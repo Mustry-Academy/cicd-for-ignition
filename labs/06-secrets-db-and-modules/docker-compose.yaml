@@ -62,7 +62,6 @@ x-ignition-env: &ignition-env
     com.inductiveautomation.opcua.drivers.tcpudp,
     com.inductiveautomation.webdev,
     com.inductiveautomation.jdbc.postgresql,
-    com.cirruslink.mqtt.engine.gateway,
     dev.bwdesigngroup.flint.FlintDesignerBridge
   # Embr-Periscope, Embr-Charts and the TimescaleDB Historian are the three
   # spare modules Part 3 installs. Their .modl files sit in
@@ -75,14 +74,10 @@ x-ignition-env: &ignition-env
   # installs them headlessly and WRITES the derived certFingerprint +
   # licenseAgreementHash back into modules.json — which the student commits
   # so image-based/fresh gateways accept them from config alone. That
-  # derivation is the whole point of Part 3. (MQTT Engine stays pre-wired:
-  # it is a 55 MB module and slow to boot, so it is not part of the
-  # exercise.)
+  # derivation is the whole point of Part 3.
   ACCEPT_MODULE_LICENSES: >-
-    com.cirruslink.mqtt.engine.gateway,
     dev.bwdesigngroup.flint.FlintDesignerBridge
   ACCEPT_MODULE_CERTS: >-
-    com.cirruslink.mqtt.engine.gateway,
     dev.bwdesigngroup.flint.FlintDesignerBridge
   GATEWAY_RESTORE_DISABLED: "true"
   GATEWAY_NETWORK_ENABLED: "true"

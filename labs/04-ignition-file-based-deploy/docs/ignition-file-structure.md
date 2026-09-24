@@ -74,7 +74,7 @@ config/resources/core/
 │   ├── system-properties/{config.json, resource.json}        ← singleton (no <name> level)
 │   ├── database-connection/TimescaleDB/{config.json, resource.json}
 │   ├── opc-connection/Ignition OPC UA Server/{config.json, resource.json}
-│   └── tag-provider/MQTT Engine/{config.json, resource.json}
+│   └── tag-provider/example-tags/{config.json, resource.json}
 └── com.inductiveautomation.historian/
     └── historian-provider/TimescaleDB Historian/{config.json, resource.json}
 ```

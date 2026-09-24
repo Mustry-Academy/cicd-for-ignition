@@ -1,10 +1,4 @@
 {
-  "com.cirruslink.mqtt.engine.gateway": {
-    "filename": "/third-party-modules/MQTT-Engine-signed.modl",
-    "onStartup": "enabled",
-    "certFingerprint": "b3d50508d45e1703dea19b80f6cdc3d7030c1f03",
-    "licenseAgreementHash": 1007003261
-  },
   "com.inductiveautomation.alarm-notification": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Alarm Notification-module.modl",
     "onStartup": "enabled",
