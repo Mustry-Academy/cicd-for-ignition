@@ -1,0 +1,314 @@
+# Mustry Academy — Lab 04 (file-based deploy)
+# Three Ignition 8.3 gateways + one TimescaleDB with three logical databases:
+#
+#   ignition-local   http://localhost:8088   bind-mounts ./projects + ./services/config
+#                                            (working gateway — edits show
+#                                             up immediately on disk)
+#   ignition-test     http://localhost:8089   projects/ + config/ bind-mounted from
+#                                            ./gateways/test, populated by deploy.yml
+#                                            (push to main)
+#   ignition-production    http://localhost:8090   projects/ + config/ bind-mounted from
+#                                            ./gateways/production, populated by release.yml
+#                                            (tag push v*)
+#
+#   timescaledb      localhost:5432          databases: ignition_local_development, ignition_test,
+#                                                       ignition_production (one per env)
+#
+# Run it:
+#   cp .env.example .env
+#   scripts/setup.sh           # or:  docker compose up -d
+# Then:
+#   open http://localhost:8088   (local)
+#   open http://localhost:8089   (test — empty until first push to main)
+#   open http://localhost:8090   (production — empty until first tag push)
+
+---
+# YAML anchors for the bits that don't differ across the three gateways. Each
+# service merges these in and overrides the parts that do (ports, admin creds,
+# the gateway name passed to the wrapper, volumes).
+x-ignition-env: &ignition-env
+  ACCEPT_IGNITION_EULA: "Y"
+  IGNITION_EDITION: standard
+  # Skip the Quick Start prompt on first login — the lab ships its own projects.
+  DISABLE_QUICKSTART: "true"
+  GATEWAY_MODULES_ENABLED: >-
+    com.inductiveautomation.alarm-notification,
+    com.inductiveautomation.eventstream,
+    com.inductiveautomation.historian,
+    com.inductiveautomation.connectors.kafka,
+    com.inductiveautomation.opcua.drivers.modbus,
+    com.inductiveautomation.opcua,
+    com.inductiveautomation.perspective,
+    com.inductiveautomation.reporting,
+    com.inductiveautomation.historian.sql,
+    com.inductiveautomation.symbol-factory,
+    com.inductiveautomation.opcua.drivers.tcpudp,
+    com.inductiveautomation.webdev,
+    com.inductiveautomation.jdbc.postgresql,
+    com.mussonindustrial.embr.charts,
+    com.mussonindustrial.embr.periscope,
+    com.mustry.historian.timescaledb,
+    com.cirruslink.mqtt.engine.gateway,
+    dev.bwdesigngroup.flint.FlintDesignerBridge
+  ACCEPT_MODULE_LICENSES: >-
+    com.mussonindustrial.embr.charts,
+    com.mussonindustrial.embr.periscope,
+    com.mustry.historian.timescaledb,
+    com.cirruslink.mqtt.engine.gateway,
+    dev.bwdesigngroup.flint.FlintDesignerBridge
+  ACCEPT_MODULE_CERTS: >-
+    com.mussonindustrial.embr.charts,
+    com.mussonindustrial.embr.periscope,
+    com.mustry.historian.timescaledb,
+    com.cirruslink.mqtt.engine.gateway,
+    dev.bwdesigngroup.flint.FlintDesignerBridge
+  GATEWAY_RESTORE_DISABLED: "true"
+  GATEWAY_NETWORK_ENABLED: "true"
+  TZ: "Europe/Brussels"
+
+# Run the gateway under umask 0002. The image's default umask (022) makes
+# everything the gateway writes into the bind mounts 644/755 — group
+# read-only — so despite group_add + setgid the student cannot edit or
+# delete those files (and teardown.sh --volumes fails on them). With 0002
+# they land 664/775, group-owned by the student via the setgid dirs.
+x-ignition-entrypoint: &ignition-entrypoint
+  ["/bin/sh", "-c", 'umask 0002 && exec docker-entrypoint.sh "$@"', "--"]
+
+x-ignition-resources: &ignition-resources
+  deploy:
+    resources:
+      limits:
+        memory: 1G
+      reservations:
+        memory: 512M
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-ignition-healthcheck: &ignition-healthcheck
+  test: ["CMD", "curl", "-fsS", "http://localhost:8088/StatusPing"]
+  interval: 30s
+  timeout: 10s
+  retries: 10
+  start_period: 90s
+
+services:
+  # --- local gateway: edits on the host show up here immediately --------------
+  ignition-local:
+    image: inductiveautomation/ignition:8.3.8
+    container_name: lab04-ignition-local
+    hostname: lab04-ignition-local
+    # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
+    # owned 2003:0 mode 775, so any OTHER primary gid loses write access and
+    # the gateway fails to boot ("gateway.xml exists, but isnt readable or
+    # writable"). Instead we ADD the student's group, which -- together with
+    # the group-write + setgid bits scripts/setup.sh applies to the
+    # bind-mounted dirs -- makes everything the gateway writes editable by
+    # the student. No root-owned files, so no sudo.
+    # LAB_GID is exported by scripts/preflight.sh.
+    user: "2003:0"
+    group_add:
+      - "${LAB_GID:-0}"
+    entrypoint: *ignition-entrypoint
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+      - "8060:8060"
+    volumes:
+      - ignition-local-data:/usr/local/bin/ignition/data
+      - ./projects:/usr/local/bin/ignition/data/projects
+      - ./services/config:/usr/local/bin/ignition/data/config
+      - ./services/modules.json:/usr/local/bin/ignition/data/modules.json
+      - ./third-party-modules:/third-party-modules
+    environment:
+      <<: *ignition-env
+      GATEWAY_ADMIN_USERNAME: "${GATEWAY_ADMIN_USERNAME_LOCAL:-admin}"
+      GATEWAY_ADMIN_PASSWORD: "${GATEWAY_ADMIN_PASSWORD_LOCAL:-password}"
+    command: >
+      -n lab04-local
+      -m 1024
+      --
+      wrapper.java.initmemory=256
+      -Dignition.allowunsignedmodules=true
+      -Dignition.gateway.externalModulesFolder=/third-party-modules
+      -Dignition.config.mode=local-development
+    healthcheck: *ignition-healthcheck
+    <<: *ignition-resources
+    networks:
+      - default
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  # --- test gateway: populated by deploy.yml (push to main) -------------------
+  ignition-test:
+    image: inductiveautomation/ignition:8.3.8
+    container_name: lab04-ignition-test
+    hostname: lab04-ignition-test
+    # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
+    # owned 2003:0 mode 775, so any OTHER primary gid loses write access and
+    # the gateway fails to boot ("gateway.xml exists, but isnt readable or
+    # writable"). Instead we ADD the student's group, which -- together with
+    # the group-write + setgid bits scripts/setup.sh applies to the
+    # bind-mounted dirs -- makes everything the gateway writes editable by
+    # the student. No root-owned files, so no sudo.
+    # LAB_GID is exported by scripts/preflight.sh.
+    user: "2003:0"
+    group_add:
+      - "${LAB_GID:-0}"
+    entrypoint: *ignition-entrypoint
+    restart: unless-stopped
+    ports:
+      - "8089:8088"
+      - "8061:8060"
+    volumes:
+      - ignition-test-data:/usr/local/bin/ignition/data
+      # projects/ and config/ are bind-mounted from ./gateways/test (gitignored,
+      # created by setup.sh) so you can SEE what a deploy shipped straight from
+      # your laptop: `ls gateways/test/projects`. The rest of data/ (internal db,
+      # var/, certificates/) stays in the named volume above.
+      - ./gateways/test/projects:/usr/local/bin/ignition/data/projects
+      - ./gateways/test/config:/usr/local/bin/ignition/data/config
+      - ./services/modules.json:/usr/local/bin/ignition/data/modules.json
+      - ./third-party-modules:/third-party-modules
+    environment:
+      <<: *ignition-env
+      GATEWAY_ADMIN_USERNAME: "${GATEWAY_ADMIN_USERNAME_TEST:-admin}"
+      GATEWAY_ADMIN_PASSWORD: "${GATEWAY_ADMIN_PASSWORD_TEST:-password}"
+    command: >
+      -n lab04-test
+      -m 1024
+      --
+      wrapper.java.initmemory=256
+      -Dignition.allowunsignedmodules=true
+      -Dignition.gateway.externalModulesFolder=/third-party-modules
+      -Dignition.config.mode=test
+    healthcheck: *ignition-healthcheck
+    <<: *ignition-resources
+    networks:
+      - default
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  # --- production gateway: populated by release.yml (tag push v*) ------------------
+  ignition-production:
+    image: inductiveautomation/ignition:8.3.8
+    container_name: lab04-ignition-production
+    hostname: lab04-ignition-production
+    # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
+    # owned 2003:0 mode 775, so any OTHER primary gid loses write access and
+    # the gateway fails to boot ("gateway.xml exists, but isnt readable or
+    # writable"). Instead we ADD the student's group, which -- together with
+    # the group-write + setgid bits scripts/setup.sh applies to the
+    # bind-mounted dirs -- makes everything the gateway writes editable by
+    # the student. No root-owned files, so no sudo.
+    # LAB_GID is exported by scripts/preflight.sh.
+    user: "2003:0"
+    group_add:
+      - "${LAB_GID:-0}"
+    entrypoint: *ignition-entrypoint
+    restart: unless-stopped
+    ports:
+      - "8090:8088"
+      - "8062:8060"
+    volumes:
+      - ignition-production-data:/usr/local/bin/ignition/data
+      # Same pattern as test: deployed files are visible on the host under
+      # ./gateways/production (gitignored, created by setup.sh).
+      - ./gateways/production/projects:/usr/local/bin/ignition/data/projects
+      - ./gateways/production/config:/usr/local/bin/ignition/data/config
+      - ./services/modules.json:/usr/local/bin/ignition/data/modules.json
+      - ./third-party-modules:/third-party-modules
+    environment:
+      <<: *ignition-env
+      GATEWAY_ADMIN_USERNAME: "${GATEWAY_ADMIN_USERNAME_PRODUCTION:-admin}"
+      GATEWAY_ADMIN_PASSWORD: "${GATEWAY_ADMIN_PASSWORD_PRODUCTION:-password}"
+    command: >
+      -n lab04-production
+      -m 1024
+      --
+      wrapper.java.initmemory=256
+      -Dignition.allowunsignedmodules=true
+      -Dignition.gateway.externalModulesFolder=/third-party-modules
+      -Dignition.config.mode=production
+    healthcheck: *ignition-healthcheck
+    <<: *ignition-resources
+    networks:
+      - default
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  # --- shared TimescaleDB with three logical databases ----------------------
+  # POSTGRES_DB is the database created automatically at first init. The init
+  # script under ./db-init/ (mounted below) creates the other two so each
+  # gateway can point at its own database.
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: lab04-timescaledb
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb-data:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-ignition}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-ignition}"
+      POSTGRES_DB: ignition_local_development
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ignition}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - default
+
+  # --- self-hosted GitHub Actions runner -------------------------------------
+  # Auto-registers against the repo set in RUNNER_REPO_URL using a GitHub
+  # Personal Access Token (RUNNER_GITHUB_PAT, must have `repo` scope). The
+  # image uses that PAT to fetch its own short-lived registration token, so
+  # you never mint one by hand. This is the first lab where you create the
+  # PAT; Labs 05 and 06 reuse the same token.
+  #
+  # The runner sits on the lab's compose network, so it reaches the gateways by
+  # service name (ignition-local, ignition-test, ignition-production) — see the
+  # IGNITION_URL defaults in .github/workflows/deploy.yml and release.yml.
+  #
+  # Why /var/run/docker.sock is mounted: deploy.yml and release.yml use
+  # `docker cp` and `docker exec` to push project files INTO the test/production
+  # gateway containers. That requires the runner to talk to the host's
+  # Docker daemon. Lab convenience, NOT a production pattern.
+  github-runner:
+    image: myoung34/github-runner:latest
+    container_name: lab04-runner
+    hostname: lab04-runner
+    restart: unless-stopped
+    environment:
+      REPO_URL: "${RUNNER_REPO_URL}"
+      ACCESS_TOKEN: "${RUNNER_GITHUB_PAT}"
+      RUNNER_NAME: "${RUNNER_NAME:-lab04-runner}"
+      RUNNER_SCOPE: repo
+      LABELS: "self-hosted,lab04"
+      # No EPHEMERAL here on purpose: the image treats ANY non-empty value
+      # (even "false") as "enable --ephemeral". Leave it unset for a
+      # persistent runner.
+      DISABLE_AUTO_UPDATE: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - default
+
+volumes:
+  ignition-local-data:
+  ignition-test-data:
+  ignition-production-data:
+  timescaledb-data:
