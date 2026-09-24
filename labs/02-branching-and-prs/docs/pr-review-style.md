@@ -21,7 +21,7 @@ A reviewable PR has four properties. In order of importance:
 
 **4. Tested.** Either: it includes a test that would have caught the original bug, or there's a written reason it can't be tested (and you've made the manual test plan explicit in "How to test").
 
-Lab 02's [`pull_request_template.md`](../.github/pull_request_template.md) enforces three of the four by structure. Smallness is up to you.
+The course's [`pull_request_template.md`](../../../.github/pull_request_template.md) (at the repo root, so it applies to every lab) enforces three of the four by structure. Smallness is up to you.
 
 ## Conventional comments
 

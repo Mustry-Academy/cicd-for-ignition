@@ -101,7 +101,7 @@ needs a peer to have reviewed yours.
 > defaults the **base repo** to the upstream course repo — switch it to **your
 > fork** every time. `gh pr create` won't guess: it errors with "no default remote
 > repository has been set" until you run
-> `gh repo set-default <your-username>/cicd-lab-02-branching-and-prs` once (part of
+> `gh repo set-default <your-username>/cicd-for-ignition` once (part of
 > setup) and pick your fork.
 
 ### 1. Discuss: which strategy fits your team? (breakout room)
@@ -125,24 +125,26 @@ production ambushes you. You thread both through GitHub Flow.
 
 **Step 1: set the GitHub Flow stage.** One long-lived branch — `main` — and a tag
 marking what's in production. In GitHub Flow, tags carry the release history. Tag
-what's live as `v1.2` on `main` and push the tag.
+what's live as `v1.2` on `main` and push the tag. Your fork hosts every lab of the
+course, so this lab's tags carry a `lab02-` prefix: the release is v1.2, the tag is
+`lab02-v1.2`.
 
 ```bash
 git switch main
-git tag v1.2
-git push origin v1.2      # "production" is v1.2
+git tag lab02-v1.2
+git push origin lab02-v1.2      # "production" is v1.2
 ```
 
-Mental model: `main` = the one shared line of development, `v1.2` = the exact
+Mental model: `main` = the one shared line of development, `lab02-v1.2` = the exact
 commit customers are running, releasing = merging to `main` and tagging. Every
 branch you cut next is short-lived: off `main`, back to `main` through a PR.
 
-> **Two commands graduate from "named" to "used" today.** `git tag v1.2` pins a
+> **Two commands graduate from "named" to "used" today.** `git tag lab02-v1.2` pins a
 > permanent, human-readable name to the exact commit you're on; unlike a branch, a
 > tag never moves — that's what makes it a release marker. `git push` uploads your
 > local commits and refs to a remote (`origin` = your fork on GitHub; this morning
 > everything stayed local). Two habits that trip people up: tags don't ride along
-> with a normal push, so `git push origin v1.2` sends one explicitly — and a *new*
+> with a normal push, so `git push origin lab02-v1.2` sends one explicitly — and a *new*
 > branch needs `git push -u origin <branch>` once, where `-u` links it to your
 > fork so every later push is just `git push`.
 
@@ -175,10 +177,10 @@ a customer hits the null-reading crash in v1.2, live. It can't wait for v2.0.
    `"0.0 °C"`. Run `scripts/validate.sh` (green).
 3. **One PR into `main`.** That's the whole GitHub Flow ceremony: no `develop`, no
    double-merge. **Don't merge yet**: your peers review first, and the merging
-   (plus the `v1.2.1` tag) happens in release order in step 3.
+   (plus the `lab02-v1.2.1` tag) happens in release order in step 3.
 4. That's **two PRs open** (feature → `main`, fix → `main`): your reviewer
    requested on each. **Merge order is the lesson now**: the fix must land (and
-   `v1.2.1` be tagged) *before* the feature merges — in GitHub Flow, merging is
+   `lab02-v1.2.1` be tagged) *before* the feature merges — in GitHub Flow, merging is
    releasing.
 
 ```bash
@@ -193,7 +195,7 @@ git push -u origin fix/null-reading
 ```
 
 > The whole lesson: merging is releasing. Whatever is on `main` when you tag
-> `v1.2.1` ships in v1.2.1 — merge the feature first and your "patch" quietly
+> `lab02-v1.2.1` ships in v1.2.1 — merge the feature first and your "patch" quietly
 > ships half of v2.0. Order is the one ceremony GitHub Flow kept.
 
 ### 3. Review a peer's PR, then merge yours
@@ -224,12 +226,12 @@ Then respond and merge, in release order:
 1. On your PRs, react to every comment (`+1` for praise, reply to questions, push a
    fix-up commit for what you accept, reply with reasoning for what you decline).
    Additive commits, no force-push during review. Re-request review when ready.
-2. Merge the **fix PR first** (production is on fire), then tag `v1.2.1` on
+2. Merge the **fix PR first** (production is on fire), then tag `lab02-v1.2.1` on
    `main` — in GitHub Flow, the tag *is* the release:
 
    ```bash
    git switch main && git pull
-   git tag v1.2.1 && git push origin v1.2.1
+   git tag lab02-v1.2.1 && git push origin lab02-v1.2.1
    ```
 
    Delete the fix branch once it's merged (GitHub offers a button; take it).
@@ -244,23 +246,25 @@ Then respond and merge, in release order:
 
 - **Now do it in Git Flow.** Same scenario, the heavyweight strategy — feel what
   the ceremony buys (support for more than one live version) and what it costs.
-  First rewind your fork — after the scenario, `main` already has both changes:
+  First rewind your fork — after the scenario, `main` already has both changes.
+  This rewinds your fork's `main` for the whole course, so do it before you commit
+  other labs' work to `main`; anything after `lab02-v1.2` goes too:
 
   ```bash
   git switch main
-  git reset --hard v1.2
-  git push --force origin main       # your throwaway fork: force-push is fine here
+  git reset --hard lab02-v1.2
+  git push --force origin main       # your own fork: force-push is fine here
   # GitHub's delete button only removed the remote branches; clear the local ones too:
   git branch -D feature/v2-silo-detail fix/null-reading
   # and un-release the patch, so the stretch can re-tag it:
-  git tag -d v1.2.1 && git push origin --delete v1.2.1
+  git tag -d lab02-v1.2.1 && git push origin --delete lab02-v1.2.1
   ```
 
   Then build the Git Flow world: a long-lived `develop` next to `main`
   (`git switch -c develop && git push -u origin develop`). Rerun the two changes
   Git Flow's way: the v2.0 view on `feature/*` **off `develop`** → PR into
   `develop`; the null-reading fix on `hotfix/*` **off `main`** → **two PRs**, into
-  `main` (tag `v1.2.1`) **and** into `develop`. Merge the hotfix PRs first (both,
+  `main` (tag `lab02-v1.2.1`) **and** into `develop`. Merge the hotfix PRs first (both,
   *then* delete the branch — deleting it between the two merges auto-closes the
   still-open second PR), pull the hotfix into the feature (`git merge develop`),
   then merge the feature. Notice the difference: the hotfix merges **twice** — skip

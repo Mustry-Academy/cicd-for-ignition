@@ -7,18 +7,18 @@ If you are on macOS or Linux, you can skip this page.
 
 ## The one rule that matters
 
-**Clone the lab repos inside the WSL filesystem, not on your Windows drive.**
+**Clone the course repo inside the WSL filesystem, not on your Windows drive.**
 
 ```bash
 # Good — the Linux side, fast and permission-clean
-cd ~
-git clone <lab-repo-url>
-cd <lab-repo>
+cd ~/mustry-academy
+git clone <your-fork-url>
+cd cicd-for-ignition/labs/<lab>
 code .            # opens VS Code connected to WSL
 
 # Bad — the Windows side, causes permission errors
 cd /mnt/c/Users/<you>/Documents
-git clone <lab-repo-url>
+git clone <your-fork-url>
 ```
 
 Anything under `/mnt/c`, `/mnt/d` and friends is your Windows disk seen through
@@ -37,15 +37,16 @@ You can tell where you are at any time:
 
 ```bash
 pwd
-# /home/you/cicd-lab-04-...   -> good
-# /mnt/c/Users/you/...        -> move it
+# /home/you/mustry-academy/cicd-for-ignition/...   -> good
+# /mnt/c/Users/you/...                             -> move it
 ```
 
-To move an existing clone:
+To move an existing clone (the whole repo, not just one lab folder):
 
 ```bash
-mv /mnt/c/Users/<you>/<lab-repo> ~/<lab-repo>
-cd ~/<lab-repo>
+mkdir -p ~/mustry-academy
+mv /mnt/c/Users/<you>/cicd-for-ignition ~/mustry-academy/cicd-for-ignition
+cd ~/mustry-academy/cicd-for-ignition/labs/<lab>
 scripts/setup.sh
 ```
 
@@ -103,7 +104,7 @@ Reopen your terminal. `scripts/setup.sh` offers to write this for you.
 
 ## Checking your setup
 
-From any lab repo:
+From any lab folder:
 
 ```bash
 scripts/test-preflight.sh

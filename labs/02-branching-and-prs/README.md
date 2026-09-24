@@ -1,6 +1,6 @@
 # Lab 02 — Branching and Pull Requests
 
-Day 1 of the [CI/CD for Ignition Masterclass](https://github.com/mustry-academy/cicd-masterclass).
+Day 1 of the [CI/CD for Ignition Masterclass](../../README.md).
 
 > Compare branching strategies side by side, and learn to write a pull request a reviewer actually enjoys reading.
 
@@ -12,13 +12,13 @@ spin up yourself. You don't need prior Ignition experience: the gateway's
 **abstracted away**, and what you actually edit is approachable — a small Python
 function, or a property on a view. The point of the lab is the **Git workflow**
 around those project files: branching, pull requests, and review. The full Ignition
-file-based deploy story arrives in [Lab 04](https://github.com/mustry-academy/cicd-lab-04-ignition-file-based-deploy).
+file-based deploy story arrives in [Lab 04](../04-ignition-file-based-deploy/).
 
 ## Prerequisites
 
 - Work in **WSL2 (Windows), Linux, or macOS** — run all lab commands there, not in PowerShell or Git Bash (see the platform notes in your welcome package)
-- Completed [Lab 01](https://github.com/mustry-academy/cicd-lab-01-git-fundamentals)
-- Pass [`cicd-preflight`](https://github.com/mustry-academy/cicd-preflight)
+- Completed [Lab 01](../01-git-fundamentals/)
+- Pass [`preflight`](../../preflight/)
 - Docker (with the Compose V2 plugin) for the optional gateway — ~1.5 GB RAM is plenty for the single gateway
 
 ## Working model: fork and PR
@@ -28,12 +28,15 @@ approved — so everyone needs merge rights on the repo they're PRing into. The 
 way to get that without handing a whole cohort write access to one repo: **work in
 your own fork, and open PRs inside it.**
 
-1. **Fork + clone** (sets `origin` to your fork, `upstream` to the lab repo):
+1. **Your course fork** (sets `origin` to your fork, `upstream` to the course repo).
+   You fork and clone once for the whole course: skip the `gh repo fork` line if
+   you already did that in Lab 01.
    ```bash
-   cd ~/mustry-academy                                               # the parent folder for all 8 lab repos, from Lab 01
-   gh repo fork mustry-academy/cicd-lab-02-branching-and-prs --clone
-   cd cicd-lab-02-branching-and-prs
-   gh repo set-default <your-username>/cicd-lab-02-branching-and-prs  # tell gh where PRs go: YOUR fork
+   mkdir -p ~/mustry-academy && cd ~/mustry-academy
+   gh repo fork Mustry-Academy/cicd-for-ignition --clone             # once per course (fork + clone)
+   cd cicd-for-ignition
+   gh repo set-default <your-username>/cicd-for-ignition             # once: tell gh where PRs go, YOUR fork
+   cd labs/02-branching-and-prs
    ```
    > **WSL2 (Windows): keep the clone in your Linux home (`~/…`), never `/mnt/c/…`.**
    > On the Windows filesystem your Windows user, your WSL user and the gateway's
@@ -54,7 +57,9 @@ your own fork, and open PRs inside it.**
 
 ## Quick start
 
-Spin up your gateway (optional, but it makes the project tangible):
+Spin up your gateway (optional, but it makes the project tangible). Only one lab
+stack runs at a time: stop the previous lab's first (`docker compose down` in that
+lab's folder).
 
 ```bash
 cp .env.example .env
@@ -107,19 +112,15 @@ peers review, merged in release order and tagged. A stretch reruns it in Git Flo
 ## Repo layout
 
 ```
-cicd-lab-02-branching-and-prs/
+labs/02-branching-and-prs/
 ├── README.md
 ├── docker-compose.yml            ← one Ignition gateway (named volume + bind-mounted projects/)
 ├── .env.example                  ← copy to .env before running
-├── .github/
-│   └── pull_request_template.md
 ├── exercises/
 │   └── lab.md                    ← the lab (Parts 1 and 2)
 ├── docs/                         ← reference reading
 │   ├── branching-strategies.md
 │   └── pr-review-style.md
-├── instructor-notes/             ← answer key (read after solo work)
-│   └── lab-key.md
 ├── scripts/
 │   ├── setup.sh                  ← boot the gateway and wait for RUNNING
 │   ├── scan.sh                   ← push project-file edits to the running gateway
@@ -131,6 +132,11 @@ cicd-lab-02-branching-and-prs/
         ├── com.inductiveautomation.perspective/   ← the Perspective HMI dashboard + page config
         └── ignition/script-python/lab/            ← Python scripts (you edit display; util is a helper)
 ```
+
+The PR template GitHub pre-fills on every PR lives at the repo root, in
+[`.github/pull_request_template.md`](../../.github/pull_request_template.md): GitHub
+only reads it from there. Open this lab folder in VS Code (`code .` from here), not
+the repo root: `flint.config.json`'s paths are relative to the workspace folder.
 
 ## The Compose stack
 
@@ -154,7 +160,7 @@ volumes:
 
 > The gateway regenerates a `.resources/` blob store and other operational files inside `projects/` as it runs. Those are gateway-owned churn and are gitignored — if you ever see them in `git status`, your ignore rules are off.
 
-> **No CI in this lab.** We deliberately ship no `.github/workflows/`. `scripts/validate.sh` is something *you* run; Lab 03 turns it into a required status check no one can merge past. Having pre-built CI here would muddy that narrative.
+> **No CI in this lab.** We deliberately ship no workflow for Lab 02 (the repo-root `.github/workflows/` holds the later labs' workflows, path-filtered so your Lab 02 PRs don't trigger them). `scripts/validate.sh` is something *you* run; Lab 03 turns it into a required status check no one can merge past. Having pre-built CI here would muddy that narrative.
 
 ## License
 

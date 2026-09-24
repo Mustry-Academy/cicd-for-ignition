@@ -17,7 +17,7 @@ Keep it short; the goal is to make the reviewer's job easy.
 
 ## Checklist
 
-- [ ] Validation passes locally (`scripts/validate.sh`)
-- [ ] Gateway still starts cleanly (`scripts/setup.sh` → gateway reaches RUNNING) — for project changes
-- [ ] No secrets committed
-- [ ] Changes are scoped to one logical thing
+- [ ] Validation passes locally (`scripts/validate.sh`, run from the lab folder you changed)
+- [ ] Gateway still starts cleanly (the lab's `scripts/setup.sh` or `docker compose up -d` → gateway reaches RUNNING) — for project changes
+- [ ] No secrets committed (`.env` stays local)
+- [ ] Changes are scoped to one logical thing (and one lab)
