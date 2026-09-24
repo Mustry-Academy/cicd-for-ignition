@@ -1,0 +1,78 @@
+# Local env
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Python (used by any lab tooling)
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Certificates and security
+**/certificates/
+**/keystore/
+
+# Runtime configuration (environment-specific). NOTE: the LOCAL gateway's
+# copies under services/config/ are deliberately tracked (a fresh clone needs
+# the `local` collection manifest on disk or first boot FAULTs); tracked files
+# override these patterns, and the skip-worktree hook hides their churn.
+# .dockerignore keeps them out of the image either way.
+**/config/local
+**/config/resources/local
+
+# Scan-API tokens are generated per clone by scripts/generate-api-keys.sh
+# (full keys in .env, hash-only resource in the local gateway's config tree;
+# test/production get theirs via scripts/install-api-token.sh). Never commit
+# them: a committed token is a working credential in every fork.
+**/config/resources/core/ignition/api-token/
+
+# The gateway-owned INTERNAL identity: the default user source (users.json
+# holds the admin password hash!), its identity provider, and the OPC-UA
+# module's user source belong to ONE gateway. Committing them ships your
+# local gateway's admin credentials to every gateway you deploy to — and
+# locks everyone out of test/production. Identity resources you configure yourself
+# (a database or AD user source, a SAML/OIDC identity provider) hold no
+# password data and ARE tracked and deployed like any other config.
+**/config/resources/core/ignition/user-source/default/
+**/config/resources/core/ignition/user-source/opcua-module/
+**/config/resources/core/ignition/identity-provider/default/
+# ...and the temp_N identity commissioning invents when it runs with identity
+# files that outlived their data volume (scripts/setup.sh repairs that). Same
+# admin hash, same lockout, so it is never committed either.
+**/config/resources/core/ignition/user-source/temp*/
+**/config/resources/core/ignition/identity-provider/temp*/
+
+# Ignition operational state — never commit these (see docs/ignition-file-structure.md)
+# These live inside the gateway's data/ directory at runtime; we mount them as a named
+# volume so they don't pollute the bind-mounted projects/ and services/ paths.
+**/.resources/
+**/migration-log-*.md
+**/jar-cache/
+**/datacache/
+**/autobackup/
+**/config/ignition/tags/*.idb
+**/themes.digest.json
+**/fonts.digest.json
+**/icons.digest.json
+
+# Data-root operational state (db/ — the internal SQLite DB incl. the user store —
+# jar-cache/, metricsdb/, var/) lives in the gateways' named volumes and never
+# appears in this repo's tree, so it needs no patterns here.
+
+# Flint gateway API tokens. The path is relative to the workspace root so the
+# same flint.config.json works in every clone, but the token itself is a live
+# gateway credential and is per-gateway AND per-clone — never commit it. Each
+# student generates their own in Config > Security > API Tokens and writes it
+# as `ignition_token=<keyId>:<secret>` (dotenv format, not JSON, despite the
+# .json extension the Flint docs use).
+/.flint/tokens/*
+!/.flint/tokens/*.example
