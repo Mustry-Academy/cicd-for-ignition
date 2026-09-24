@@ -1,0 +1,9 @@
+# actionlint config for the whole course repo, so a plain `actionlint` at the
+# root knows every lab's self-hosted runner labels. Each lab also keeps its own
+# labs/<lab>/.github/actionlint.yaml, which its CI and pre-commit pass
+# explicitly when they lint only that lab's workflows.
+self-hosted-runner:
+  labels:
+    - local-lab03   # lab03-runner-demo.yml
+    - lab04         # lab04-deploy.yml, lab04-release.yml
+    - lab06         # lab06-deploy.yml

@@ -21,7 +21,9 @@ status=0
 for lab_dir in "$top"/labs/*/; do
     lab="labs/$(basename "$lab_dir")"
     [ "$lab" = "labs/07-multi-gateway-deploy" ] && continue
-    printf '%s\n' "$staged" | grep -q "^$lab/" || continue
+    # A lab's own folder, or its workflows at the root (.github/workflows/labNN-*)
+    num="$(basename "$lab_dir" | cut -d- -f1)"
+    printf '%s\n' "$staged" | grep -qE "^($lab/|\.github/workflows/lab$num-)" || continue
 
     if [ -x "$lab_dir/scripts/git-hooks/pre-commit" ]; then
         (cd "$lab_dir" && ./scripts/git-hooks/pre-commit) || status=1
