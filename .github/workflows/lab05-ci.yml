@@ -2,9 +2,14 @@
 # once a commit merges, deploy.yml (push to main) and release.yml (tag) ship
 # it without re-validating — the same commit already passed here.
 #
+# Monorepo: this file lives at the repo root (GitHub only runs root workflows)
+# and only fires for changes under labs/05-ignition-image-based-deploy/. Run
+# steps start in that folder (defaults.run.working-directory); `uses:` steps
+# do not, so their paths spell out the lab folder.
+#
 # GitHub flow has a single long-lived branch:
 #   main  ← feature/* branches merge here via PR (then deploy.yml ships to test,
-#           and a vX.Y.Z tag ships to production via release.yml)
+#           and a lab05-vX.Y.Z tag ships to production via release.yml)
 #
 # Purpose: catch the cheap stuff before a build/deploy gets near it. Everything
 # here runs on ubuntu-latest (free, no self-hosted runner). The expensive,
@@ -17,20 +22,27 @@
 # BUILDS the image (without pushing) so a broken Dockerfile fails the PR, not
 # the deploy.
 
-name: CI
+name: Lab 05 · CI
 
 on:
   pull_request:
     branches: [main]
+    paths:
+      - "labs/05-ignition-image-based-deploy/**"
+      - ".github/workflows/lab05-ci.yml"
 
 # Cancel any in-flight CI run for this PR when a new commit lands.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: lab05-ci-${{ github.ref }}
   cancel-in-progress: true
 
 # Least-privilege default.
 permissions:
   contents: read
+
+defaults:
+  run:
+    working-directory: labs/05-ignition-image-based-deploy
 
 jobs:
   # Job ids double as the status-check names branch protection matches on
@@ -52,10 +64,12 @@ jobs:
         run: pip install yamllint==1.35.1 ign-lint==0.6.1
 
       - name: yamllint
-        run: yamllint -c .yamllint.yml .
+        run: yamllint -c .yamllint.yml . ../../.github/workflows/lab05-*.yml
 
       - name: actionlint
         uses: raven-actions/actionlint@v2
+        with:
+          files: ".github/workflows/lab05-*.yml"
 
       - name: shellcheck
         # -x follows the sourced lib.sh; source resolution comes from .shellcheckrc
@@ -84,7 +98,7 @@ jobs:
           fail=0
           while IFS= read -r f; do
             if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
-              echo "::error file=$f::Invalid JSON"
+              echo "::error file=labs/05-ignition-image-based-deploy/$f::Invalid JSON"
               fail=1
             fi
           done < <(find projects services -type f -name '*.json' 2>/dev/null)
@@ -103,7 +117,7 @@ jobs:
           fail=0
           for must in ".env" ".git/" "scripts/" "docs/" "exercises/"; do
             if ! grep -qxF "$must" .dockerignore; then
-              echo "::error file=.dockerignore::Missing required exclusion: $must"
+              echo "::error file=labs/05-ignition-image-based-deploy/.dockerignore::Missing required exclusion: $must"
               fail=1
             fi
           done
@@ -122,7 +136,7 @@ jobs:
           [ -f "$f" ] || { echo "No $f — nothing to validate"; exit 0; }
           bad="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(" ".join(sorted({v for k,v in d.items() if k in ("systemAuthProfile","systemIdentityProvider") and str(v).startswith("temp")})))' "$f")"
           if [ -n "$bad" ]; then
-            echo "::error file=$f::Points at a throwaway identity ($bad). Restore it (git checkout -- $f), remove services/config/resources/core/ignition/{user-source,identity-provider}/temp*, or re-run scripts/setup.sh"
+            echo "::error file=labs/05-ignition-image-based-deploy/$f::Points at a throwaway identity ($bad). Restore it (git checkout -- $f), remove services/config/resources/core/ignition/{user-source,identity-provider}/temp*, or re-run scripts/setup.sh"
             exit 1
           fi
           echo "security-properties names a deployable identity."
@@ -137,7 +151,7 @@ jobs:
         # Lints the Dockerfile for common mistakes (unpinned base, bad COPY, etc).
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: Dockerfile
+          dockerfile: labs/05-ignition-image-based-deploy/Dockerfile
 
       - name: Build image (smoke test, no push)
         # Prove the Dockerfile builds against the real project/config/modules.
@@ -146,7 +160,7 @@ jobs:
         # other event types.
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: labs/05-ignition-image-based-deploy
           push: false
           build-args: |
             GIT_SHA=${{ github.event.pull_request.head.sha || github.sha }}

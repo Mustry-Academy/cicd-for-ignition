@@ -177,8 +177,8 @@ You're finished with part 1 when:
 
 Everything in this part runs on your own machine, **and you type the deploy
 commands yourself — no script**. In a real setup this part is automated by the
-same GitHub Actions you built in Lab 04: a merge to `main` fires `deploy.yml`,
-a tag fires `release.yml`; only the steps inside the jobs change (build + push +
+same GitHub Actions you built in Lab 04: a merge to `main` fires `lab05-deploy.yml`,
+a tag fires `lab05-release.yml`; only the steps inside the jobs change (build + push +
 pull + recreate instead of copy + scan). We skip GitHub today because a gateway
 image is ~2 GB, and uploading that from a course laptop is not a good use of
 your hour — the transport isn't the lesson. Every command below is a line the
@@ -273,14 +273,14 @@ Three directions, pick by appetite:
    merge to `main` → an image is built and pushed, tag → that image is promoted.
    The deploy half stays manual, exactly like you did it. Needs your fork
    with Actions enabled, and `gh` pointed at your fork:
-   `gh repo set-default <you>/cicd-lab-05-ignition-image-based-deploy` — you
-   already ran this in the assignment setup; it's stored per clone, same as
-   Labs 03/04 (also a great take-home):
-   1. Open a PR with a small project change — `ci.yml` validates it (including a
-      no-push image build). Merge to `main` → `deploy.yml` builds on a free
+   `gh repo set-default <you>/cicd-for-ignition` — you ran this once when you
+   forked the course repo; it's stored per clone, so every lab shares it
+   (also a great take-home):
+   1. Open a PR with a small project change — `lab05-ci.yml` validates it (including a
+      no-push image build). Merge to `main` → `lab05-deploy.yml` builds on a free
       GitHub-hosted runner and pushes to **your** GHCR namespace. Wait for that
       run to go green before the next step — there is no image to pull until
-      `deploy.yml` has finished.
+      `lab05-deploy.yml` has finished.
    2. Open the run's summary page. It prints the image name it just built. Pull it
       and point test at it — the same two commands you used all through part 2, only
       the image name is longer:
@@ -289,8 +289,9 @@ Three directions, pick by appetite:
       IGNITION_TEST_IMAGE=ghcr.io/<your-user>/cicd-lab-05-ignition:sha-<short> \
         docker compose up -d ignition-test
       ```
-   3. `git tag v0.1.0 && git push origin v0.1.0` → `release.yml` re-tags `:test` to
-      `:v0.1.0` + `:production` — **no rebuild**. Deploy it to production (:8090) the same way,
+   3. `git tag lab05-v0.1.0 && git push origin lab05-v0.1.0` → `lab05-release.yml` re-tags `:test` to
+      `:v0.1.0` + `:production` — **no rebuild**. (The `lab05-` prefix keeps the tag from firing
+      other labs' release workflows in the shared course repo; the image gets the bare `:v0.1.0`.) Deploy it to production (:8090) the same way,
       with `IGNITION_PRODUCTION_IMAGE`.
    4. The payoff — prove test and production run the **same image bytes**
       (`{{.Image}}` is the sha256 of the image a container runs):
@@ -306,7 +307,7 @@ Three directions, pick by appetite:
 2. **Go deeper on the image:** shrink the build context with
    `--progress=plain`, do layer forensics with `docker history --no-trunc`, or
    (if you have a fork with Actions) add a no-push `docker build` smoke-test
-   job to `ci.yml` so a broken Dockerfile fails the PR.
+   job to `lab05-ci.yml` so a broken Dockerfile fails the PR.
 3. **A first taste of Lab 06** — bake more kinds of cargo, the way the
    production image from the teaching does:
    - **A third-party module:** enable an unused `.modl` from

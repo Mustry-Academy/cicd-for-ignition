@@ -4,9 +4,9 @@
 #   ignition-local   http://localhost:8088   bind-mounts ./projects + ./services/config
 #                                            (working gateway — you AUTHOR here,
 #                                             file-based, exactly like Lab 04)
-#   ignition-test     http://localhost:8089   runs the IMAGE built by deploy.yml
+#   ignition-test     http://localhost:8089   runs the IMAGE built by lab05-deploy.yml
 #                                            (push to main → build → recreate)
-#   ignition-production    http://localhost:8090   runs the IMAGE promoted by release.yml
+#   ignition-production    http://localhost:8090   runs the IMAGE promoted by lab05-release.yml
 #                                            (tag push v* → re-tag → recreate)
 #
 #   timescaledb      localhost:5432          databases: ignition_local_development, ignition_test,
@@ -26,8 +26,8 @@ name: cicd-lab05
 #   scripts/setup.sh           # or:  docker compose up -d
 # Then:
 #   open http://localhost:8088   (local — your authoring gateway)
-#   open http://localhost:8089   (test — base image until the first deploy.yml run)
-#   open http://localhost:8090   (production — base image until the first release.yml run)
+#   open http://localhost:8089   (test — base image until the first lab05-deploy.yml run)
+#   open http://localhost:8090   (production — base image until the first lab05-release.yml run)
 
 # YAML anchors for the bits that don't differ across the three gateways. Each
 # service merges these in and overrides the parts that do (ports, admin creds,
@@ -151,7 +151,7 @@ services:
   # --- test gateway: runs the built IMAGE -------------------------------------
   # No bind mounts and no persistent data volume: the container filesystem IS the
   # deployable artifact. Project content, config, and modules all come from the
-  # image's layers. deploy.yml sets IGNITION_TEST_IMAGE to the freshly built tag
+  # image's layers. lab05-deploy.yml sets IGNITION_TEST_IMAGE to the freshly built tag
   # and runs `docker compose up -d ignition-test` to recreate this container.
   # Before the first build, it falls back to the base image so the stack still
   # comes up (an empty gateway, just like Lab 04's test started empty).
@@ -196,7 +196,7 @@ services:
         condition: service_healthy
 
   # --- production gateway: runs the PROMOTED image ---------------------------------
-  # Same shape as test. release.yml sets IGNITION_PRODUCTION_IMAGE to the image that was
+  # Same shape as test. lab05-release.yml sets IGNITION_PRODUCTION_IMAGE to the image that was
   # already tested on the test gateway (re-tagged, NOT rebuilt) and recreates this container.
   ignition-production:
     image: "${IGNITION_PRODUCTION_IMAGE:-inductiveautomation/ignition:8.3.8}"

@@ -75,7 +75,7 @@ gateway_service() {
 #   3. a local-only fallback so the build scripts work with NO registry at all
 #
 # The local build/run/deploy flow doesn't need a registry — only the CI path
-# (deploy.yml/release.yml) pushes to GHCR, and it derives the namespace from the
+# (lab05-deploy.yml/lab05-release.yml) pushes to GHCR, and it derives the namespace from the
 # fork owner without reading this value. So an unset IGNITION_IMAGE_REPO is the
 # normal case and yields a plain local image name.
 image_repo() {

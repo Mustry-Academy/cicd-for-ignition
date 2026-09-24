@@ -1,13 +1,15 @@
 # Promote the tested :test image to production on tag push (GitHub flow release).
 #
-# GitHub flow: a release is tagging a commit on `main` with `vX.Y.Z`. That tag
+# GitHub flow: a release is tagging a commit on `main` with `lab05-vX.Y.Z`
+# (namespaced: one fork hosts every lab, so a bare `v*` tag would fire every
+# lab's release). That tag
 # fires this workflow. We do NOT promote by rebuilding from the tagged commit —
 # we promote the image currently running on test (the `:test` tag, which
 # `deploy.yml` published from `main`). "Ship exactly what test validated": a
 # rebuild could pull a newer base layer and ship bytes the test gateway never tested.
 #
 # The image-based payoff: we do NOT rebuild. The `:test` image is RE-TAGGED to
-# :vX.Y.Z + :production with a server-side manifest copy (`docker buildx imagetools
+# :vX.Y.Z (the tag minus its `lab05-` prefix) + :production with a server-side manifest copy (`docker buildx imagetools
 # create`) — same bytes, same digest test ran. Then production is recreated from it.
 #
 # One job, on a free GitHub-hosted runner:
@@ -17,27 +19,27 @@
 # tag is done by hand (IGNITION_PRODUCTION_IMAGE + `docker compose up -d
 # ignition-production`) — this lab runs no self-hosted runner.
 #
-# Triggers on tags matching `v*` (e.g. v1.0.0). Also supports manual dispatch
+# Triggers on tags matching `lab05-v*` (e.g. lab05-v1.0.0). Also supports manual dispatch
 # with a version input — that's the rollback button: re-promote any ALREADY
 # RELEASED version's image (:vX.Y.Z) back to production without touching git.
 #
 # Add required reviewers on a GitHub environment if you want a manual approval
 # gate before production releases — common pattern, no workflow change needed.
 
-name: Release
+name: Lab 05 · Release
 
 on:
   push:
-    tags: ['v*']
+    tags: ['lab05-v*']
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Already-released version to re-promote to production (e.g. v1.0.0)'
+        description: 'Already-released version to re-promote to production (e.g. v1.0.0 or lab05-v1.0.0)'
         required: true
         type: string
 
 concurrency:
-  group: promote-production-image
+  group: lab05-promote-production-image
   cancel-in-progress: false
 
 permissions:
@@ -68,10 +70,13 @@ jobs:
             # Manual dispatch = rollback / re-promote: the source is an image that
             # was ALREADY released under :vX.Y.Z. We re-point :production at it.
             version="${{ github.event.inputs.tag }}"
+            version="${version#lab05-}"
             source="${base}:${version}"
           else
             # Tag push = new release: promote whatever the test gateway is running right now.
+            # The image gets the bare semver (lab05-v1.0.0 → :v1.0.0).
             version="${{ github.ref_name }}"
+            version="${version#lab05-}"
             source="${base}:test"
           fi
           {

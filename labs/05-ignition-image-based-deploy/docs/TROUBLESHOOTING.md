@@ -60,7 +60,7 @@ needing `sudo` to edit your own project files. Full working stand-alone command 
 A bare `docker run` is missing the commissioning env vars, so the gateway waits on the setup wizard.
 Add `-e IGNITION_EDITION=standard` and `-e GATEWAY_ADMIN_USERNAME=admin` (plus `ACCEPT_IGNITION_EULA=Y`
 and `GATEWAY_ADMIN_PASSWORD`). The compose stack supplies all of these already, so deploys via
-`deploy.yml` / `scripts/deploy-image.sh` don't hit this — it's only a stand-alone-run gotcha.
+`lab05-deploy.yml` / `scripts/deploy-image.sh` don't hit this — it's only a stand-alone-run gotcha.
 
 ## GHCR push/pull fails (401 / 403 / denied)
 
@@ -75,7 +75,7 @@ setting on your fork:
   *Settings → … → Packages* aren't disabled for the org. Personal forks are read-write by default.
 - **`denied: installation not allowed to Create organization package`.** Same org policy as above, or
   the org blocks package creation — push under a **personal** fork instead.
-- **403 even with `packages: write`.** The workflow already requests it (in `deploy.yml` / `release.yml`);
+- **403 even with `packages: write`.** The workflow already requests it (in `lab05-deploy.yml` / `lab05-release.yml`);
   if you copied a job and dropped the `permissions:` block, add `packages: write` back.
 - **401 on pull from the deploy job.** The deploy job must `docker login ghcr.io` with `GITHUB_TOKEN`
   before `docker pull` — confirm the *Log in to GHCR* step is present and ran.
@@ -88,11 +88,11 @@ setting on your fork:
 
 ## `manifest unknown` when releasing
 
-`release.yml` promotes the **`:test`** image (what the test gateway is running). If no `:test` image exists yet, the
+`lab05-release.yml` promotes the **`:test`** image (what the test gateway is running). If no `:test` image exists yet, the
 re-tag fails with `manifest unknown`.
 
 - **New release (tag push):** nothing has ever been shipped to test. Push a change to **`main`** so
-  `deploy.yml` builds and publishes `:test` first, then tag the release.
+  `lab05-deploy.yml` builds and publishes `:test` first, then tag the release.
 - **Rollback (manual dispatch):** the version you asked to re-promote was never released — there's no
   `:vX.Y.Z` image for it. Use a version that actually shipped to production before.
 
@@ -102,7 +102,7 @@ Your `docker pull` of a CI-built image fails with `no matching manifest for linu
 Cause: the **build** ran on GitHub's `ubuntu-latest` (amd64) and produced an **amd64-only** image,
 but your laptop is Apple Silicon (**arm64**), so the pull finds no matching architecture.
 
-Fixed by building **multi-arch**: `deploy.yml`'s build job uses `docker/setup-qemu-action` and
+Fixed by building **multi-arch**: `lab05-deploy.yml`'s build job uses `docker/setup-qemu-action` and
 `platforms: linux/amd64,linux/arm64`, so the pushed image runs natively on both. (Cheap here — the
 Dockerfile is COPY-only, so there's nothing to emulate.)
 
@@ -130,7 +130,7 @@ docker buildx imagetools inspect ghcr.io/<your-fork-owner>/cicd-lab-05-ignition:
 ## test/production stuck on the base image (empty gateway)
 
 That's the **default** until the first deploy — `IGNITION_TEST_IMAGE` / `IGNITION_PRODUCTION_IMAGE` are unset,
-so compose falls back to the base Ignition image. Run `deploy.yml` (push to `main`) / `release.yml`
+so compose falls back to the base Ignition image. Run `lab05-deploy.yml` (push to `main`) / `lab05-release.yml`
 (tag on `main`), or locally `scripts/build-image.sh && scripts/deploy-image.sh test cicd-lab-05-ignition:local`.
 
 ## The workflow finished but nothing deployed
@@ -164,7 +164,8 @@ scripts/clean-ignition-resource-churn.sh --apply  # restores them from HEAD
 
 Junk-only rewrites are reverted whether or not you already staged them. Files with real content
 changes are never touched by the script.
-`git diff` already hides the volatile metadata via a textconv driver wired by `scripts/setup.sh`;
+`git diff` already hides the volatile metadata via a textconv driver wired by `scripts/setup.sh`
+(through the repo root's `scripts/install-git-config.sh`);
 re-run it if diffs still show timestamp/signature noise. Only the machine-local
 `local-system-properties/config.json` stays `skip-worktree` (the hooks re-apply it).
 
@@ -175,8 +176,7 @@ scripts/validate.sh      # JSON + .dockerignore + hadolint + actionlint — mirr
 scripts/build-image.sh   # confirm the image actually builds
 ```
 
-Still stuck? The instructor answer key ([lab-key.md](../instructor-notes/lab-key.md)) has deeper
-failure-mode walkthroughs.
+Still stuck? Ask your instructor or on Discord.
 
 
 ## Why resource.json keeps changing on its own

@@ -52,7 +52,7 @@ One image, several names:
 | `:vX.Y.Z` | **Immutable** | promote | A released version. Re-tag of the tested `:sha-…`, no rebuild. |
 | `:production` | Moving | promote | "Whatever's live in production." Same caveat as `:test`. |
 
-Rule of thumb: **deploy immutable tags, navigate with moving tags.** `deploy.yml` recreates the gateway from `:sha-<short>`, not `:test`, precisely so the running container pins to one build.
+Rule of thumb: **deploy immutable tags, navigate with moving tags.** `lab05-deploy.yml` recreates the gateway from `:sha-<short>`, not `:test`, precisely so the running container pins to one build.
 
 ## Provenance labels
 
@@ -84,7 +84,7 @@ The **build context** is the tarball Docker sends the daemon before running the 
 - **Safety** — `.env` is excluded so secrets can't be baked into a published image, even if a future `COPY` is careless.
 - **Cleanliness** — our `Dockerfile` only `COPY`s four paths, but `.dockerignore` is the backstop that keeps the context honest.
 
-`scripts/validate.sh` and `ci.yml` both assert the must-exclude patterns (`.env`, `.git/`, `scripts/`, `docs/`, `exercises/`) are present.
+`scripts/validate.sh` and `lab05-ci.yml` both assert the must-exclude patterns (`.env`, `.git/`, `scripts/`, `docs/`, `exercises/`) are present.
 
 ## When you'd reach for more
 

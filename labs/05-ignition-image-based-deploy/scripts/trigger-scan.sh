@@ -17,8 +17,8 @@
 #
 # Gateways:
 #   local        http://localhost:8088   (default — student's bind-mounted gateway)
-#   test         http://localhost:8089   (deploy.yml target)
-#   production   http://localhost:8090   (release.yml target)
+#   test         http://localhost:8089   (lab05-deploy.yml target)
+#   production   http://localhost:8090   (lab05-release.yml target)
 #
 # Env (override the gateway defaults when needed):
 #   IGNITION_URL          full URL; if set, wins over the gateway preset

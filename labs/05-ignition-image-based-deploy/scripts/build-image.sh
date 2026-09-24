@@ -6,7 +6,7 @@
 #   <repo>:sha-<short>   immutable, traceable to the commit
 #   <repo>:local         a moving "latest local build" pointer
 #
-# This is the same `docker build` that .github/workflows/deploy.yml runs on a
+# This is the same `docker build` that .github/workflows/lab05-deploy.yml runs on a
 # GitHub-hosted runner — running it here lets you inspect the image, run it, and
 # deploy it without waiting for CI.
 #

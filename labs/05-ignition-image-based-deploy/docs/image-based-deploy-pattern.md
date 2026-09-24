@@ -30,11 +30,11 @@ The single most important idea in image-based release:
 ```
 push to main ──▶ build ──▶ :sha-abc1234 + :test ──▶ deploy to test  (test it here)
                                        │
-tag v0.1.0 (on main) ─▶ promote ───────┘ re-tag :test ──▶ :v0.1.0 + :production ──▶ deploy to production
+tag lab05-v0.1.0 (on main) ─▶ promote ─┘ re-tag :test ──▶ :v0.1.0 + :production ──▶ deploy to production
                         (no rebuild — same digest)
 ```
 
-`release.yml` does **not** rebuild on a tag. It runs `docker buildx imagetools create` to copy the manifest of the already-tested **`:test`** image (the one test is running) onto new tags (`:v0.1.0`, `:production`). Server-side, no layers moved. (Why `:test` and not a rebuild from the tagged commit? A rebuild could pull a newer base layer and ship bytes test never ran — we promote *what test validated*.) Prove it:
+`lab05-release.yml` does **not** rebuild on a tag. It runs `docker buildx imagetools create` to copy the manifest of the already-tested **`:test`** image (the one test is running) onto new tags (`:v0.1.0`, `:production`; the git tag's `lab05-` prefix is stripped, it only keeps this lab's release from firing other labs' workflows in the shared course repo). Server-side, no layers moved. (Why `:test` and not a rebuild from the tagged commit? A rebuild could pull a newer base layer and ship bytes test never ran — we promote *what test validated*.) Prove it:
 
 ```bash
 docker inspect -f '{{.Image}}' lab05-ignition-test
@@ -82,7 +82,7 @@ Most mature Ignition shops use **both**: file-based for the daily inner loop on 
 Three patterns, increasing maturity — image-based makes the strong ones cheap:
 
 1. **`git revert` + re-merge.** Triggers a fresh build/deploy of the reverted state. Works, but rebuilds.
-2. **Re-promote a known-good tag.** `release.yml`'s `workflow_dispatch` takes a `tag` input: point production at `v0.1.0`'s *existing* image in two clicks. No rebuild, no git surgery. This is the canonical image-based rollback.
+2. **Re-promote a known-good tag.** `lab05-release.yml`'s `workflow_dispatch` takes a `tag` input: point production at `v0.1.0`'s *existing* image in two clicks. No rebuild, no git surgery. This is the canonical image-based rollback.
 3. **Keep N versions warm.** Because every release is an immutable tag in the registry, "roll back" is always available for any version you haven't deleted. Retention/cleanup of old tags becomes the real question (out of scope here).
 
 ## What lives where (and what's safe to throw away)

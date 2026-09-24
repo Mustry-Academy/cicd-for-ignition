@@ -1,10 +1,10 @@
 #!/bin/bash
 # One-shot setup for the lab 05 stack:
 #   - sanity-checks the host (docker compose v2, curl, WSL quirks)
-#   - installs the repo's git hooks (skip-worktree for the machine-local
-#     Ignition config file) and a diff driver that hides volatile resource.json
-#     metadata; volatile-only churn is undone with
-#     scripts/clean-ignition-resource-churn.sh
+#   - wires the repo-wide git hooks + resource.json diff driver
+#     (scripts/install-git-config.sh at the repo root) and applies this lab's
+#     skip-worktree bit to the machine-local Ignition config file; volatile-only
+#     churn is undone with scripts/clean-ignition-resource-churn.sh
 #   - ensures .env is in place
 #   - generates a unique API key per gateway into .env (nothing key-related
 #     is committed or baked into an image); local gets its token via the bind
@@ -14,7 +14,7 @@
 #   - waits for ALL THREE gateways to become RUNNING
 #   - triggers an initial projects + config scan against the LOCAL gateway.
 #     Test and production start on the BASE image (empty gateways) by design — they get
-#     replaced by the image deploy.yml builds / release.yml promotes.
+#     replaced by the image lab05-deploy.yml builds / lab05-release.yml promotes.
 #
 # Re-run safely — every step is idempotent.
 #
@@ -69,52 +69,30 @@ echo ""
 echo "This script initializes the development environment:"
 echo "  - three Ignition 8.3 gateways:"
 echo "      local  http://localhost:8088   (your authoring gateway, bind-mounted from the repo)"
-echo "      test    http://localhost:8089   (runs the image deploy.yml builds on push to main)"
-echo "      production   http://localhost:8090   (runs the image release.yml promotes on tag push)"
+echo "      test    http://localhost:8089   (runs the image lab05-deploy.yml builds on push to main)"
+echo "      production   http://localhost:8090   (runs the image lab05-release.yml promotes on tag push)"
 echo "  - one TimescaleDB on localhost:5432 hosting ignition_local_development / ignition_test / ignition_production"
 echo ""
 
 
-# ---- Git hooks ------------------------------------------------------------
-install_git_hooks() {
-    local repo_hooks_dir
-    repo_hooks_dir="$(git rev-parse --git-path hooks 2>/dev/null)" || return 0
-    local source_dir="$PROJECT_ROOT/scripts/git-hooks"
-    [ -d "$source_dir" ] || return 0
-    mkdir -p "$repo_hooks_dir"
-    # Clones set up before post-merge/post-rewrite were dropped still have
-    # symlinks to the deleted files; git errors on every merge/rebase until
-    # they are removed.
-    for stale in post-merge post-rewrite; do
-        local link="$repo_hooks_dir/$stale"
-        if [ -L "$link" ] && [ ! -e "$link" ]; then
-            rm -f "$link"
-        fi
-    done
-    # post-checkout only. Git keeps the skip-worktree bit across merge, rebase,
-    # amend, reset --hard and stash, so hooks on those events had nothing to do.
-    # The bit is only lost when the file leaves the index and comes back, which
-    # is a checkout.
-    ln -sf "$source_dir/post-checkout" "$repo_hooks_dir/post-checkout"
-    # pre-commit reverts junk-only resource.json rewrites. The textconv driver
-    # below only hides them from `git diff`; without this hook they are
-    # invisible on screen and still committed.
-    ln -sf "$source_dir/pre-commit" "$repo_hooks_dir/pre-commit"
-    if [ -x "$source_dir/skip-worktree-ignition-resources" ]; then
-        "$source_dir/skip-worktree-ignition-resources" || true
+# ---- Git hooks + diff driver ----------------------------------------------
+# The course repo holds every lab, so hooks and the diff driver are wired once
+# for the whole clone: core.hooksPath points at the repo-root dispatchers,
+# which run this lab's scripts/git-hooks/{pre-commit,post-checkout} from this
+# folder, and .gitattributes routes resource.json through the textconv
+# normalizer so volatile Designer metadata never shows up in diffs.
+install_git_config() {
+    local repo_root
+    repo_root="$(git -C "$PROJECT_ROOT" rev-parse --show-toplevel 2>/dev/null)" || return 0
+    "$repo_root/scripts/install-git-config.sh"
+    # A fresh clone has no skip-worktree bits and post-checkout cannot fire on
+    # clone, so apply them once here.
+    if [ -x "$PROJECT_ROOT/scripts/git-hooks/skip-worktree-ignition-resources" ]; then
+        "$PROJECT_ROOT/scripts/git-hooks/skip-worktree-ignition-resources" || true
     fi
 }
 
-install_git_hooks
-
-# ---- Git diff driver --------------------------------------------------------
-# .gitattributes routes resource.json through this textconv normalizer so
-# volatile Designer metadata (timestamps, signatures) never shows up in diffs.
-configure_git_diff_drivers() {
-    git config diff.ignition-resource.textconv "$PROJECT_ROOT/scripts/git-diff/normalize-ignition-resource-json.py"
-}
-
-configure_git_diff_drivers
+install_git_config
 
 # ---- .env -----------------------------------------------------------------
 ensure_env_file() {

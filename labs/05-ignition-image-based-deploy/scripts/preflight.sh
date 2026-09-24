@@ -435,9 +435,11 @@ pf_configure_git() {
   fi
   # Git 2.35.2+ refuses to operate on a repo owned by another user. After the
   # reclaim above this is normally moot, but a repo cloned from Windows can
-  # still trip it.
+  # still trip it. safe.directory names the top of the course repo, two
+  # levels above this lab (labs/<lab>/), not the lab folder itself.
   git status >/dev/null 2>&1 || {
-    git config --global --add safe.directory "$PWD" 2>/dev/null || true
+    git config --global --add safe.directory \
+      "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)" 2>/dev/null || true
   }
 }
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# validate.sh — local mirror of .github/workflows/ci.yml.
+# validate.sh — local mirror of .github/workflows/lab05-ci.yml (repo root).
 #
 # Run this before opening a PR to catch the cheap stuff the CI workflow checks,
 # without waiting for a runner:
@@ -7,10 +7,11 @@
 #   2. .dockerignore excludes the lab/secret paths it should.
 #   3. hadolint passes on the Dockerfile (only if hadolint is installed).
 #   4. security-properties doesn't name a throwaway temp_N identity.
-#   5. actionlint passes on .github/workflows/ (only if actionlint is installed).
+#   5. actionlint passes on this lab's workflows, .github/workflows/lab05-*.yml
+#      at the repo root (only if actionlint is installed).
 #
 # Exits non-zero if any check fails. No Ignition needed; Docker only if you want
-# the optional build smoke test (CI always does it — see ci.yml).
+# the optional build smoke test (CI always does it — see lab05-ci.yml).
 
 set -uo pipefail
 
@@ -101,9 +102,10 @@ else
 fi
 
 # 5. actionlint (optional) -----------------------------------------------------
-echo "→ actionlint (.github/workflows/)"
+echo "→ actionlint (.github/workflows/lab05-*.yml)"
 if command -v actionlint > /dev/null 2>&1; then
-  if actionlint -color; then
+  repo_root="$(git -C "$PROJECT_ROOT" rev-parse --show-toplevel)"
+  if actionlint -color "$repo_root"/.github/workflows/lab05-*.yml; then
     echo -e "  ${GREEN}ok${NC}"
   else
     rc=1

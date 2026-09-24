@@ -7,4 +7,4 @@
 # churn is invisible on screen and still committed.
 #
 # Files with real edits are never touched. See docs/resource-json-hygiene.html.
-exec "$(git rev-parse --show-toplevel)/scripts/clean-ignition-resource-churn.sh" --apply
+exec "$(dirname "${BASH_SOURCE[0]}")/../clean-ignition-resource-churn.sh" --apply

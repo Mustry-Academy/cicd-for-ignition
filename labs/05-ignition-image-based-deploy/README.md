@@ -1,10 +1,10 @@
 # Lab 05 — Ignition image-based deploy
 
-Day 3 of the [CI/CD for Ignition Masterclass](https://github.com/mustry-academy/cicd-masterclass).
+Day 3 of the [CI/CD for Ignition Masterclass](../../README.md).
 
 > Bake an Ignition gateway's project, config, **and modules** into a versioned Docker image, push it to a registry, and deploy by pulling the image and recreating the container — then promote the *exact same image* you tested on the test gateway to production on a tag, with rollback as easy as running a previous tag.
 
-This is the companion to [Lab 04 (file-based deploy)](https://github.com/mustry-academy/cicd-lab-04-ignition-file-based-deploy). There you `docker cp`-ed files into a *running* gateway and triggered a hot scan — fast, great for daily project iteration, but it couldn't touch modules (a scan can't enable/disable them) and gave you no versioned, rollback-able artifact. Image-based deploy is the other half: the deployable state becomes an immutable image. Most mature Ignition workflows use **both** — file-based for the inner loop, image-based for releases.
+This is the companion to [Lab 04 (file-based deploy)](../04-ignition-file-based-deploy/). There you `docker cp`-ed files into a *running* gateway and triggered a hot scan — fast, great for daily project iteration, but it couldn't touch modules (a scan can't enable/disable them) and gave you no versioned, rollback-able artifact. Image-based deploy is the other half: the deployable state becomes an immutable image. Most mature Ignition workflows use **both** — file-based for the inner loop, image-based for releases.
 
 
 > **How resource.json stays clean:** Ignition restamps these manifests constantly. [`docs/resource-json-hygiene.html`](./docs/resource-json-hygiene.html) explains what the junk is, the two tools that deal with it, and why an empty `git diff` does not mean a clean file.
@@ -25,8 +25,8 @@ The local → test → production story is the same; only the test/production **
 ## Prerequisites
 
 - **≥ 8 GB free RAM for Docker** — three Ignition gateways at 1 GB each, plus TimescaleDB and Docker overhead.
-- _Optional, for the stretch challenge only:_ a fork of this repo. The CI builds publish images to **your own** GHCR namespace (`ghcr.io/<your-fork-owner>/cicd-lab-05-ignition`) — never to Mustry's. **Enable Actions in your fork first**: forks ship with workflows disabled — open the *Actions* tab and click the green "I understand my workflows, go ahead and enable them" button. The lab itself needs no fork, no PAT, and no GitHub account.
-- _Background:_ [Lab 04](https://github.com/mustry-academy/cicd-lab-04-ignition-file-based-deploy) sets up the Ignition stack and the file-based pattern this lab contrasts with. It helps but isn't required — this lab stands alone.
+- _Optional, for the stretch challenge only:_ your fork of the course repo (`<your-username>/cicd-for-ignition`, the same fork every lab uses). The CI builds publish images to **your own** GHCR namespace (`ghcr.io/<your-fork-owner>/cicd-lab-05-ignition`) — never to Mustry's. **Enable Actions in your fork** if you haven't yet (once per fork): forks ship with workflows disabled — open the *Actions* tab and click the green "I understand my workflows, go ahead and enable them" button. The lab itself needs no fork, no PAT, and no GitHub account.
+- _Background:_ [Lab 04](../04-ignition-file-based-deploy/) sets up the Ignition stack and the file-based pattern this lab contrasts with. It helps but isn't required — this lab stands alone.
 - _No extra registry account:_ the CI publishes to **GitHub Container Registry (GHCR)** under your fork, authenticated with the workflow's built-in `GITHUB_TOKEN`. The **local** scripts (`build-image.sh`/`deploy-image.sh`) need no registry at all — they build and run images on your machine.
 
 
@@ -39,9 +39,10 @@ The local → test → production story is the same; only the test/production **
 
 ## Quick start
 
+One lab stack at a time: all Docker labs share the same ports and container names, so stop the previous lab first (`docker compose down` in that lab's folder).
+
 ```bash
-gh repo clone mustry-academy/cicd-lab-05-ignition-image-based-deploy
-cd cicd-lab-05-ignition-image-based-deploy
+cd ~/mustry-academy/cicd-for-ignition/labs/05-ignition-image-based-deploy   # your fork, cloned once (see the course README)
 cp .env.example .env
 scripts/setup.sh    # brings up the stack, waits for all three gateways, prints credentials
 ```
@@ -51,8 +52,8 @@ Once setup finishes you have three Ignition gateways:
 | Gateway | URL | What runs there |
 |---|---|---|
 | `local` | http://localhost:8088 | Bind-mounted from `./projects/` + `./services/config/` — your **authoring** gateway (file-based, like Lab 04). |
-| `test` | http://localhost:8089 | The **image** `deploy.yml` builds on push to **`main`**. Base image (empty) until the first deploy. |
-| `production` | http://localhost:8090 | The **image** `release.yml` promotes on tag push `v*` (cut from `main`). Base image (empty) until the first release. |
+| `test` | http://localhost:8089 | The **image** `lab05-deploy.yml` builds on push to **`main`**. Base image (empty) until the first deploy. |
+| `production` | http://localhost:8090 | The **image** `lab05-release.yml` promotes on tag push `lab05-v*` (cut from `main`). Base image (empty) until the first release. |
 
 Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_TEST/_PRODUCTION`, default `admin / password`).
 
@@ -74,19 +75,13 @@ Reference reading sits alongside: [`docs/dockerfile-anatomy.md`](./docs/dockerfi
 ## Repo layout
 
 ```
-cicd-lab-05-ignition-image-based-deploy/
+labs/05-ignition-image-based-deploy/
 ├── README.md
 ├── Dockerfile                          ← bakes projects + config + modules into the gateway image
 ├── .dockerignore                       ← what NOT to send to the build context (the image-based .deployignore)
 ├── docker-compose.yaml                 ← three gateways + TimescaleDB
 ├── .env.example                        ← copy to .env before running
 ├── .gitattributes                      ← JSON line-ending normalization + binary markers
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml                      ← PR validation: JSON, hadolint, actionlint, build smoke test (ubuntu-latest)
-│   │   ├── deploy.yml                  ← push to main → build+push image, print the tag to deploy by hand
-│   │   └── release.yml                 ← tag v* (on main) → re-tag the test image to :vX.Y.Z + :production
-│   └── pull_request_template.md
 ├── exercises/
 │   └── lab.md                          ← the lab, in two ordered parts: build the image, then deploy it
 ├── db-init/                            ← timescaledb init: create ignition_test + ignition_production databases
@@ -94,8 +89,6 @@ cicd-lab-05-ignition-image-based-deploy/
 │   ├── dockerfile-anatomy.md
 │   ├── image-based-deploy-pattern.md
 │   └── TROUBLESHOOTING.md
-├── instructor-notes/                   ← answer key (read after solo work)
-│   └── lab-key.md
 ├── scripts/
 │   ├── setup.sh                        ← bootstraps the whole stack
 │   ├── teardown.sh                     ← stop the stack (with --volumes to wipe)
@@ -108,7 +101,7 @@ cicd-lab-05-ignition-image-based-deploy/
 │   ├── lib.sh                          ← shared helpers
 │   ├── clean-ignition-resource-churn.sh ← undo volatile-only resource.json rewrites (dry-run / --apply)
 │   ├── git-diff/                       ← textconv normalizer that hides volatile metadata in diffs
-│   └── git-hooks/                      ← skip-worktree hooks for the machine-local config file
+│   └── git-hooks/                      ← this lab's hooks, run by the repo-root dispatchers (skip-worktree, churn cleanup)
 ├── projects/                           ← project content (baked into the image; bind-mounted into `local`)
 │   └── example-project/                ← a real Perspective project (views, templates)
 ├── services/
@@ -117,13 +110,15 @@ cicd-lab-05-ignition-image-based-deploy/
 └── third-party-modules/                ← bundled .modl binaries (baked into the image)
 ```
 
+The workflows live at the course repo root (GitHub only runs workflows from there): [`.github/workflows/lab05-*.yml`](../../.github/workflows/).
+
 ## The Compose stack
 
 Three Ignition 8.3 gateways + one TimescaleDB, simulating local → test → production:
 
 - **`ignition-local`** bind-mounts `./projects/` and `./services/config/`, exactly like Lab 04. This is where you **author** content. The image you ship is *built from these same files*.
-- **`ignition-test`** runs whatever image `IGNITION_TEST_IMAGE` points at (default: the base Ignition image — an empty gateway). It has **no bind mounts and no persistent data volume** — the container filesystem *is* the artifact. `deploy.yml` sets `IGNITION_TEST_IMAGE` to the freshly built tag and recreates the container.
-- **`ignition-production`** is the same shape, fed by `release.yml` with the *promoted* image (the same one the test gateway tested).
+- **`ignition-test`** runs whatever image `IGNITION_TEST_IMAGE` points at (default: the base Ignition image — an empty gateway). It has **no bind mounts and no persistent data volume** — the container filesystem *is* the artifact. `lab05-deploy.yml` sets `IGNITION_TEST_IMAGE` to the freshly built tag and recreates the container.
+- **`ignition-production`** is the same shape, fed by `lab05-release.yml` with the *promoted* image (the same one the test gateway tested).
 
 The single TimescaleDB hosts `ignition_local_development`/`ignition_test`/`ignition_production`. **Historian data lives in Timescale, not in the gateway image** — which is exactly why throwing away and recreating the test/production container on every deploy is safe.
 
@@ -134,31 +129,31 @@ The single TimescaleDB hosts `ignition_local_development`/`ignition_test`/`ignit
 This lab uses **GitHub flow**: one long-lived branch, releases cut by tagging — the same flow as every previous lab.
 
 ```
-feature/*  ──PR→  main ──push→  deploy.yml ──build+push→ :test image ──→ TEST gateway
+feature/*  ──PR→  main ──push→  lab05-deploy.yml ──build+push→ :test image ──→ TEST gateway
                    │
-                   └─tag vX.Y.Z→  release.yml ──promote :test→ :vX.Y.Z+:production ──→ PRODUCTION gateway
+                   └─tag lab05-vX.Y.Z→  lab05-release.yml ──promote :test→ :vX.Y.Z+:production ──→ PRODUCTION gateway
 ```
 
 | Branch | Role | What CI does |
 |---|---|---|
-| `main` | The only long-lived branch — every merge should be deployable | `deploy.yml` builds the image and ships it to the **test** gateway |
-| `feature/*` | Day-to-day work, branched off `main` | `ci.yml` validates the PR into `main` |
-| tag `vX.Y.Z` | A release — stamp the `main` state you want in production | `release.yml` promotes the tested image to **production** |
+| `main` | The only long-lived branch — every merge should be deployable | `lab05-deploy.yml` builds the image and ships it to the **test** gateway |
+| `feature/*` | Day-to-day work, branched off `main` | `lab05-ci.yml` validates the PR into `main` |
+| tag `lab05-vX.Y.Z` | A release — stamp the `main` state you want in production | `lab05-release.yml` promotes the tested image to **production** |
 
-**Releasing is promotion, not a rebuild.** `release.yml` promotes **the image test already
-tested** — the `:test` tag — re-tagging it to `:vX.Y.Z` + `:production`. Production runs the exact digest test
+**Releasing is promotion, not a rebuild.** `lab05-release.yml` promotes **the image test already
+tested** — the `:test` tag — re-tagging it to `:vX.Y.Z` + `:production` (the image keeps the bare semver; the `lab05-` prefix only namespaces the git tag, since one fork hosts every lab). Production runs the exact digest test
 validated; rebuilding from the tagged commit could silently pull a newer base layer and ship bytes
 test never ran. Tag when test is where you want production to be.
 
 ## The CI/CD workflows
 
-Three workflows under [`.github/workflows/`](./.github/workflows/):
+Three workflows under [`.github/workflows/`](../../.github/workflows/) at the repo root, each scoped to changes under `labs/05-ignition-image-based-deploy/`:
 
 | File | Trigger | Runner | Purpose |
 |---|---|---|---|
-| [`ci.yml`](./.github/workflows/ci.yml) | PR to `main` | `ubuntu-latest` | Validate JSON + `.dockerignore`, lint the Dockerfile (hadolint) and workflows (actionlint), and **build the image** (no push) so a broken Dockerfile fails the PR. |
-| [`deploy.yml`](./.github/workflows/deploy.yml) | Push to `main` (build paths), manual | `ubuntu-latest` | Build + push the image to GHCR (`:sha-<short>`, `:test`) and print the tag in the run summary. |
-| [`release.yml`](./.github/workflows/release.yml) | Tag `v*` (on `main`), manual | `ubuntu-latest` | Re-tag the **`:test`** image (what the test gateway is running) to `:vX.Y.Z` + `:production` (**no rebuild**) and print the tag. |
+| [`lab05-ci.yml`](../../.github/workflows/lab05-ci.yml) | PR to `main` | `ubuntu-latest` | Validate JSON + `.dockerignore`, lint the Dockerfile (hadolint) and workflows (actionlint), and **build the image** (no push) so a broken Dockerfile fails the PR. |
+| [`lab05-deploy.yml`](../../.github/workflows/lab05-deploy.yml) | Push to `main` (build paths), manual | `ubuntu-latest` | Build + push the image to GHCR (`:sha-<short>`, `:test`) and print the tag in the run summary. |
+| [`lab05-release.yml`](../../.github/workflows/lab05-release.yml) | Tag `lab05-v*` (on `main`), manual | `ubuntu-latest` | Re-tag the **`:test`** image (what the test gateway is running) to `:vX.Y.Z` + `:production` (**no rebuild**) and print the tag. |
 
 **Every workflow runs on a free GitHub-hosted runner** — this lab stands up no self-hosted runner at all. Notice what that means: CI can build and promote images, but it cannot *deploy* one, because deploying means touching a machine that owns a gateway container. So in this lab **you deploy by hand**: take the image name the workflow printed, put it in `IGNITION_TEST_IMAGE`, and run `docker compose up -d ignition-test` yourself.
 

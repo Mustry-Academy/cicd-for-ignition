@@ -2,7 +2,12 @@
 #
 # GitHub flow: `main` is the only long-lived branch. Feature branches merge into
 # it via PR, and every push here builds an image and ships it to the TEST
-# gateway. Releases to production happen separately (tag vX.Y.Z → release.yml).
+# gateway. Releases to production happen separately (tag lab05-vX.Y.Z →
+# release.yml).
+#
+# Monorepo: this file lives at the repo root and only fires for changes under
+# labs/05-ignition-image-based-deploy/. The build context is that folder, so
+# the lab's .dockerignore applies exactly as it did in a standalone repo.
 #
 # This workflow BUILDS ONLY. It runs entirely on a free GitHub-hosted runner:
 #
@@ -21,22 +26,22 @@
 # GHCR auth uses the built-in GITHUB_TOKEN (`packages: write`). No PAT, no
 # secret to manage for the registry.
 
-name: Deploy
+name: Lab 05 · Deploy
 
 on:
   push:
     branches: [main]
     paths:
-      - "projects/**"
-      - "services/**"
-      - "third-party-modules/**"
-      - "Dockerfile"
-      - ".dockerignore"
-      - ".github/workflows/deploy.yml"
+      - "labs/05-ignition-image-based-deploy/projects/**"
+      - "labs/05-ignition-image-based-deploy/services/**"
+      - "labs/05-ignition-image-based-deploy/third-party-modules/**"
+      - "labs/05-ignition-image-based-deploy/Dockerfile"
+      - "labs/05-ignition-image-based-deploy/.dockerignore"
+      - ".github/workflows/lab05-deploy.yml"
   workflow_dispatch:
 
 concurrency:
-  group: build-test-image
+  group: lab05-build-test-image
   cancel-in-progress: false
 
 permissions:
@@ -45,6 +50,10 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
+
+defaults:
+  run:
+    working-directory: labs/05-ignition-image-based-deploy
 
 jobs:
   # No validation job here: ci.yml already ran on the PR that put this commit
@@ -92,7 +101,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: labs/05-ignition-image-based-deploy
           push: true
           # Multi-arch so the image runs natively whether the deploy target is
           # amd64 (Intel/Linux) or arm64 (Apple Silicon). Without this, an

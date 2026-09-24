@@ -74,7 +74,7 @@ COPY --chown=2003:0 projects/             ${GATEWAY_DATA_PATH}/projects/
 # Stamp the image with the git SHA it was built from so you can always trace a
 # running container back to a commit. CI passes --build-arg GIT_SHA=$(git ...).
 ARG GIT_SHA=unknown
-ARG IMAGE_SOURCE=https://github.com/mustry-academy/cicd-lab-05-ignition-image-based-deploy
+ARG IMAGE_SOURCE=https://github.com/Mustry-Academy/cicd-for-ignition
 LABEL org.opencontainers.image.revision="${GIT_SHA}" \
       org.opencontainers.image.source="${IMAGE_SOURCE}" \
       org.opencontainers.image.title="cicd-lab-05-ignition" \

@@ -119,7 +119,7 @@ footer{border-top:1px solid var(--line2);padding-top:18px;color:var(--txt-faint)
 <body>
 
 <div class="hero"><div class="inner">
-  <div class="kicker">cicd-lab-05 &middot; resource.json</div>
+  <div class="kicker">Lab 05 &middot; resource.json</div>
   <h1>How we keep Ignition's junk out of our resource files</h1>
   <p>Ignition stamps every resource manifest with metadata that has nothing to do with your project.
   We hide that junk from diffs, and we revert it automatically before it can enter a commit.</p>
@@ -251,15 +251,16 @@ footer{border-top:1px solid var(--line2);padding-top:18px;color:var(--txt-faint)
       </div>
       <div class="part">
         <div class="f">scripts/git-hooks/pre-commit</div>
-        <p>Runs Tool 2 on every commit. Installed by <code class="i">setup.sh</code> as a symlink into
-        <code class="i">.git/hooks/</code>.</p>
+        <p>Runs Tool 2 on every commit that touches this lab. The course repo's pre-commit dispatcher
+        (<code class="i">core.hooksPath</code>, set by <code class="i">setup.sh</code>) calls it from the lab folder.</p>
       </div>
     </div>
 
     <p class="big" style="margin-top:26px">One command wires all of it</p>
 <pre>scripts/setup.sh
-<span class="cm">#   → git config diff.ignition-resource.textconv ...   (Tool 1)</span>
-<span class="cm">#   → .git/hooks/pre-commit → scripts/git-hooks/pre-commit  (Tool 2)</span></pre>
+<span class="cm">#   → &lt;repo root&gt;/scripts/install-git-config.sh</span>
+<span class="cm">#       → git config diff.ignition-resource.textconv ...   (Tool 1)</span>
+<span class="cm">#       → git config core.hooksPath scripts/git-hooks      (dispatcher → this lab's pre-commit, Tool 2)</span></pre>
     <p class="lead" style="margin-top:14px">You can also run Tool 2 by hand at any time:</p>
 <pre>scripts/clean-ignition-resource-churn.sh              <span class="cm"># show what is junk-only</span>
 scripts/clean-ignition-resource-churn.sh <span class="hl">--apply</span>      <span class="cm"># revert it</span></pre>
@@ -310,7 +311,7 @@ scripts/clean-ignition-resource-churn.sh <span class="hl">--apply</span>      <s
   </section>
 
   <footer>
-    Mustry Academy &middot; CI/CD for Ignition &middot; cicd-lab-05-ignition-image-based-deploy
+    Mustry Academy &middot; CI/CD for Ignition &middot; labs/05-ignition-image-based-deploy
   </footer>
 
 </div>

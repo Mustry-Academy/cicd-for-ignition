@@ -236,38 +236,39 @@ body{
     <div class="stage">Before you start · setup</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num warm">SETUP</span><div><div class="title">First: fork this lab, clone it, bring the stack up</div><div class="lead">Everything runs locally today, so strictly speaking a plain clone would do — but fork anyway, <b>like every previous lab</b>: all the repos end up in your own account, and the CI legs (<span class="inlinecode">deploy.yml</span> / <span class="inlinecode">release.yml</span>) are ready if you want them later.</div></div></div>
+    <div class="sechead"><span class="num warm">SETUP</span><div><div class="title">First: your course fork, this lab's folder, bring the stack up</div><div class="lead">Everything runs locally today, so strictly speaking a plain clone would do — but work in your fork anyway, <b>like every previous lab</b>: the whole course lives in your own account, and the CI legs (<span class="inlinecode">lab05-deploy.yml</span> / <span class="inlinecode">lab05-release.yml</span>) are ready if you want them later.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx">Go to your lab parent folder <span class="inlinecode">~/mustry-academy/</span> — all the lab repos live side by side, one folder per lab. <b>On WSL2, clone into your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>: the gateways' bind mounts are far slower and line endings get messy across the Windows boundary.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the lab to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. No need to enable Actions today — nothing in the assignment triggers a workflow.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx">Go to your course clone <span class="inlinecode">~/mustry-academy/cicd-for-ignition/</span> — every lab is a folder under <span class="inlinecode">labs/</span>; this one is <span class="inlinecode">labs/05-ignition-image-based-deploy</span>. <b>On WSL2, clone into your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>: the gateways' bind mounts are far slower and line endings get messy across the Windows boundary.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone — once for the whole course.</b> Already did it for an earlier lab? Skip this. Otherwise <span class="inlinecode">gh repo fork … --clone</span> forks the course repo to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. No need to enable Actions today — nothing in the assignment triggers a workflow.</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and — unlike Lab 04 — <b>change nothing</b>: the admin logins work as shipped, and <span class="inlinecode">setup.sh</span> generates a unique API key per gateway into <span class="inlinecode">.env</span> (no key ever lives in the repo or the image). No PAT, no fork, no GitHub account needed today.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx"><b>Check the remotes and set the default:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b> — then <span class="inlinecode">gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-lab-05-…</span> so <span class="inlinecode">gh</span> targets <b>your fork</b>, not the course repo (per clone, same as Labs 03/04; the stretch goal's PRs need it). Then <span class="inlinecode">code .</span> to open VS Code.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Check the remotes and set the default:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b> — then <span class="inlinecode">gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition</span> so <span class="inlinecode">gh</span> targets <b>your fork</b>, not the course repo (once per clone; already done if you set it in an earlier lab — the stretch goal's PRs need it). Then <span class="inlinecode">code .</span> to open VS Code.</div></div>
         <div class="step"><div class="ix t">5</div><div class="tx"><span class="inlinecode">scripts/setup.sh</span> brings up the stack: the <b>local</b> authoring gateway (:8088, bind-mounted), <b>test</b> (:8089) and <b>production</b> (:8090) — both empty until their first image deploy — plus TimescaleDB. Four containers, no runner: today <b>you</b> are the last mile of the pipeline.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># 1: the parent folder, all labs side by side</span>
-cd ~/mustry-academy
-
-<span class="cm"># 2: fork to your account + clone your fork</span>
-gh repo fork mustry-academy/cicd-lab-05-ignition-image-based-deploy --clone
+        <div class="code"><pre><span class="cm"># 1–2: once per course: fork to your account + clone your fork</span>
+mkdir -p ~/mustry-academy &amp;&amp; cd ~/mustry-academy
+gh repo fork Mustry-Academy/cicd-for-ignition --clone
 <span class="cm">#    …or press "Fork" on github.com, then clone YOUR fork:</span>
-git clone git@github.com:&lt;your-username&gt;/cicd-lab-05-ignition-image-based-deploy.git
-cd cicd-lab-05-ignition-image-based-deploy
+<span class="cm">#    git clone git@github.com:&lt;your-username&gt;/cicd-for-ignition.git</span>
+
+<span class="cm">#      then this lab's folder (stop the previous lab's stack first:</span>
+<span class="cm">#      docker compose down in its folder)</span>
+cd ~/mustry-academy/cicd-for-ignition/labs/05-ignition-image-based-deploy
 
 <span class="cm"># 3: copy the env file — change NOTHING today</span>
 cp .env.example .env
 
 <span class="cm"># 4: origin → YOUR username? good. Then point gh at your fork</span>
 git remote -v
-gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-lab-05-ignition-image-based-deploy
+gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition
 
 <span class="cm"># 5: open VS Code, then bring the stack up</span>
 code .
 scripts/setup.sh          <span class="cm"># 3 gateways + TimescaleDB</span></pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Why fork at all?</span>
-          <p>Consistency and ownership. Your fork is <b>your</b> copy of the whole course: every lab you forked stays in your account after the masterclass, and if you later flip on the CI legs, the workflows push images to <b>your own</b> GHCR namespace — no extra setup.</p>
+          <p>Consistency and ownership. Your fork is <b>your</b> copy of the whole course: every lab stays in your account after the masterclass, and if you later flip on the CI legs, the workflows push images to <b>your own</b> GHCR namespace — no extra setup.</p>
         </div>
       </div>
     </div>
@@ -386,7 +387,7 @@ docker stop demo</pre></div>
     <div class="sechead"><span class="num phase2">2 · READ FIRST</span><div><div class="title">Why we deploy locally today, and what GitHub Actions would do instead</div><div class="lead"><b>Nothing to type on this slide</b> — it only explains the plan. In a real setup this part is automated by <b>the same Actions you built in Lab 04</b>; today you type the workflow's commands yourself, starting on the next slide (Part 2.1).</div></div></div>
     <div class="cols2">
       <ul class="checks">
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Same triggers as Lab 04.</b> A merge to <span class="inlinecode">main</span> would fire <span class="inlinecode">deploy.yml</span>, a tag would fire <span class="inlinecode">release.yml</span>. Only the steps <b>inside</b> the jobs change: build + push + pull + recreate, instead of copy + scan.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Same triggers as Lab 04.</b> A merge to <span class="inlinecode">main</span> would fire <span class="inlinecode">lab05-deploy.yml</span>, a tag would fire <span class="inlinecode">lab05-release.yml</span>. Only the steps <b>inside</b> the jobs change: build + push + pull + recreate, instead of copy + scan.</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Why not do that now?</b> The gateway image is <b>~2 GB</b>. Between GitHub's datacenter and a registry that upload is seconds; from ten course laptops, it's your whole hour. The transport isn't the lesson.</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>So today, you are the pipeline.</b> Every command in Parts 2.1 to 2.3 is a line the workflow would run. Type them once by hand and the automation never feels like magic again.</span></li>
       </ul>
@@ -568,16 +569,16 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-test</pre></div>
     <div class="stage">Stretch · optional</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num warm">STRETCH</span><div><div class="title">Let GitHub build the image, then deploy it by hand</div><div class="lead">In part 2 you built locally and deployed by hand. This moves the <b>build</b> half to CI — merge to <span class="inlinecode">main</span> builds and pushes, a <span class="inlinecode">v*</span> tag promotes. The deploy half stays yours. Needs your fork; a good take-home if the venue Wi-Fi hates 2 GB pulls.</div></div></div>
+    <div class="sechead"><span class="num warm">STRETCH</span><div><div class="title">Let GitHub build the image, then deploy it by hand</div><div class="lead">In part 2 you built locally and deployed by hand. This moves the <b>build</b> half to CI — merge to <span class="inlinecode">main</span> builds and pushes, a <span class="inlinecode">lab05-v*</span> tag promotes. The deploy half stays yours. Needs your fork; a good take-home if the venue Wi-Fi hates 2 GB pulls.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix">1</div><div class="tx"><b>First, trigger <span class="inlinecode">deploy.yml</span>:</b> open a PR with a small project change (<span class="inlinecode">ci.yml</span> validates it, including a no-push image build) and <b>merge it to <span class="inlinecode">main</span></b>. The merge fires <span class="inlinecode">deploy.yml</span>, which builds on a free hosted runner and pushes to <b>your</b> GHCR namespace. <b>Wait until that run is green</b> — there is no image to pull before it finishes.</div></div>
+        <div class="step"><div class="ix">1</div><div class="tx"><b>First, trigger <span class="inlinecode">lab05-deploy.yml</span>:</b> open a PR with a small project change (<span class="inlinecode">lab05-ci.yml</span> validates it, including a no-push image build) and <b>merge it to <span class="inlinecode">main</span></b>. The merge fires <span class="inlinecode">lab05-deploy.yml</span>, which builds on a free hosted runner and pushes to <b>your</b> GHCR namespace. <b>Wait until that run is green</b> — there is no image to pull before it finishes.</div></div>
         <div class="step"><div class="ix">2</div><div class="tx"><b>Then deploy it yourself:</b> open the deploy run's <b>summary page</b> — it prints the image name it just built. Pull that tag and point test at it. Same two commands as part 2; only the image name got longer.</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx"><b>Release to production:</b> push a <span class="inlinecode">v*</span> tag → <span class="inlinecode">release.yml</span> re-tags <span class="inlinecode">:test</span> to <span class="inlinecode">:v0.1.0</span> + <span class="inlinecode">:production</span> — <b>no rebuild</b>. When that run is green, deploy it to :8090 the same way, with <span class="inlinecode">IGNITION_PRODUCTION_IMAGE</span>.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Release to production:</b> push a <span class="inlinecode">lab05-v*</span> tag → <span class="inlinecode">lab05-release.yml</span> re-tags <span class="inlinecode">:test</span> to <span class="inlinecode">:v0.1.0</span> (prefix stripped) + <span class="inlinecode">:production</span> — <b>no rebuild</b>. When that run is green, deploy it to :8090 the same way, with <span class="inlinecode">IGNITION_PRODUCTION_IMAGE</span>.</div></div>
         <div class="step"><div class="ix">4</div><div class="tx"><b>The payoff:</b> inspect both containers like you did all lab — but with <span class="inlinecode">{{.Image}}</span>, the sha256 of the image the container runs. Identical on test and production → production runs the exact bytes test validated. And notice what stayed manual: you typed an image name twice. That last mile is what Labs 06 and 07 automate.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># 1: PR → merge to main → deploy.yml builds + pushes
+        <div class="code"><pre><span class="cm"># 1: PR → merge to main → lab05-deploy.yml builds + pushes
 #    (Actions tab: wait for the green check)</span>
 
 <span class="cm"># 2: copy the tag from the run summary, deploy it</span>
@@ -586,7 +587,7 @@ IGNITION_TEST_IMAGE=ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:sha-&lt;short&gt; \
   docker compose up -d ignition-test
 
 <span class="cm"># 3: release (promote, no rebuild), then deploy to :8090</span>
-git tag v0.1.0 &amp;&amp; git push origin v0.1.0
+git tag lab05-v0.1.0 &amp;&amp; git push origin lab05-v0.1.0
 IGNITION_PRODUCTION_IMAGE=ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:v0.1.0 \
   docker compose up -d ignition-production
 

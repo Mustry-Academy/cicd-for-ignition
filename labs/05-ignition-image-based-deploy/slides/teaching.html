@@ -564,7 +564,6 @@ ENTRYPOINT ["/usr/local/bin/<span class="hl">entrypoint.sh</span>"]  <span class
 .env.example
 docs/
 exercises/
-instructor-notes/
 scripts/
 <span class="cm"># one gateway's identity: never bake</span>
 <span class="hl">…/user-source/default/</span>
@@ -711,7 +710,7 @@ scripts/
     <div class="wnode reveal" data-step="2">
       <div class="ic">⚙️</div>
       <h4>GitHub · Actions</h4>
-      <p>The merge fires <code>deploy.yml</code>, the same trigger as Lab 04. A hosted runner checks out the commit and runs <b>docker build</b>: the Dockerfile bakes the image.</p>
+      <p>The merge fires <code>lab05-deploy.yml</code>, the same trigger as Lab 04. A hosted runner checks out the commit and runs <b>docker build</b>: the Dockerfile bakes the image.</p>
     </div>
     <div class="warr reveal" data-step="3"><div class="a">→</div><div class="t">docker push</div></div>
     <div class="wnode store reveal" data-step="3">
