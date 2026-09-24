@@ -1,0 +1,34 @@
+[
+  {
+    "dataType": "Float8",
+    "name": "CaseCount",
+    "opcItemPath": "ns\u003d1;s\u003d[Simulator]Overview/CaseCount",
+    "opcServer": "Ignition OPC UA Server",
+    "tagType": "AtomicTag",
+    "valueSource": "memory"
+  },
+  {
+    "dataType": "Int2",
+    "name": "CurrentOrder",
+    "opcItemPath": "ns\u003d1;s\u003d[Simulator]Overview/CurrentOrder",
+    "opcServer": "Ignition OPC UA Server",
+    "tagType": "AtomicTag",
+    "valueSource": "opc"
+  },
+  {
+    "dataType": "Int2",
+    "name": "CurrentRun",
+    "opcItemPath": "ns\u003d1;s\u003d[Simulator]Overview/CurrentRun",
+    "opcServer": "Ignition OPC UA Server",
+    "tagType": "AtomicTag",
+    "valueSource": "opc"
+  },
+  {
+    "dataType": "Int2",
+    "name": "RunControl",
+    "opcItemPath": "ns\u003d1;s\u003d[Simulator]Overview/RunControl",
+    "opcServer": "Ignition OPC UA Server",
+    "tagType": "AtomicTag",
+    "valueSource": "opc"
+  }
+]
