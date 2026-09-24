@@ -6,13 +6,14 @@
 #   2. sample-app/README.md     — add a "Run me" section
 #   3. sample-app/tests/test_app.py — add a second test
 #
-# Idempotent on a clean working tree. Refuses to run on an already-dirty tree
-# so it can't double-apply the changes.
+# Idempotent on a clean working tree. Refuses to run on an already-dirty lab
+# folder so it can't double-apply the changes.
 
 set -euo pipefail
 
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-cd "$REPO_ROOT"
+# the lab folder, not the repo root: the course repo holds every lab
+LAB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$LAB_ROOT"
 
 # prefer python3, fall back to plain python where python3 is missing
 PY_BIN="$(command -v python3 || command -v python || true)"
@@ -21,8 +22,8 @@ if [ -z "$PY_BIN" ]; then
   exit 1
 fi
 
-if ! git diff --quiet || ! git diff --cached --quiet; then
-  echo "ERROR: working tree or index is not clean."
+if ! git diff --quiet -- . || ! git diff --cached --quiet -- .; then
+  echo "ERROR: working tree or index is not clean in $(basename "$LAB_ROOT")/."
   echo "Stash or commit your changes first:"
   echo "  git stash --include-untracked"
   exit 1
@@ -67,4 +68,4 @@ def test_greet_handles_empty_string():
 EOF
 
 echo "seed-messy-state.sh: dropped three changes into sample-app/"
-git status --short
+git status --short -- .

@@ -9,17 +9,17 @@ This is the first lab in the course. We deliberately stay out of Ignition territ
 ## Prerequisites
 
 - Work in **WSL2 (Windows), Linux, or macOS** — run all lab commands there, not in PowerShell or Git Bash (see the platform notes in your welcome package)
-- Pass [`cicd-preflight`](https://github.com/mustry-academy/cicd-preflight)
-- **Fork this repo** to your own GitHub account and clone *your fork* before the live session — every lab repo gets forked to your personal space, so you can commit, branch and push freely
+- Pass the [preflight](../../preflight/)
+- **Fork the course repo** to your own GitHub account and clone *your fork* before the live session — you fork once, and every lab lives in it as a folder under `labs/`, so you can commit, branch and push freely
 
 ## Quick start
 
 ```bash
-mkdir -p ~/mustry-academy && cd ~/mustry-academy                   # one parent folder for all 8 lab repos
-gh repo fork mustry-academy/cicd-lab-01-git-fundamentals --clone   # fork to your account + clone your fork
+mkdir -p ~/mustry-academy && cd ~/mustry-academy                   # one parent folder for the course
+gh repo fork Mustry-Academy/cicd-for-ignition --clone              # fork to your account + clone your fork (once, for all labs)
 #   …or press "Fork" on github.com, then clone YOUR fork:
-#   git clone git@github.com:<your-username>/cicd-lab-01-git-fundamentals.git
-cd cicd-lab-01-git-fundamentals
+#   git clone git@github.com:<your-username>/cicd-for-ignition.git
+cd cicd-for-ignition/labs/01-git-fundamentals                      # every lab command runs from here
 code .                                                             # open in VS Code (WSL: opens connected to WSL)
 python -m venv .venv && source .venv/bin/activate
 pip install -r sample-app/requirements.txt
@@ -45,15 +45,13 @@ One continuous ~3-hour lab (09:00–12:00) that interleaves Git's object model w
 ## Repo layout
 
 ```
-cicd-lab-01-git-fundamentals/
+labs/01-git-fundamentals/
 ├── README.md
 ├── exercises/
 │   └── lab.md
 ├── docs/                         ← reference reading
 │   ├── why-version-control.md
 │   └── git-object-model.md
-├── instructor-notes/             ← answer key (read after solo work)
-│   └── lab-key.md
 ├── slides/                       ← the presented decks, in session order
 │   ├── introduction.html
 │   ├── oatmakers-story.html
