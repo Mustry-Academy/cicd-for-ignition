@@ -567,27 +567,27 @@ body{
       <div class="phase p2 reveal" data-step="2">
         <div class="pn">DAY 2</div>
         <h4>Collaboration and automation</h4>
-        <p>Linters and validation as a safety net, GitHub Actions, self-hosted runners, the Ignition 8.3 file structure.</p>
+        <p>Linters and validation as a safety net, GitHub Actions, self-hosted runners, the Ignition 8.3 file structure and the first file-based deploy.</p>
         <div class="labs">Labs 03 + 04</div>
       </div>
       <div class="phase p3 reveal" data-step="3">
         <div class="pn">DAY 3</div>
         <h4>Ignition-specific deployments</h4>
-        <p>File-based vs image-based deploys, the database with your code, third-party modules, external JARs.</p>
+        <p>Image-based deploys: project, config and modules baked into one versioned image, promoted from test to production.</p>
         <div class="labs">Lab 05</div>
       </div>
       <div class="phase p4 reveal" data-step="4">
         <div class="pn">DAY 4</div>
         <h4>Ignition in the real world</h4>
-        <p>Multi-gateway promotion, configuration per environment, secrets management, and the capstone.</p>
-        <div class="labs">Labs 06 + 07 + 08</div>
+        <p>Secrets, database migrations, modules and JARs. Then the capstone: multi-gateway deploys, the whole cohort on one shared repo.</p>
+        <div class="labs">Labs 06 + 07</div>
       </div>
     </div>
     <p class="lead reveal" data-step="4" style="margin-top:22px">Each day ends with the same map of Oatmakers. <b>Watch it heal.</b></p>
   </div>
 
   <div class="controls on-light">
-    <span class="lead-step" id="plan-step">Four days. Eight labs. One company to fix.</span>
+    <span class="lead-step" id="plan-step">Four days. Seven labs. One company to fix.</span>
     <button class="btn" data-act="back">&#9664; Back</button>
     <button class="btn primary" data-act="next">Next &#9654;</button>
   </div>
@@ -636,7 +636,7 @@ body{
     <div class="viz" id="viz-day2"></div>
     <div class="labrow">
       <span class="oat-chip reveal" id="chips-day2-a">Lab 03 · GitHub Actions</span>
-      <span class="oat-chip reveal" id="chips-day2-b">Lab 04 · Ignition file structure</span>
+      <span class="oat-chip reveal" id="chips-day2-b">Lab 04 · Ignition file-based deploy</span>
     </div>
   </div>
 
@@ -662,7 +662,7 @@ body{
     <div class="maphead"><span class="chap">Chapter 3 · Day 3</span><span class="mtitle">Shipping, the Ignition way</span></div>
     <div class="viz" id="viz-day3"></div>
     <div class="labrow">
-      <span class="oat-chip reveal" id="chips-day3-a">Lab 05 · File-based and image-based deploys</span>
+      <span class="oat-chip reveal" id="chips-day3-a">Lab 05 · Ignition image-based deploy</span>
     </div>
   </div>
 
@@ -688,9 +688,8 @@ body{
     <div class="maphead"><span class="chap">Chapter 4 · Day 4</span><span class="mtitle">All eight sites, for real</span></div>
     <div class="viz" id="viz-day4"></div>
     <div class="labrow">
-      <span class="oat-chip reveal" id="chips-day4-a">Lab 06 · Multi-gateway deploys</span>
-      <span class="oat-chip reveal" id="chips-day4-b">Lab 07 · Secrets and the database</span>
-      <span class="oat-chip gold reveal" id="chips-day4-c">Lab 08 · Capstone · you build this whole map yourself</span>
+      <span class="oat-chip reveal" id="chips-day4-a">Lab 06 · Secrets, database migrations, modules &amp; JARs</span>
+      <span class="oat-chip gold reveal" id="chips-day4-b">Lab 07 · Capstone · multi-gateway, you build this whole map</span>
     </div>
   </div>
 
@@ -1195,7 +1194,7 @@ controllers.pains=htmlCtrl(4,'pains-step',[
 
 /* ---------- slide 8: the plan ---------- */
 controllers.plan=htmlCtrl(6,'plan-step',[
-  'Four days. Eight labs. One company to fix.',
+  'Four days. Seven labs. One company to fix.',
   'Day 1: get the history and the branching right. The hotfix week, replayed calmly.',
   'Day 2: automate the checking. A robot reviews every change before a human does.',
   'Day 3: automate the shipping, the Ignition way.',
@@ -1238,8 +1237,8 @@ controllers.day4=worldCtrl('viz-day4','day4-step',DAY4_BASE,[
   {add:['ladder'],t:'Day 4: changes climb an environment ladder. local, test, staging, production. Production is the last rung, not the first.'},
   {add:['vault'],t:'Each environment keeps its own credentials. None of them live in Git.'},
   {add:['fan'],badges:'final',badgeOpts:{stagger:120},t:'One promotion, eight identical sites.'},
-  {t:'And then you run the whole map yourself, end to end. That is Lab 08, the capstone.'}
-],(s)=>{chip('chips-day4-a',s>=4);chip('chips-day4-b',s>=4);chip('chips-day4-c',s>=4);});
+  {t:'And then you run the whole map yourself, end to end. That is Lab 07, the capstone.'}
+],(s)=>{chip('chips-day4-a',s>=4);chip('chips-day4-b',s>=4);});
 
 /* ---------- slide 13: finale ---------- */
 const FINALE_BASE=DAY4_BASE.concat(['ladder','vault','fan']);
