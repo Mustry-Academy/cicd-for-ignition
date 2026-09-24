@@ -1,0 +1,4 @@
+*.pdf
+qr/
+assets/*.orig.jpg
+welcome-package.built.html
