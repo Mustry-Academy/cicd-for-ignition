@@ -1,0 +1,36 @@
+# pre-commit configuration for the lab.
+# Part 1 stretch target — wires Part 1's linters into a pre-commit hook
+# so bad commits are blocked locally before they ever reach CI.
+#
+# Setup:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Run all hooks on the full repo:
+#   pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: ["-c", ".yamllint.yml"]
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        files: \.sh$
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.1
+    hooks:
+      - id: actionlint
+
+  # Ignition-native linter for Perspective views (naming, polling, scripts...).
+  # The hook only fires on staged view.json files; --config points it at ours.
+  - repo: https://github.com/bw-design-group/ignition-lint
+    rev: v0.6.1
+    hooks:
+      - id: ign-lint
+        args: ["--config=rule_config.json"]
