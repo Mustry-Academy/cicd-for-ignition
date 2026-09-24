@@ -10,15 +10,18 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-cd "$REPO_ROOT"
+# the lab folder, not the repo root: the course repo holds every lab
+LAB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$LAB_ROOT"
+# git diff --name-only prints repo-root-relative paths (labs/01-…/sample-app/…)
+LAB_PREFIX="$(git rev-parse --show-prefix)"
 
 fail=0
 say_pass() { echo "✅ $1"; }
 say_fail() { echo "❌ $1"; fail=1; }
 
-# 1. Working tree should be clean.
-if git diff --quiet && git diff --cached --quiet; then
+# 1. Working tree should be clean (this lab's folder).
+if git diff --quiet -- . && git diff --cached --quiet -- .; then
   say_pass "working tree is clean"
 else
   say_fail "working tree has uncommitted changes — commit them before verifying"
@@ -33,7 +36,7 @@ fi
 
 # 3. HEAD should touch only sample-app/README.md.
 changed_files=$(git diff --name-only HEAD~1 HEAD | sort -u)
-expected="sample-app/README.md"
+expected="${LAB_PREFIX}sample-app/README.md"
 if [ "$changed_files" = "$expected" ]; then
   say_pass "HEAD changes only sample-app/README.md"
 else

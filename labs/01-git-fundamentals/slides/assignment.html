@@ -264,20 +264,20 @@ body{
     <div class="sechead"><span class="num warm">WARM-UP · 0</span><div><div class="title">First: your fork, on your machine, in VS Code</div><div class="lead">Already forked and cloned before the session? Great — just do steps 3 and 4. Everyone works from the same place before we trace anything.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx">Make <b>one parent folder</b> for the whole series: <span class="inlinecode">~/mustry-academy/</span>. All 8 lab repos will live side by side in here, one folder per lab.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the lab to <i>your</i> GitHub account and clones your fork, in one go. Prefer the website? Press <b>Fork</b> on github.com — but you still need to <span class="inlinecode">git clone</span> your fork afterwards.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Check the remote:</b> <span class="inlinecode">git remote -v</span> must show <b>your username</b>, not <span class="inlinecode">mustry-academy</span> — your fork is where you can commit, branch and push freely.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx">From inside the repo, open VS Code with <span class="inlinecode">code .</span> — then work from its integrated terminal (<span class="inlinecode">Ctrl+`</span>), which already sits in the right folder.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx">Make <b>one parent folder</b> for the whole series: <span class="inlinecode">~/mustry-academy/</span>. The course repo lives in here, with one folder per lab under <span class="inlinecode">labs/</span>.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the course repo to <i>your</i> GitHub account and clones your fork, in one go. You fork once, for every lab. Prefer the website? Press <b>Fork</b> on github.com — but you still need to <span class="inlinecode">git clone</span> your fork afterwards.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Check the remote:</b> <span class="inlinecode">git remote -v</span> must show <b>your username</b>, not <span class="inlinecode">Mustry-Academy</span> — your fork is where you can commit, branch and push freely.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx">From the lab folder, open VS Code with <span class="inlinecode">code .</span> — then work from its integrated terminal (<span class="inlinecode">Ctrl+`</span>), which already sits in the right folder.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># 1: one home for all 8 labs</span>
+        <div class="code"><pre><span class="cm"># 1: one home for the course</span>
 mkdir -p ~/mustry-academy && cd ~/mustry-academy
 
 <span class="cm"># 2: fork to your account + clone your fork</span>
-gh repo fork mustry-academy/cicd-lab-01-git-fundamentals --clone
+gh repo fork Mustry-Academy/cicd-for-ignition --clone
 <span class="cm">#    …or press "Fork" on github.com, then clone YOUR fork:</span>
-git clone git@github.com:&lt;your-username&gt;/cicd-lab-01-git-fundamentals.git
-cd cicd-lab-01-git-fundamentals
+git clone git@github.com:&lt;your-username&gt;/cicd-for-ignition.git
+cd cicd-for-ignition/labs/01-git-fundamentals
 
 <span class="cm"># 3: origin → YOUR username? good.</span>
 git remote -v
@@ -307,7 +307,7 @@ code .</pre></div>
         <div class="step"><div class="ix t">1</div><div class="tx">Add a single sentence to <span class="inlinecode">sample-app/README.md</span>.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx">Stage &amp; commit it (see command).</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><span class="inlinecode">git cat-file -p HEAD</span>, then read it aloud. Note the <b>tree</b> SHA and the <b>parent</b> SHA.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx">cat-file the <b>tree</b> → this is the <b>root</b> tree, so the <span class="inlinecode">README.md</span> here is the repo's own. Find the <span class="inlinecode">sample-app</span> <b>sub-tree</b> entry instead → note its SHA.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx">cat-file the <b>tree</b> → this is the <b>root</b> tree of the course repo, so the <span class="inlinecode">README.md</span> here is the course's own. Follow the <b>sub-trees</b> down instead: <span class="inlinecode">labs</span> → <span class="inlinecode">01-git-fundamentals</span> → <span class="inlinecode">sample-app</span> → note its SHA.</div></div>
         <div class="step"><div class="ix t">5</div><div class="tx">cat-file the <b>sub-tree</b> → find <i>your</i> <span class="inlinecode">README.md</span> entry → note its <b>blob</b> SHA.</div></div>
         <div class="step"><div class="ix t">6</div><div class="tx">cat-file the <b>blob</b> → confirm it's your file content. <b>The blob has no filename</b>: the name lived in the tree.</div></div>
         <div class="step"><div class="ix t">7</div><div class="tx">Now let Git do that whole walk in one command: <span class="inlinecode">git ls-tree HEAD sample-app/</span>. The <span class="inlinecode">README.md</span> <b>blob SHA should match</b> the one you traced by hand: that matching SHA is the point.</div></div>
@@ -319,7 +319,7 @@ git commit -m <span class="cmd2">"docs: expand sample-app intro"</span>
 
 <span class="cm"># steps 3 to 6: walk the graph</span>
 git cat-file -p HEAD
-git cat-file -p &lt;tree-SHA&gt;       <span class="cm"># root tree → sample-app sub-tree</span>
+git cat-file -p &lt;tree-SHA&gt;       <span class="cm"># root tree → labs → 01-… → sample-app</span>
 git cat-file -p &lt;sub-tree-SHA&gt;   <span class="cm"># → your README.md blob</span>
 git cat-file -p &lt;blob-SHA&gt;
 
@@ -569,7 +569,7 @@ git log --graph --decorate --oneline --all</pre></div>
         <div class="step"><div class="ix p">9</div><div class="tx">Reset once more — you're still on <span class="inlinecode">main</span> from Part B: <span class="inlinecode">git reset --hard BASE</span>. This drops Part B's merge <b>and</b> its note commit. <b>Redo the note commit</b> so <span class="inlinecode">main</span> is ahead of the fork point again; without it, the rebase has nothing to do.</div></div>
         <div class="step"><div class="ix p">10</div><div class="tx"><span class="inlinecode">git switch feature/greeting-tweaks &amp;&amp; git rebase main</span>. The three commits land on the new tip, <b>no merge commit</b>. Notice the <b>new SHAs</b>.</div></div>
         <div class="step"><div class="ix p">11</div><div class="tx"><span class="inlinecode">git switch main &amp;&amp; git merge feature/greeting-tweaks</span>. This <b>fast-forwards</b>. Linear history.</div></div>
-        <div class="step"><div class="ix p">12</div><div class="tx">Compare your final graph to <span class="inlinecode">instructor-notes/lab-key.md</span>. <b>Don't peek before you finish.</b></div></div>
+        <div class="step"><div class="ix p">12</div><div class="tx">Compare your final graph to your Part B sketch: the same feature commits, in a <b>straight line</b> instead of a diamond.</div></div>
       </div>
       <div class="code"><pre>git reset --hard BASE      <span class="cm"># still on main from Part B</span>
 <span class="cm"># redo the note: append to docs/why-version-control.md again, then</span>
