@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One-time setup for the CI/CD for Ignition course. Run it from your fork's
-# clone at least 7 days before Day 1, and again whenever preflight tells you to.
+# clone at least two days before Day 1, and again whenever preflight tells you to.
 #
 #   1. preflight        tools, Docker, WSL location, course images (preflight/)
 #   2. git config       shared hook dispatchers + resource.json diff driver

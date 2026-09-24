@@ -8,7 +8,7 @@ This is the course repo. Everything you work on during the four days lives here:
 
 **Prerequisite:** current Inductive University 8.3 Credential, or equivalent professional experience.
 
-## Before Day 1 (at least 7 days ahead)
+## Before Day 1 (at least two days ahead)
 
 Work in **WSL2 (Windows), Linux or macOS**. On Windows, keep the clone in your Linux home (`~/…`), never on `/mnt/c/…`: the Docker labs break there.
 

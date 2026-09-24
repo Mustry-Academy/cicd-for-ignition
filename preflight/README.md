@@ -1,6 +1,6 @@
 # CI/CD for Ignition — Preflight
 
-> Run this **at least 7 days before Day 1** to validate that your environment is ready.
+> Run this **at least two days before Day 1** to validate that your environment is ready.
 
 The preflight script checks that you have all the tools required for the course installed and working, and that you can successfully pull and run an Ignition 8.3 Docker image. It lives in the `preflight/` folder of the course repo, [`cicd-for-ignition`](../README.md).
 
