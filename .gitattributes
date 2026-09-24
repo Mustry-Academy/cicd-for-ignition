@@ -1,0 +1,19 @@
+# Normalize text files to LF line endings. Without this, Windows clones can
+# introduce CRLF into Ignition's JSON resources, producing noisy diffs and
+# (worse) confusing the gateway's project-scan heuristics on some platforms.
+* text=auto eol=lf
+
+*.json     text eol=lf
+*.py       text eol=lf
+*.md       text eol=lf
+*.sh       text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+
+# Binary types Ignition produces — don't diff or normalize.
+*.png      binary
+*.gwbk     binary
+*.modl     binary
+*.zip      binary
+*.idb      binary
+*.bin      binary

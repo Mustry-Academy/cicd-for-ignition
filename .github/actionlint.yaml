@@ -1,0 +1,10 @@
+# actionlint config.
+#
+# `self-hosted-demo.yml` routes to a self-hosted runner tagged `local-lab03`
+# (see docs/self-hosted-runners.md). actionlint doesn't know custom runner
+# labels, so without this it would warn "label local-lab03 is unknown" on every
+# run. Declaring it here is the documented fix — and how real repos teach
+# actionlint about their own self-hosted fleet.
+self-hosted-runner:
+  labels:
+    - local-lab03
