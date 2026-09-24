@@ -1,0 +1,80 @@
+# Local env & scratch
+.env
+NOTES.local.md
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ---------------------------------------------------------------------------
+# What the LOCAL gateway (docker-compose.yaml) writes into the
+# bind-mounted repo dirs. This mirrors the Deploy workflow's exclusion list:
+# gateway-owned state never belongs in git — it is per-instance identity,
+# key material, or rebuildable runtime state.
+# ---------------------------------------------------------------------------
+
+# Per-instance identity & machine-local config
+services/config/local/
+services/config/resources/local/
+
+# The gateway's secrets-management keys and tag VALUE store
+services/config/ignition/
+
+# OPC UA server keystores (regenerated per gateway)
+services/config/com.inductiveautomation.opcua/
+
+# The gateway-owned INTERNAL identity: users.json holds THIS gateway's admin
+# password hash. Committing it ships your local admin credentials to
+# production — and locks everyone out. The temp/ variants are what
+# first-boot commissioning creates on a fresh local gateway.
+services/config/resources/core/ignition/user-source/default/
+services/config/resources/core/ignition/user-source/opcua-module/
+services/config/resources/core/ignition/user-source/temp/
+services/config/resources/core/ignition/identity-provider/default/
+services/config/resources/core/ignition/identity-provider/temp/
+
+# The scan-API token: generated per clone by scripts/generate-api-key.sh
+# (key in .env, hash-only resource here). Never commit it — a committed
+# token resource puts every clone's auth surface in the repo's history.
+# Production's token is minted by the instructors (scripts/mint-api-key.sh)
+# and never touches the repo either.
+services/config/resources/core/ignition/api-token/
+
+# Internal content-addressed blob store + upgrade artifacts (rebuilt on scan)
+**/.resources/
+services/config/resources/migration-log-*.md
+
+# Gateway runtime noise
+**/.container-init.conf
+**/valueStore.idb
+**/db_backup_sqlite.idb
+**/autobackup/
+**/datacache/
+**/jar-cache/
+**/var
+*.log
+**/logs
+**/certificates/
+**/keystore/
+**/conversion-report.txt
+**.digest.json
+**/.alarms_*
+*.tmp
+*.bak
+# Flint gateway API tokens. The path is relative to the workspace root so the
+# same flint.config.json works in every clone, but the token itself is a live
+# gateway credential and is per-gateway AND per-clone — never commit it. Each
+# student generates their own in Config > Security > API Tokens and writes it
+# as `ignition_token=<keyId>:<secret>` (dotenv format, not JSON, despite the
+# .json extension the Flint docs use).
+/.flint/tokens/*
+!/.flint/tokens/*.example
+
+# Local customer-demo validation evidence
+/build/
+/.ignition-lint/
