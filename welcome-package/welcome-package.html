@@ -866,7 +866,8 @@
   <div class="eyebrow">The one task that matters most</div>
   <h2 class="h">Run the preflight check.</h2>
   <p class="lead">
-    Once you've installed everything, run our preflight script. It validates every tool,
+    Once you've installed everything, fork the course repo and run its setup script. It starts
+    with our preflight check, which validates every tool,
     pulls the course images (Ignition&nbsp;8.3.6 and&nbsp;8.3.8, TimescaleDB, and the GitHub runner),
     checks ports and bind mounts, and starts a test gateway. Most of the wait is image pulls.
   </p>
@@ -874,26 +875,26 @@
   <div class="preflight-block">
     <div class="card preflight-code">
       <span class="p">$</span> mkdir -p ~/mustry-academy &amp;&amp; cd ~/mustry-academy<br>
-      <span class="p">$</span> git clone {{PREFLIGHT_REPO_URL}}<br>
-      <span class="p">$</span> cd cicd-preflight<br>
-      <span class="p">$</span> ./scripts/preflight.sh
+      <span class="p">$</span> gh repo fork Mustry-Academy/cicd-for-ignition --clone<br>
+      <span class="p">$</span> cd cicd-for-ignition<br>
+      <span class="p">$</span> ./course-setup.sh
     </div>
     <div class="qr-card">
-      <img src="qr/preflight.svg" alt="QR code for preflight repo" />
-      <div class="qr-label">Scan to open the<br>preflight repo</div>
+      <img src="qr/course-repo.svg" alt="QR code for the course repo" />
+      <div class="qr-label">Scan to open the<br>course repo</div>
     </div>
   </div>
 
   <div class="callout">
     <div class="ct">Windows: where you clone decides whether the labs work</div>
-    <div class="cb">Run this inside WSL, and note that first line: <span class="mono">~/mustry-academy</span> is your <strong>Linux home</strong>. Keep every lab repo there, never on your Windows drive (<span class="mono">/mnt/c/…</span>) — there, Windows decides file ownership, so it breaks in ways <span class="mono">chown</span> cannot fix and you end up needing <span class="mono">sudo</span> to edit your own project files. Our scripts refuse to run from <span class="mono">/mnt/c</span> and never need <span class="mono">sudo</span>. Check with <span class="mono">pwd</span>: it must not start with <span class="mono">/mnt/</span>.</div>
+    <div class="cb">Run this inside WSL, and note that first line: <span class="mono">~/mustry-academy</span> is your <strong>Linux home</strong>. Keep your course repo there, never on your Windows drive (<span class="mono">/mnt/c/…</span>) — there, Windows decides file ownership, so it breaks in ways <span class="mono">chown</span> cannot fix and you end up needing <span class="mono">sudo</span> to edit your own project files. Our scripts refuse to run from <span class="mono">/mnt/c</span> and never need <span class="mono">sudo</span>. Check with <span class="mono">pwd</span>: it must not start with <span class="mono">/mnt/</span>.</div>
   </div>
 
   <p>
-    The script writes <span class="mono">preflight-report.txt</span>.
+    The preflight writes <span class="mono">preflight/preflight-report.txt</span>.
     <strong>Paste it into <span class="mono">#preflight-help</span> on Discord</strong>
     so we can confirm you're ready. On failure, start with the script's suggestion, then
-    <span class="mono">troubleshooting.md</span> in the repo.
+    <span class="mono">preflight/troubleshooting.md</span> in the repo.
   </p>
 
   <div class="callout">

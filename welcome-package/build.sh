@@ -41,7 +41,7 @@ require qrencode "Install with: brew install qrencode"
 # shellcheck disable=SC1090
 source "$LINKS_CONF"
 
-LINK_VARS=(DISCORD_INVITE_URL PREFLIGHT_REPO_URL SURVEY_URL)
+LINK_VARS=(DISCORD_INVITE_URL COURSE_REPO_URL SURVEY_URL)
 for v in "${LINK_VARS[@]}"; do
   if [ -z "${!v:-}" ]; then
     echo "error: $v is unset or empty in $LINKS_CONF" >&2
@@ -53,7 +53,7 @@ done
 # Each entry: <output-name>=<URL>. The HTML references qr/<output-name>.svg.
 QR_TARGETS=(
   "discord=$DISCORD_INVITE_URL"
-  "preflight=$PREFLIGHT_REPO_URL"
+  "course-repo=$COURSE_REPO_URL"
   "survey=$SURVEY_URL"
   "linkedin=https://www.linkedin.com/in/jasper-louage/"
 )

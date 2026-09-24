@@ -1,0 +1,47 @@
+name: Preflight · CI
+
+# The preflight script is the first thing students run in a CI/CD course, so it
+# should practise what it preaches: syntax-check and lint the shell on every
+# push/PR that touches it. shellcheck is pinned to a fixed version so the result
+# is reproducible and doesn't drift with whatever the runner image ships.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "preflight/**"
+      - ".github/workflows/preflight-ci.yml"
+  pull_request:
+    paths:
+      - "preflight/**"
+      - ".github/workflows/preflight-ci.yml"
+
+env:
+  SHELLCHECK_VERSION: v0.10.0
+
+defaults:
+  run:
+    working-directory: preflight
+
+jobs:
+  shellcheck:
+    name: Lint shell scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: bash syntax check
+        run: bash -n scripts/preflight.sh
+
+      # Unpacks into $RUNNER_TEMP rather than the checkout so the extracted
+      # shellcheck-*/ folder can't end up inside the preflight/ tree.
+      - name: Install shellcheck ${{ env.SHELLCHECK_VERSION }}
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl -fsSL "https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION}/shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" \
+            | tar -xJ
+          sudo install "shellcheck-${SHELLCHECK_VERSION}/shellcheck" /usr/local/bin/shellcheck
+          shellcheck --version
+
+      - name: shellcheck
+        run: shellcheck scripts/*.sh

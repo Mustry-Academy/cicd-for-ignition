@@ -3,14 +3,18 @@
 Source for the Mustry Academy welcome package handed to attendees of *CI/CD for Ignition* before Day 1.
 Renders to a print-ready A4 PDF, styled to match the [mustrysolutions.com](https://mustrysolutions.com/) brand.
 
+It lives in the `welcome-package/` folder of the course monorepo, [`cicd-for-ignition`](../README.md), next to
+the [preflight](../preflight/) and the labs. It is instructor-facing: students get the PDF, not this folder.
+Run `./build.sh` from here (or by path from anywhere); everything it reads and writes is relative to this folder.
+
 ## Files
 
 | File                          | Purpose                                                                 |
 | ----------------------------- | ----------------------------------------------------------------------- |
 | `welcome-package.html`         | Source — content + styling, with `{{NAME}}` link placeholders           |
-| `links.conf`                  | Discord invite, preflight repo and intake survey links                  |
+| `links.conf`                  | Discord invite, course repo and intake survey links                     |
 | `build.sh`                    | Builds the PDF: QR codes, link fill-in, headless-Chrome render          |
-| `logo.png`                    | Mustry Solutions logo used in page headers and as a cover watermark     |
+| `assets/`                     | Logos and the instructor photo used in the page headers, cover and bio   |
 | `welcome-package.pdf`          | Latest rendered output (not tracked by git)                             |
 | `qr/`                         | Generated QR code SVGs (not tracked by git)                             |
 
@@ -46,7 +50,7 @@ CHROME="/path/to/chrome" ./build.sh
 
 1. Loads the links from `links.conf`.
 2. Generates QR code SVGs into `qr/` for each URL in the `QR_TARGETS` array
-   (Discord invite, preflight repo, intake survey, instructor LinkedIn).
+   (Discord invite, course repo, intake survey, instructor LinkedIn).
 3. Fills the `{{NAME}}` placeholders in a temporary copy of `welcome-package.html`.
    Fails loudly on any placeholder it doesn't know.
 4. Renders that copy to PDF with headless Chrome (`@page` CSS handles A4), then deletes it.
@@ -89,7 +93,7 @@ Structure of `welcome-package.html`:
    - `01 · Welcome` — instructor note (signed) + course expectations
    - `02 · Your Instructor` — instructor bio, stats, photo + credentials
    - `03 · System Requirements` — install list + platform notes
-   - `04 · Preflight` — preflight script + QR code
+   - `04 · Preflight` — fork the course repo, run `./course-setup.sh` (runs the preflight) + QR code
    - `05 · The Course` — typical four-day curriculum + a typical day schedule
    - `06 · Your Timeline` — pre-course timeline + checklist
    - `07 · Good to Know` — logistics + contact band with Discord QR

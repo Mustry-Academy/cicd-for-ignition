@@ -3,7 +3,9 @@
 # Preflight environment check
 #
 # Validates that the participant's machine has everything needed for Day 1.
-# Writes a report to ./preflight-report.txt that the TA can read.
+# Writes a report to preflight/preflight-report.txt (next to this script's
+# folder, whatever directory you run it from) that the TA can read.
+# In the course repo it normally runs via ./course-setup.sh at the repo root.
 #
 # The script is deliberately linear: read it top to bottom and each check is a
 # self-contained block. If you add/remove/retier a check, update the "What it
@@ -13,7 +15,11 @@ set -u
 
 FAILED=0
 WARNINGS=0
-REPORT_FILE="$(pwd)/preflight-report.txt"
+# The preflight/ folder inside the course repo. Report and scratch files live
+# here (and are gitignored) so the result is the same whether you run this
+# script directly or through ../course-setup.sh from the repo root.
+PREFLIGHT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPORT_FILE="$PREFLIGHT_DIR/preflight-report.txt"
 
 # Flags (see --help). Set by the argument parser further down.
 QUIET=0
@@ -283,9 +289,9 @@ github_clock_skew() {
   echo $(( local_now > remote ? local_now - remote : remote - local_now ))
 }
 
-# BIND_MOUNT_DIR — a scratch dir under the working directory (same filesystem
-# the labs live on) that the bind-mount check hands to the gateway image.
-BIND_MOUNT_DIR="$(pwd)/.preflight-bind-mount"
+# BIND_MOUNT_DIR — a scratch dir inside the course repo (same filesystem the
+# labs live on) that the bind-mount check hands to the gateway image.
+BIND_MOUNT_DIR="$PREFLIGHT_DIR/.preflight-bind-mount"
 bind_mount_cleanup() { rm -rf "$BIND_MOUNT_DIR"; }
 
 # port_owner PORT — best-effort name of what holds PORT, for the report. A
@@ -325,7 +331,7 @@ usage() {
   cat <<EOF
 Mustry Academy preflight — checks your machine is ready for Day 1.
 
-Usage: scripts/preflight.sh [options]
+Usage: preflight/scripts/preflight.sh [options]   (or ./course-setup.sh from the repo root)
 
 Options:
   --no-pull       Skip pulling the course images (use locally cached ones)
@@ -404,15 +410,17 @@ esac
 # problem and makes each later lab worse. The lab setup scripts refuse to run
 # from these paths, so catch it here — days before Day 1, not during Lab 02.
 if is_wsl; then
-  section "Working directory"
-  FS_TYPE="$(stat -f -c %T . 2>/dev/null || echo unknown)"
-  case "$FS_TYPE:$PWD" in
+  section "Repo location"
+  # Check the course repo itself (where the labs will run), not just the
+  # directory the script happened to be started from.
+  FS_TYPE="$(stat -f -c %T "$PREFLIGHT_DIR" 2>/dev/null || echo unknown)"
+  case "$FS_TYPE:$PREFLIGHT_DIR" in
     drvfs:*|9p:*|v9fs:*|cifs:*|*:/mnt/[a-z]/*)
-      log_fail "You are working on the Windows filesystem ($PWD)" \
-        "Move your repos to your Linux home and re-run: mkdir -p ~/mustry-academy && cd ~/mustry-academy, then clone again there. Windows-drive paths break file ownership in ways chown cannot fix."
+      log_fail "The course repo is on the Windows filesystem ($PREFLIGHT_DIR)" \
+        "Move it to your Linux home and re-run: mkdir -p ~/mustry-academy && cd ~/mustry-academy, then fork/clone cicd-for-ignition again there. Windows-drive paths break file ownership in ways chown cannot fix."
       ;;
     *)
-      log_pass "Working on the Linux filesystem ($PWD)"
+      log_pass "The course repo is on the Linux filesystem ($PREFLIGHT_DIR)"
       ;;
   esac
 fi
@@ -447,8 +455,8 @@ if command -v git >/dev/null 2>&1; then
   # message that confuses first-timers. Read from inside the repo so a
   # conditional include for ~/mustry-academy counts too. Name only in the
   # report — the email is nobody else's business.
-  if [ -n "$(git config --get user.name 2>/dev/null)" ] && [ -n "$(git config --get user.email 2>/dev/null)" ]; then
-    log_pass "Commit identity set ($(git config --get user.name))"
+  if [ -n "$(git -C "$PREFLIGHT_DIR" config --get user.name 2>/dev/null)" ] && [ -n "$(git -C "$PREFLIGHT_DIR" config --get user.email 2>/dev/null)" ]; then
+    log_pass "Commit identity set ($(git -C "$PREFLIGHT_DIR" config --get user.name))"
   else
     log_missing "$REQUIRED" "git has no commit identity (user.name / user.email)" "Run: git config --global user.name \"Your Name\" && git config --global user.email \"you@example.com\""
   fi
@@ -456,8 +464,8 @@ if command -v git >/dev/null 2>&1; then
   # core.autocrlf=true is a Git-for-Windows habit that follows people into
   # WSL. It rewrites every checked-out file with CRLF, and the labs' shell
   # scripts then die with "bash\r: No such file or directory".
-  if [ "$(git config --get core.autocrlf 2>/dev/null | tr '[:upper:]' '[:lower:]')" = "true" ]; then
-    log_missing "$REQUIRED" "core.autocrlf is 'true' — checkouts get Windows line endings and the lab scripts won't run" "Run: git config --global core.autocrlf input — then re-clone any lab repo you already cloned"
+  if [ "$(git -C "$PREFLIGHT_DIR" config --get core.autocrlf 2>/dev/null | tr '[:upper:]' '[:lower:]')" = "true" ]; then
+    log_missing "$REQUIRED" "core.autocrlf is 'true' — checkouts get Windows line endings and the lab scripts won't run" "Run: git config --global core.autocrlf input — then re-clone the course repo if you already cloned it"
   else
     log_pass "Line endings left alone (core.autocrlf not 'true')"
   fi
@@ -613,7 +621,7 @@ if command -v gh >/dev/null 2>&1; then
     # `gh auth setup-git` registers its helper per host (credential
     # "https://github.com"), not as the global credential.helper, so look at
     # every credential.*helper key.
-    GIT_CRED_HELPERS="$(git config --get-regexp '^credential\..*helper$' 2>/dev/null | awk '{ $1=""; sub(/^ /, ""); if ($0 != "") print }' | sort -u | tr '\n' ' ')"
+    GIT_CRED_HELPERS="$(git -C "$PREFLIGHT_DIR" config --get-regexp '^credential\..*helper$' 2>/dev/null | awk '{ $1=""; sub(/^ /, ""); if ($0 != "") print }' | sort -u | tr '\n' ' ')"
     if echo "$GIT_CRED_HELPERS" | grep -q 'gh auth git-credential'; then
       log_pass "git authenticates to GitHub through gh (HTTPS)"
     elif ssh_github_ok; then
@@ -936,7 +944,7 @@ else
      && [ -e "$BIND_MOUNT_DIR/.written" ]; then
     log_pass "The gateway container (uid 2003) can write to a directory mounted from here"
   else
-    log_missing "$REQUIRED" "The gateway container (uid 2003) cannot write to a directory mounted from $(pwd)" "On Linux/WSL2 the lab's ./projects and ./services/config need to be writable by uid 2003 — see troubleshooting.md → 'The gateway container cannot write to a directory mounted from here'"
+    log_missing "$REQUIRED" "The gateway container (uid 2003) cannot write to a directory mounted from $PREFLIGHT_DIR" "On Linux/WSL2 the lab's ./projects and ./services/config need to be writable by uid 2003 — see troubleshooting.md → 'The gateway container cannot write to a directory mounted from here'"
   fi
   bind_mount_cleanup
 fi

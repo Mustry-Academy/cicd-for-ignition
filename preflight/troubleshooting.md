@@ -1,15 +1,16 @@
 # Troubleshooting the preflight
 
-## "You are working on the Windows filesystem"
+## "The course repo is on the Windows filesystem"
 
-Your repo is somewhere under `/mnt/c/…` (or another Windows drive). Move it to your
-Linux home and clone again there:
+Your clone of `cicd-for-ignition` is somewhere under `/mnt/c/…` (or another Windows
+drive). Delete that clone and clone your fork again in your Linux home. If you already
+forked, `gh repo fork` reuses the existing fork and just clones it:
 
 ```bash
 mkdir -p ~/mustry-academy && cd ~/mustry-academy
-git clone https://github.com/mustry-academy/cicd-preflight.git
-cd cicd-preflight
-./scripts/preflight.sh
+gh repo fork Mustry-Academy/cicd-for-ignition --clone
+cd cicd-for-ignition
+./course-setup.sh
 ```
 
 Check where you are at any time with `pwd` — it must **not** start with `/mnt/`.
@@ -27,10 +28,10 @@ setup scripts refuse to run from `/mnt/c` for this reason.
 
 ## "This script is running under sudo"
 
-Run it as yourself, without `sudo`:
+Run it as yourself, without `sudo`, from the root of your `cicd-for-ignition` clone:
 
 ```bash
-./scripts/preflight.sh
+./course-setup.sh                  # or just the checks: preflight/scripts/preflight.sh
 ```
 
 Nothing in this course needs root. Every file created under `sudo` is owned by root,
@@ -60,7 +61,7 @@ You must run the preflight from inside WSL2, not from CMD or Git Bash. In Docker
 Git for Windows sets `core.autocrlf=true` so files get Windows line endings on checkout. That
 setting sometimes gets copied into WSL (or set globally on a Mac from an old tutorial), and then
 every lab `.sh` script fails with `bash\r: No such file or directory` or `$'\r': command not
-found`. Turn it off and re-clone anything you already cloned:
+found`. Turn it off and re-clone the course repo if you already cloned it:
 
 ```bash
 git config --global core.autocrlf input
@@ -195,7 +196,7 @@ gh auth setup-git
 ```
 
 or use SSH: `gh auth login` again, choose **SSH** and let it generate and upload a key, then clone
-your forks with the `git@github.com:` URLs.
+your fork with its `git@github.com:` URL.
 
 Two **warning** variants of this check:
 
@@ -285,7 +286,7 @@ openssl x509 -inform der -in corp-root.cer -out ~/corp-root.crt
 ### 2. Re-run the preflight
 
 ```bash
-./scripts/preflight.sh --no-pull --skip-smoke
+preflight/scripts/preflight.sh --no-pull --skip-smoke     # from the repo root
 ```
 
 The script notices `~/corp-root.crt`, probes GitHub again trusting it, and reports
@@ -419,8 +420,8 @@ SELinux blocks it even when the permissions are fine.
 `IGNITION_GID` when started as root and steps down to that user before launching the gateway.
 Create `docker-compose.override.yaml` next to the lab's `docker-compose.yaml` (compose picks it
 up automatically). Use the gateway service names from that lab's compose file — labs 04/05 call
-them `ignition-local`, `ignition-dev`, `ignition-prod`; lab 06 `gateway-loc`, `gateway-dev`,
-`gateway-prod`; lab 07 `gateway`:
+them `ignition-local`, `ignition-test`, `ignition-production`; lab 06 `gateway-local-development`,
+`gateway-test`, `gateway-production`; lab 07 `gateway`, `test-gateway`:
 
 ```yaml
 # docker-compose.override.yaml — Linux/WSL2 only: run the gateways as my user
@@ -432,9 +433,9 @@ x-as-me: &as-me
     IGNITION_GID: "1000"          # your gid:  id -g
 
 services:
-  ignition-local: *as-me
-  ignition-dev:   *as-me
-  ignition-prod:  *as-me
+  ignition-local:      *as-me
+  ignition-test:       *as-me
+  ignition-production: *as-me
 ```
 
 Fill in your real `id -u` / `id -g` (1000 is the first user on most distros). The `environment`
@@ -501,4 +502,4 @@ find it, so a Windows-host install may still show the warning depending on your 
 
 ## Still stuck?
 
-Paste the contents of `preflight-report.txt` into the Discord `#preflight-help` channel. The TA monitors it daily and will respond within 24 hours on weekdays.
+Paste the contents of `preflight/preflight-report.txt` into the Discord `#preflight-help` channel. The TA monitors it daily and will respond within 24 hours on weekdays.

@@ -59,12 +59,14 @@ Installing packages is one of the few legitimate uses of `sudo` in this course.
 ## 4. The rule that decides whether the labs work
 
 **Keep every course repo in your Linux home (`~/…`), never on your Windows drive
-(`/mnt/c/…`).**
+(`/mnt/c/…`).** That is your fork of `cicd-for-ignition` and, for Lab 07, your
+cohort's shared repo, cloned next to it.
 
 ```bash
 mkdir -p ~/mustry-academy && cd ~/mustry-academy
-git clone <repo-url>
-cd <repo>
+gh repo fork Mustry-Academy/cicd-for-ignition --clone
+cd cicd-for-ignition
+./course-setup.sh # runs the preflight, then the one-time setup
 code .            # opens VS Code connected to WSL
 ```
 
