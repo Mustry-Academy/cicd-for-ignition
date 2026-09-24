@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Oatmakers Story · CI/CD for Ignition</title>
+<link rel="icon" type="image/png" href="logos/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Nunito+Sans:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0e1b2e;
+  --navy2:#15233a;
+  --blue:#2563eb;
+  --blue-d:#1d4ed8;
+  --peri:#93a9f0;
+  --peri2:#a8bef7;
+  --peri-soft:#e8eefc;
+  --bg:#eef1f6;
+  --panel:#ffffff;
+  --panel2:#f5f8fc;
+  --line:#e3e9f1;
+  --line2:#d3dcea;
+  --txt:#15233a;
+  --txt-dim:#5a6a7e;
+  --txt-faint:#94a2b4;
+  --good:#16a34a; --good-soft:#e3f6ea;
+  --warn:#d97706; --warn-soft:#fbf0db;
+  --shadow:0 1px 2px rgba(14,27,46,.05),0 10px 30px -16px rgba(14,27,46,.28);
+  /* Oatmakers, the client */
+  --oat-green:#24382B;
+  --oat-green-d:#16241b;
+  --oat-sage:#7E9461;
+  --oat-gold:#C8902F;
+  --oat-gold-l:#EBBE58;
+  --oat-orange:#FF9200;
+  --oat-cream:#F6F1E3;
+  --oat-sage-soft:rgba(126,148,97,.16);
+  --oat-gold-soft:rgba(200,144,47,.15);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--navy);
+  color:var(--txt);
+  font-family:'Libre Franklin',sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+
+/* ---- deck mechanics ---- */
+.deck{height:100vh;width:100vw;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth}
+.deck::-webkit-scrollbar{display:none}
+.slide{
+  height:100vh;width:100vw;scroll-snap-align:start;scroll-snap-stop:always;
+  display:flex;flex-direction:column;position:relative;
+  padding:56px 64px 36px;background:var(--bg);
+}
+.slide.dark{background:radial-gradient(120% 120% at 80% -10%,#1c3358 0%,#0e1b2e 55%)}
+.slide.dark.oat{background:radial-gradient(120% 120% at 80% -10%,#1e3427 0%,#101d14 55%)}
+
+/* progress + nav */
+.hud{position:fixed;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.08);z-index:50}
+.hud .bar{height:100%;background:linear-gradient(90deg,var(--oat-gold),var(--oat-gold-l));width:0;transition:width .3s}
+.pager{position:fixed;right:22px;bottom:18px;z-index:50;font-size:11px;color:var(--txt-faint);font-family:'IBM Plex Mono'}
+.pager.on-dark{color:rgba(255,255,255,.55)}
+.hint{position:fixed;left:22px;bottom:16px;z-index:50;font-size:10.5px;color:var(--txt-faint);letter-spacing:.3px}
+.hint.on-dark{color:rgba(255,255,255,.4)}
+
+/* ---- logo ---- */
+.brandrow{display:flex;align-items:center;gap:13px}
+.logo-img{height:30px;width:auto;display:block}
+.logo-img.logo-lg{height:44px}
+
+/* slide chrome */
+.eyebrow{font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:14px}
+.dark .eyebrow{color:var(--peri2)}
+.dark.oat .eyebrow{color:var(--oat-gold-l)}
+.title{font-weight:800;font-size:40px;line-height:1.04;letter-spacing:-1px;color:var(--navy)}
+.dark .title{color:#fff}
+.lead{font-size:16px;color:var(--txt-dim);line-height:1.5;max-width:760px;margin-top:14px}
+.dark .lead{color:#c4cfde}
+.sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:26px}
+.sechead .num{font-family:'IBM Plex Mono';font-size:13px;font-weight:600;color:#fff;background:var(--oat-green);padding:5px 11px;border-radius:8px;letter-spacing:.5px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:34px}
+.topbar .stage{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt-faint);font-weight:600}
+.topbar .stage.on-dark{color:rgba(255,255,255,.5)}
+
+/* ---- cover ---- */
+.cover{flex:1;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.cover .big{font-weight:800;font-size:60px;line-height:1.02;letter-spacing:-1.6px;color:#fff;max-width:16ch}
+.cover .big em{font-style:normal;color:var(--oat-gold-l)}
+.cover .sub{font-size:17px;color:#aebbcd;max-width:62ch;line-height:1.55;margin-top:18px}
+.dark.oat .cover .sub{color:#c3cfbc}
+.cover .for{margin-top:30px;display:flex;align-items:center;gap:16px;font-size:13px;color:#8fa0b6;flex-wrap:wrap}
+.cover .for .pill{border:1px solid rgba(255,255,255,.16);border-radius:30px;padding:7px 15px;color:#dbe4f0}
+.cover .for .pill b{color:#fff;font-weight:700}
+.coverlogo{margin-top:34px;display:inline-block;border:1px solid rgba(126,148,97,.45);background:rgba(126,148,97,.10);border-radius:18px;padding:26px 34px;width:fit-content}
+.coverlogo svg{display:block;height:86px;width:auto}
+
+/* ---- generic layout ---- */
+.body{flex:1;display:flex;flex-direction:column;justify-content:center}
+.split{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:center}
+
+/* generic reveal: elements fade/rise in when .show is added */
+.reveal{opacity:0;transform:translateY(10px);transition:opacity .5s ease,transform .5s ease}
+.reveal.show{opacity:1;transform:none}
+
+/* facts list (company slide) */
+.facts{display:flex;flex-direction:column;gap:18px}
+.fact{display:flex;gap:14px;align-items:flex-start}
+.fact .fk{flex:none;width:26px;height:26px;border-radius:8px;background:var(--oat-sage-soft);border:1px solid rgba(126,148,97,.5);display:grid;place-items:center;font-family:'IBM Plex Mono';font-size:12px;font-weight:600;color:var(--oat-green);margin-top:2px}
+.fact .ft{font-size:15px;color:var(--txt-dim);line-height:1.55}
+.fact .ft b{color:var(--txt);font-weight:700}
+.subchips{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+/* Oatmakers chips + cards */
+.oat-chip{font-family:'IBM Plex Mono';font-size:12px;font-weight:600;color:var(--oat-gold);background:var(--oat-gold-soft);border:1px solid rgba(200,144,47,.45);border-radius:20px;padding:6px 13px;white-space:nowrap}
+.dark .oat-chip{color:var(--oat-gold-l)}
+.oat-chip.sage{color:var(--oat-green);background:var(--oat-sage-soft);border-color:rgba(126,148,97,.5)}
+.dark .oat-chip.sage{color:#cfe0bd}
+.oat-chip.gold{background:var(--oat-gold);color:#fff;border-color:var(--oat-gold)}
+
+/* fake Perspective screen */
+.oat-mock{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;width:100%;max-width:430px}
+.oat-mock .om-hdr{background:var(--oat-green);color:var(--oat-cream);display:flex;align-items:center;gap:11px;padding:12px 16px;font-weight:700;font-size:14px;letter-spacing:.4px}
+.oat-mock .om-hdr svg{height:28px;width:28px;flex:none}
+.oat-mock .om-hdr .crumbs{margin-left:auto;font-family:'IBM Plex Mono';font-size:10px;opacity:.72;font-weight:400}
+.om-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px 8px}
+.om-tile{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.om-tile .k{font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:.6px;color:var(--txt-faint);font-weight:600}
+.om-tile .v{font-weight:800;font-size:19px;letter-spacing:-.4px;color:var(--oat-green);margin-top:4px}
+.om-tile .v small{font-size:11px;font-weight:600;color:var(--txt-faint)}
+.om-spark{padding:4px 16px 16px}
+.om-foot{border-top:1px solid var(--line);padding:9px 16px;font-family:'IBM Plex Mono';font-size:10px;color:var(--txt-faint);display:flex;justify-content:space-between}
+
+/* pain montage */
+.pains{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:4px}
+.pain{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--oat-gold);border-radius:12px;padding:16px 18px 14px;box-shadow:var(--shadow)}
+.pain h4{font-size:14.5px;font-weight:800;letter-spacing:-.2px;display:flex;align-items:center;gap:9px}
+.pain h4 svg{width:17px;height:17px;color:var(--oat-gold);flex:none}
+.pain .q{font-family:'IBM Plex Mono';font-size:11.5px;color:#9a6f24;margin:8px 0 7px;line-height:1.5}
+.pain p{font-size:12.5px;color:var(--txt-dim);line-height:1.5}
+.painsum{margin-top:18px;background:var(--oat-green);color:var(--oat-cream);border-radius:12px;padding:15px 22px;font-weight:600;font-size:15px;letter-spacing:.1px}
+.painsum b{color:var(--oat-gold-l)}
+
+/* roadmap (plan slide) */
+.road{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:8px}
+.phase{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.phase:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--oat-sage)}
+.phase.p2:before{background:var(--oat-gold)}
+.phase.p3:before{background:linear-gradient(180deg,var(--oat-gold),var(--oat-sage))}
+.phase.p4:before{background:var(--oat-green)}
+.phase .pn{font-family:'IBM Plex Mono';font-size:11px;color:var(--txt-faint);font-weight:600;letter-spacing:1px}
+.phase h4{font-size:17px;font-weight:800;letter-spacing:-.4px;margin:8px 0 4px}
+.phase p{font-size:12.5px;color:var(--txt-dim);line-height:1.5;margin-top:8px}
+.phase .labs{margin-top:12px;font-family:'IBM Plex Mono';font-size:10.5px;color:var(--oat-gold);font-weight:600}
+
+/* map slides */
+.stage-wrap{flex:1;display:flex;flex-direction:column;min-height:0}
+.maphead{display:flex;align-items:baseline;gap:16px;margin-bottom:4px}
+.maphead .chap{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:2px;color:var(--oat-gold-l);font-weight:600;text-transform:uppercase}
+.maphead .mtitle{font-weight:800;font-size:30px;letter-spacing:-.6px;color:#fff}
+.viz{position:relative;flex:1;min-height:0}
+.viz svg{position:absolute;inset:0;width:100%;height:100%}
+.labrow{display:flex;gap:10px;margin-top:8px;min-height:32px;align-items:center}
+
+/* svg fade-in helpers */
+.vshow{opacity:0;transition:opacity .55s ease}
+.vshow.on{opacity:1}
+.vpop{opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.5);transition:opacity .45s ease,transform .45s cubic-bezier(.2,1.3,.4,1)}
+.vpop.on{opacity:1;transform:scale(1)}
+.vdraw{opacity:0;transition:opacity .5s ease}
+.vdraw.on{opacity:1}
+
+/* svg scene bits */
+.scard{fill:rgba(126,148,97,.10);stroke:#7E9461;stroke-width:1.6}
+.gsite{fill:rgba(126,148,97,.28);stroke:#a9bd8f;stroke-width:1.5}
+.slabel{fill:#e7ecdf;font-family:'Libre Franklin';font-weight:700;font-size:16px;text-anchor:middle}
+.badge text{font-family:'IBM Plex Mono';font-size:13px;font-weight:600;text-anchor:middle;dominant-baseline:central}
+.badge rect{stroke-width:1.5}
+.b-g rect{fill:rgba(22,163,74,.20);stroke:#4ade80}   .b-g text{fill:#86efac}
+.b-a rect{fill:rgba(217,119,6,.18);stroke:#f0b765}   .b-a text{fill:#f5cf8f}
+.b-r rect{fill:rgba(220,38,38,.18);stroke:#ef6f6f}   .b-r text{fill:#f8a3a3}
+.b-x rect{fill:rgba(148,162,180,.14);stroke:#94a2b4} .b-x text{fill:#b9c3d1}
+.flick{animation:flick .55s ease}
+@keyframes flick{0%,100%{opacity:1}30%{opacity:.15}60%{opacity:1}80%{opacity:.3}}
+.warntri path{fill:#f59e0b}
+.warntri text{fill:#1c1607;font-family:'Libre Franklin';font-weight:800;font-size:13px;text-anchor:middle}
+.pulsering{fill:none;stroke:#ef4444;stroke-width:2.5;transform-box:fill-box;transform-origin:center;animation:ringpulse 1.5s ease-out infinite}
+@keyframes ringpulse{0%{transform:scale(.55);opacity:1}100%{transform:scale(1.25);opacity:0}}
+.pnode rect.card{fill:rgba(246,241,227,.05);stroke:var(--oat-gold);stroke-width:1.8}
+.pnode text.nl{fill:#fff;font-family:'Libre Franklin';font-weight:700;font-size:16px}
+.pnode text.ns{fill:#d8c9a0;font-family:'Libre Franklin';font-weight:500;font-size:12px}
+.pnode text.nm{fill:#d8c9a0;font-family:'IBM Plex Mono';font-size:11px}
+.envchip rect{fill:rgba(126,148,97,.14);stroke:#a9bd8f;stroke-width:1.6}
+.envchip text{fill:#dfe8d4;font-family:'IBM Plex Mono';font-size:13px;font-weight:600;text-anchor:middle;dominant-baseline:central}
+.envchip.production rect{fill:rgba(200,144,47,.18);stroke:var(--oat-gold-l)}
+.envchip.production text{fill:var(--oat-gold-l)}
+.link{stroke:#C8902F;stroke-width:2.2;fill:none}
+.fanl{stroke:#4ade80;stroke-width:1.7;fill:none;opacity:.8}
+.sneaker{stroke:#ef6f6f;stroke-width:2.2;fill:none;stroke-dasharray:6 7}
+.redx line{stroke:#ef6f6f;stroke-width:4.5;stroke-linecap:round}
+.wall{fill:none;stroke:rgba(246,241,227,.35);stroke-width:1.5;stroke-dasharray:7 7}
+.walllab{fill:rgba(246,241,227,.45);font-family:'IBM Plex Mono';font-size:11px}
+.slbl{fill:#cfd8c3;font-family:'IBM Plex Mono';font-size:11.5px}
+.slbl.red{fill:#f8a3a3}
+.minig .lane{stroke:rgba(246,241,227,.22);stroke-width:1.6}
+.minig .lname{fill:#bcC8ad;font-family:'IBM Plex Mono';font-size:10.5px}
+.minig circle{fill:#101d14;stroke-width:2}
+.gwbkchip rect{fill:rgba(148,162,180,.12);stroke:#94a2b4;stroke-width:1.4}
+.gwbkchip text{fill:#b9c3d1;font-family:'IBM Plex Mono';font-size:10.5px}
+.guy circle{fill:var(--oat-cream)}
+.guy rect.bod{fill:var(--oat-cream)}
+.guy rect.usb{fill:var(--oat-gold-l);stroke:#a87724;stroke-width:1}
+.cdot{fill:var(--oat-gold-l);stroke:#a87724;stroke-width:1.5}
+
+/* timeline (v2.0 WIP slide) */
+.tl .base{stroke:rgba(246,241,227,.4);stroke-width:2.5}
+.tl circle.c{fill:#101d14;stroke:#4ade80;stroke-width:2.5}
+.tl circle.wip{stroke:#f0b765}
+.tl text.cl{fill:#dbe2d3;font-family:'IBM Plex Mono';font-size:12px;text-anchor:middle}
+.tl text.wl{fill:#f5cf8f;font-family:'IBM Plex Mono';font-size:11.5px;text-anchor:middle}
+.tl .tagflag rect{fill:rgba(22,163,74,.2);stroke:#4ade80;stroke-width:1.5}
+.tl .tagflag text{fill:#86efac;font-family:'IBM Plex Mono';font-size:12px;font-weight:600;text-anchor:middle;dominant-baseline:central}
+.tl .wipbadge rect{fill:rgba(217,119,6,.2);stroke:#f0b765;stroke-width:1.2}
+.tl .wipbadge text{fill:#f5cf8f;font-family:'IBM Plex Mono';font-size:10px;font-weight:600;text-anchor:middle;dominant-baseline:central}
+.tl .bracket{stroke:#ef6f6f;stroke-width:2.5;fill:none}
+.tl .bracketlab{fill:#f8a3a3;font-family:'Libre Franklin';font-weight:700;font-size:16px;text-anchor:middle}
+/* before/after strip */
+.ba{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
+.ba .b{background:rgba(246,241,227,.05);border:1px solid rgba(246,241,227,.16);border-radius:12px;padding:12px 16px;font-size:12.5px;color:#c3cfbc;line-height:1.5}
+.ba .b b{color:var(--oat-gold-l);font-weight:700}
+.ba .b .from{text-decoration:line-through;opacity:.6}
+
+/* control bar for interactive slides */
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:12px;margin-top:auto;border-top:1px solid rgba(255,255,255,.08)}
+.controls .lead-step{font-size:13.5px;color:#c4cfde;margin-right:auto;max-width:66ch;line-height:1.45}
+.dark.oat .controls .lead-step{color:#c3cfbc}
+.controls .lead-step b{color:#fff}
+.btn{font-family:'IBM Plex Mono';font-size:13px;font-weight:600;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.04);color:#dbe4f0;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.15s}
+.btn:hover:not(:disabled){background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.4)}
+.btn.primary{background:var(--oat-gold);border-color:var(--oat-gold);color:#fff}
+.btn.primary:hover:not(:disabled){background:#a87724}
+.btn:disabled{opacity:.32;cursor:default}
+.controls.on-light{border-top-color:var(--line)}
+.controls.on-light .lead-step{color:var(--txt-dim)}
+.controls.on-light .lead-step b{color:var(--txt)}
+.controls.on-light .btn{border-color:var(--line2);color:var(--txt-dim);background:#fff}
+.controls.on-light .btn.primary{background:var(--oat-green);border-color:var(--oat-green);color:#fff}
+.controls.on-light .btn.primary:hover:not(:disabled){background:#16241b}
+
+.foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--txt-faint);padding-top:20px}
+.dark .foot{color:rgba(255,255,255,.45)}
+
+@media print{
+  body{overflow:visible}
+  .deck{height:auto;overflow:visible}
+  .slide{height:100vh;page-break-after:always;break-after:page}
+  .hud,.pager,.hint,.controls{display:none}
+  .reveal,.vshow,.vpop,.vdraw{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- Oatmakers logo, inlined from the demo repo so the deck stays self-contained -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="grain" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EBBE58"/>
+      <stop offset="1" stop-color="#C8902F"/>
+    </linearGradient>
+    <clipPath id="oring"><circle cx="100" cy="100" r="82"/></clipPath>
+    <g id="oatgrain">
+      <path d="M0,-13 C5.5,-7 5.5,7 0,13 C-5.5,7 -5.5,-7 0,-13 Z" fill="url(#grain)"/>
+      <path d="M0,-13 C2,-7 2,7 0,13" fill="none" stroke="#A87724" stroke-width="1" opacity="0.55"/>
+    </g>
+    <g id="ob-stem">
+      <use href="#oatgrain" transform="translate(100,44)"/>
+      <use href="#oatgrain" transform="translate(87,70) rotate(-30)"/>
+      <use href="#oatgrain" transform="translate(113,70) rotate(30)"/>
+      <use href="#oatgrain" transform="translate(84,96) rotate(-36)"/>
+      <use href="#oatgrain" transform="translate(116,96) rotate(36)"/>
+      <use href="#oatgrain" transform="translate(86,122) rotate(-42)"/>
+      <use href="#oatgrain" transform="translate(114,122) rotate(42)"/>
+    </g>
+    <!-- badge, dark ring: for light backgrounds -->
+    <g id="ob-dark">
+      <circle cx="100" cy="100" r="86" fill="none" stroke="#24382B" stroke-width="6"/>
+      <g clip-path="url(#oring)">
+        <path d="M4,148 Q78,112 196,156 L196,200 L4,200 Z" fill="#7E9461"/>
+        <path d="M4,166 Q96,132 196,176 L196,200 L4,200 Z" fill="#24382B"/>
+      </g>
+      <path d="M100,148 Q103,104 100,50" fill="none" stroke="#24382B" stroke-width="4" stroke-linecap="round"/>
+      <use href="#ob-stem"/>
+    </g>
+    <!-- badge, cream ring: for dark backgrounds -->
+    <g id="ob-light">
+      <circle cx="100" cy="100" r="86" fill="none" stroke="#F6F1E3" stroke-width="6"/>
+      <g clip-path="url(#oring)">
+        <path d="M4,148 Q78,112 196,156 L196,200 L4,200 Z" fill="#7E9461"/>
+        <path d="M4,166 Q96,132 196,176 L196,200 L4,200 Z" fill="#C8902F"/>
+      </g>
+      <path d="M100,148 Q103,104 100,50" fill="none" stroke="#F6F1E3" stroke-width="4" stroke-linecap="round"/>
+      <use href="#ob-stem"/>
+    </g>
+    <!-- full lockup for dark backgrounds -->
+    <g id="ol-light">
+      <use href="#ob-light"/>
+      <text x="225" y="127" font-family="'Nunito Sans','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="76" font-weight="700" letter-spacing="-1"><tspan fill="#EBBE58">Oat</tspan><tspan fill="#F6F1E3">Makers</tspan></text>
+      <text x="228" y="156" font-family="'Nunito Sans','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="21" font-weight="600" letter-spacing="10.5" fill="#7E9461">ROLLED &#183; OATS</text>
+    </g>
+  </defs>
+</svg>
+
+<div class="deck" id="deck">
+
+<!-- 1 · COVER -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img logo-lg" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">The Oatmakers story · Day 1 · Kickoff</div>
+  </div>
+
+  <div class="cover">
+    <div class="eyebrow" style="color:var(--oat-gold-l)">CI/CD for Ignition · The story</div>
+    <div class="big">Meet <em>Oatmakers</em>.</div>
+    <div class="sub">One fictional client, four days, one mission: take a company with zero CI/CD and build them a pipeline worth trusting. Everything you learn this week, Oatmakers needs.</div>
+    <div class="coverlogo"><svg viewBox="0 0 720 200"><use href="#ol-light"/></svg></div>
+    <div class="for">
+      <span class="pill"><b>8</b> production sites</span>
+      <span class="pill">All on <b>Ignition</b></span>
+      <span class="pill"><b>Zero</b> CI/CD</span>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Mustry Academy · CI/CD for Ignition</span>
+    <span>The Oatmakers story</span>
+  </div>
+</section>
+
+<!-- 2 · COMPANY INTRO -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow">
+      <img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage">The Oatmakers story</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">01</span>
+      <div>
+        <div class="title">Oatmakers, rolled oats since 1972</div>
+        <div class="lead">A healthy company with an unhealthy way of shipping software.</div>
+      </div>
+    </div>
+    <div class="split">
+      <div class="facts">
+        <div class="fact reveal" data-step="1">
+          <span class="fk">01</span>
+          <div class="ft"><b>One product, one line design.</b> Every site runs the same production line, L01, from intake to bag.
+            <div class="subchips">
+              <span class="oat-chip sage">CO · cooling</span><span class="oat-chip sage">HT · heat treatment</span><span class="oat-chip sage">KN · knife</span><span class="oat-chip sage">PE · pelletizing</span><span class="oat-chip sage">PL · packaging</span><span class="oat-chip sage">SH · storage</span>
+            </div>
+          </div>
+        </div>
+        <div class="fact reveal" data-step="3">
+          <span class="fk">02</span>
+          <div class="ft">We're the guys they brought in to fix their Ignition CI/CD implementation</div>
+        </div>
+      </div>
+      <div class="reveal" data-step="2">
+        <div class="oat-mock">
+          <div class="om-hdr">
+            <svg viewBox="0 0 200 200"><use href="#ob-light"/></svg>
+            <span>OATMAKERS</span>
+            <span class="crumbs">Site 04 · Oat Line Overview</span>
+          </div>
+          <div class="om-tiles">
+            <div class="om-tile"><div class="k">KILN TEMP</div><div class="v">162.0 <small>&#176;C</small></div></div>
+            <div class="om-tile"><div class="k">LINE LOAD</div><div class="v">68 <small>%</small></div></div>
+            <div class="om-tile"><div class="k">BAGS / MIN</div><div class="v">42</div></div>
+          </div>
+          <div class="om-spark">
+            <svg viewBox="0 0 400 60" style="width:100%;height:52px">
+              <polyline points="0,42 40,38 80,40 120,30 160,33 200,22 240,26 280,18 320,22 360,12 400,16" fill="none" stroke="#C8902F" stroke-width="2.5"/>
+              <polyline points="0,50 40,48 80,49 120,45 160,46 200,42 240,44 280,40 320,42 360,38 400,39" fill="none" stroke="#7E9461" stroke-width="2" opacity=".6"/>
+            </svg>
+          </div>
+          <div class="om-foot"><span>oatmakers · v1.2</span><span>L01 running</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls on-light">
+    <span class="lead-step" id="company-step">A quick tour of the client before things go wrong.</span>
+    <button class="btn" data-act="back">&#9664; Back</button>
+    <button class="btn primary" data-act="next">Next &#9654;</button>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>The Oatmakers story · The client</span></div>
+</section>
+
+<!-- 3 · EIGHT SITES, ONE PROJECT -->
+<section class="slide dark oat">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">The Oatmakers story</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="maphead"><span class="chap">The Oatmakers world</span><span class="mtitle">Eight sites, one project. In theory.</span></div>
+    <div class="viz" id="viz-sites"></div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="sites-step">Everything ships from here.</span>
+    <button class="btn" data-act="back">&#9664; Back</button>
+    <button class="btn primary" data-act="next">Next &#9654;</button>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>The Oatmakers story · The map</span></div>
+</section>
+
+<!-- 4 · HOW A CHANGE TRAVELS TODAY -->
+<section class="slide dark oat">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">The Oatmakers story</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="maphead"><span class="chap">The Oatmakers world</span><span class="mtitle">How a change travels today</span></div>
+    <div class="viz" id="viz-usb"></div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="usb-step">A change is made at HQ. Now it has to get to eight sites.</span>
+    <button class="btn" data-act="back">&#9664; Back</button>
+    <button class="btn primary" data-act="next">Next &#9654;</button>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>The Oatmakers story · The deploy</span></div>
+</section>
+
+<!-- 5 · LIFE WITHOUT CI/CD -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow">
+      <img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage">The Oatmakers story</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">02</span>
+      <div>
+        <div class="title">Life without CI/CD</div>
+        <div class="lead">Every one of these is real. You have probably lived at least three of them.</div>
+      </div>
+    </div>
+    <div class="pains">
+      <div class="pain reveal" data-step="1">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 21h16"/></svg>The backup strategy</h4>
+        <div class="q">backup_final_v3_REALLY_FINAL.gwbk</div>
+        <p>Manual gateway backups on a shared drive. The newest one wins. Probably.</p>
+      </div>
+      <div class="pain reveal" data-step="2">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="3" width="10" height="7" rx="1.5"/><path d="M10 10v4m4-4v4M6 14h12v7H6z"/></svg>The deploy pipeline</h4>
+        <div class="q">a USB stick and a prayer</div>
+        <p>Resources copied by hand, site by site, whenever someone happens to drive there.</p>
+      </div>
+      <div class="pain reveal" data-step="3">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M9 16c1-1 5-1 6 0"/></svg>The classic ticket</h4>
+        <div class="q">"It works on Site 3 but not on Site 7"</div>
+        <p>Nobody can diff two gateways, so nobody knows why. The ticket stays open for months.</p>
+      </div>
+      <div class="pain reveal" data-step="4">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5l3 2M12 3a9 9 0 109 9"/></svg>The audit trail</h4>
+        <div class="q">"Who changed the alarm setpoint? When? Why?"</div>
+        <p>No history, no author, no rollback. The honest answer is a shrug.</p>
+      </div>
+      <div class="pain reveal" data-step="5">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 16H3z"/><path d="M12 10v4m0 3h.01"/></svg>The test environment</h4>
+        <div class="q">production</div>
+        <p>Every change is tested in production, by production. The operators find the bugs.</p>
+      </div>
+      <div class="pain reveal" data-step="6">
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>The bus factor</h4>
+        <div class="q">"Only Karl knows how that works."</div>
+        <p>Karl is on holiday. Nobody dares to touch anything Karl built. Karl built everything.</p>
+      </div>
+    </div>
+    <div class="painsum reveal" data-step="7">None of this is a people problem. It is a <b>system problem</b>. And systems can be fixed.</div>
+  </div>
+
+  <div class="controls on-light">
+    <span class="lead-step" id="pains-step">Let's name what Oatmakers is living with.</span>
+    <button class="btn" data-act="back">&#9664; Back</button>
+    <button class="btn primary" data-act="next">Next &#9654;</button>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>The Oatmakers story · The pain</span></div>
+</section>
+
+<!-- 6 · THE TRIGGER: V2.0 -->
+<section class="slide dark oat">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">The Oatmakers story</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="maphead"><span class="chap">The trigger</span><span class="mtitle">Management wants v2.0</span></div>
+    <div class="viz" id="viz-wip"></div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="wip-step">New dashboards, a silo detail view, packaging line support. Big job, three weeks.</span>
+    <button class="btn" data-act="back">&#9664; Back</button>
+    <button class="btn primary" data-act="next">Next &#9654;</button>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>The Oatmakers story · The trigger</span></div>
+</section>
+
+<!-- 7 · THE PLAN -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow">
+      <img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage">The Oatmakers story</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">03</span>
+      <div>
+        <div class="title">The plan: four days, four chapters</div>
+        <div class="lead">Mustry gets the call. We take the job. Here is how we get Oatmakers out of trouble.</div>
+      </div>
+    </div>
+    <div class="road">
+      <div class="phase p1 reveal" data-step="1">
+        <div class="pn">DAY 1</div>
+        <h4>Foundations and the Git mindset</h4>
+        <p>Git internals, branching strategies, pull requests, everyday workflows. The v2.0 plus hotfix week, done right.</p>
+        <div class="labs">Labs 01 + 02</div>
+      </div>
+      <div class="phase p2 reveal" data-step="2">
+        <div class="pn">DAY 2</div>
+        <h4>Collaboration and automation</h4>
+        <p>Linters and validation as a safety net, GitHub Actions, self-hosted runners, the Ignition 8.3 file structure.</p>
+        <div class="labs">Labs 03 + 04</div>
+      </div>
+      <div class="phase p3 reveal" data-step="3">
+        <div class="pn">DAY 3</div>
+        <h4>Ignition-specific deployments</h4>
+        <p>File-based vs image-based deploys, the database with your code, third-party modules, external JARs.</p>
+        <div class="labs">Lab 05</div>
+      </div>
+      <div class="phase p4 reveal" data-step="4">
+        <div class="pn">DAY 4</div>
+        <h4>Ignition in the real world</h4>
+        <p>Multi-gateway promotion, configuration per environment, secrets management, and the capstone.</p>
+        <div class="labs">Labs 06 + 07 + 08</div>
+      </div>
+    </div>
+    <p class="lead reveal" data-step="4" style="margin-top:22px">Each day ends with the same map of Oatmakers. <b>Watch it heal.</b></p>
+  </div>
+
+  <div class="controls on-light">
+    <span class="lead-step" id="plan-step">Four days. Eight labs. One company to fix.</span>
+    <button class="btn" data-act="back">&#9664; Back</button>
+    <button class="btn primary" data-act="next">Next &#9654;</button>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>The Oatmakers story · The plan</span></div>
+</section>
+
+<!-- 8 · CHAPTER 1 -->
+<section class="slide dark oat">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">The Oatmakers story · Day 1</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="maphead"><span class="chap">Chapter 1 · Day 1</span><span class="mtitle">One source of truth</span></div>
+    <div class="viz" id="viz-day1"></div>
+    <div class="labrow">
+      <span class="oat-chip reveal" id="chips-day1-a">Lab 01 · Git fundamentals</span>
+      <span class="oat-chip reveal" id="chips-day1-b">Lab 02 · Branching and PRs</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="day1-step">Where we left Oatmakers.</span>
+    <button class="btn" data-act="back">&#9664; Back</button>
+    <button class="btn primary" data-act="next">Next &#9654;</button>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Chapter 1 · One source of truth</span></div>
+</section>
+
+<!-- 9 · CHAPTER 2 -->
+<section class="slide dark oat">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">The Oatmakers story · Day 2</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="maphead"><span class="chap">Chapter 2 · Day 2</span><span class="mtitle">A robot checks every change</span></div>
+    <div class="viz" id="viz-day2"></div>
+    <div class="labrow">
+      <span class="oat-chip reveal" id="chips-day2-a">Lab 03 · GitHub Actions</span>
+      <span class="oat-chip reveal" id="chips-day2-b">Lab 04 · Ignition file structure</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="day2-step">The history exists. Nothing guards it yet.</span>
+    <button class="btn" data-act="back">&#9664; Back</button>
+    <button class="btn primary" data-act="next">Next &#9654;</button>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Chapter 2 · The safety net</span></div>
+</section>
+
+<!-- 10 · CHAPTER 3 -->
+<section class="slide dark oat">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">The Oatmakers story · Day 3</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="maphead"><span class="chap">Chapter 3 · Day 3</span><span class="mtitle">Shipping, the Ignition way</span></div>
+    <div class="viz" id="viz-day3"></div>
+    <div class="labrow">
+      <span class="oat-chip reveal" id="chips-day3-a">Lab 05 · File-based and image-based deploys</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="day3-step">Proven changes, still delivered by hand.</span>
+    <button class="btn" data-act="back">&#9664; Back</button>
+    <button class="btn primary" data-act="next">Next &#9654;</button>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Chapter 3 · Shipping</span></div>
+</section>
+
+<!-- 11 · CHAPTER 4 -->
+<section class="slide dark oat">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">The Oatmakers story · Day 4</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="maphead"><span class="chap">Chapter 4 · Day 4</span><span class="mtitle">All eight sites, for real</span></div>
+    <div class="viz" id="viz-day4"></div>
+    <div class="labrow">
+      <span class="oat-chip reveal" id="chips-day4-a">Lab 06 · Multi-gateway deploys</span>
+      <span class="oat-chip reveal" id="chips-day4-b">Lab 07 · Secrets and the database</span>
+      <span class="oat-chip gold reveal" id="chips-day4-c">Lab 08 · Capstone · you build this whole map yourself</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="day4-step">One site is not a rollout.</span>
+    <button class="btn" data-act="back">&#9664; Back</button>
+    <button class="btn primary" data-act="next">Next &#9654;</button>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Chapter 4 · The rollout</span></div>
+</section>
+
+<!-- 12 · FINALE -->
+<section class="slide dark oat">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">The Oatmakers story · Day 4</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="maphead"><span class="chap">The finale</span><span class="mtitle">Where you will end up</span></div>
+    <div class="viz" id="viz-finale"></div>
+    <div class="ba reveal" id="ba-strip">
+      <div class="b">Deploy to 8 sites: <span class="from">3 weeks</span> &nbsp;<b>20 minutes</b></div>
+      <div class="b">Versions in production: <span class="from">six-ish</span> &nbsp;<b>exactly one</b></div>
+      <div class="b">Who can deploy: <span class="from">only Karl</span> &nbsp;<b>anyone on the team</b></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="finale-step">Friday afternoon at Oatmakers.</span>
+    <button class="btn" data-act="back">&#9664; Back</button>
+    <button class="btn primary" data-act="next">Next &#9654;</button>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>The Oatmakers story · The finish line</span></div>
+</section>
+
+<!-- 13 · CLOSING -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img logo-lg" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">The Oatmakers story · Day 1 · Kickoff</div>
+  </div>
+
+  <div class="cover">
+    <div class="eyebrow" style="color:var(--oat-gold-l)">Chapter 1 starts now</div>
+    <div class="big">Let's get Oatmakers <em>out of trouble</em>.</div>
+    <div class="sub">First stop: the foundation every pipeline stands on. Git. By tonight, the 3 AM scenario has a calm answer, and you will have run it with your own hands.</div>
+    <div class="for">
+      <span>Guided by</span>
+      <span class="pill"><b>Sam</b></span>
+      <span class="pill"><b>Jasper</b></span>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Mustry Academy · CI/CD for Ignition</span>
+    <span>Next up &#8594; Lab 01 · Git fundamentals</span>
+  </div>
+</section>
+</div>
+
+<div class="hud"><div class="bar" id="bar"></div></div>
+<div class="pager" id="pager">01 / 13</div>
+<div class="hint" id="hint">&#8593; &#8595; slides · &#8592; &#8594; step the story</div>
+
+<script>
+/* ============ deck navigation ============ */
+const deck=document.getElementById('deck');
+const slides=[...document.querySelectorAll('.slide')];
+const bar=document.getElementById('bar');
+const pager=document.getElementById('pager');
+const hint=document.getElementById('hint');
+function pad(n){return String(n).padStart(2,'0')}
+const POS_KEY='deckpos:'+location.pathname;
+function curIndex(){return Math.round(deck.scrollTop/window.innerHeight)}
+function update(){
+  const i=curIndex();
+  bar.style.width=((i)/(slides.length-1)*100)+'%';
+  pager.textContent=pad(i+1)+' / '+pad(slides.length);
+  const dark=slides[i]&&slides[i].classList.contains('dark');
+  pager.classList.toggle('on-dark',dark);
+  hint.classList.toggle('on-dark',dark);
+  try{localStorage.setItem(POS_KEY,String(i))}catch(e){}
+}
+// On a reload (Live Server save, or manual F5), jump back to the slide you were
+// on. A fresh open (new tab / typed URL) is nav type 'navigate' → starts at 1.
+(function restorePos(){
+  try{
+    const nav=performance.getEntriesByType('navigation')[0];
+    if(!nav||nav.type!=='reload')return;
+    const saved=parseInt(localStorage.getItem(POS_KEY)||'0',10);
+    if(saved>0)deck.scrollTop=saved*window.innerHeight;
+  }catch(e){}
+})();
+deck.addEventListener('scroll',()=>{requestAnimationFrame(update)});
+window.addEventListener('keydown',e=>{
+  if(e.target.tagName==='BUTTON')return;
+  const i=curIndex();
+  // Up/Down (and PageUp/Down) always move between slides
+  if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();deck.scrollTo({top:(i+1)*window.innerHeight})}
+  if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();deck.scrollTo({top:(i-1)*window.innerHeight})}
+  if(e.key==='Home'){deck.scrollTo({top:0})}
+  if(e.key==='End'){deck.scrollTo({top:slides.length*window.innerHeight})}
+  // Left/Right ONLY step the current slide's animation; they never change slides.
+  if(e.key==='ArrowRight'){e.preventDefault(); if(bound[i])bound[i].go(1);}
+  if(e.key==='ArrowLeft'){e.preventDefault(); if(bound[i])bound[i].go(-1);}
+});
+update();
+setTimeout(()=>{hint.style.transition='opacity .6s';hint.style.opacity='0'},5000);
+
+/* ============ tiny SVG helpers ============ */
+const NS='http://www.w3.org/2000/svg';
+function el(tag,attrs={},parent){const n=document.createElementNS(NS,tag);for(const k in attrs)n.setAttribute(k,attrs[k]);if(parent)parent.appendChild(n);return n;}
+function txt(attrs,parent,content){const t=el('text',attrs,parent);t.textContent=content;return t;}
+function reveal(elm,on){if(!elm)return;elm.classList.toggle('on',on!==false);}
+
+/* glide an actor group along a path with rAF; snappable, replay-safe */
+function moveAlong(actor,path,dur,done){
+  const len=path.getTotalLength();const t0=performance.now();
+  reveal(actor,true);
+  function frame(t){
+    const k=Math.min(1,(t-t0)/dur);
+    const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2; // easeInOut
+    const p=path.getPointAtLength(e*len);
+    actor.setAttribute('transform','translate('+p.x+','+p.y+')');
+    if(k<1)requestAnimationFrame(frame);else if(done)done();
+  }
+  requestAnimationFrame(frame);
+}
+function snapTo(actor,path,at){ // at: 0..1
+  const p=path.getPointAtLength(at*path.getTotalLength());
+  actor.setAttribute('transform','translate('+p.x+','+p.y+')');
+}
+
+/* ============ per-slide step controllers ============ */
+const controllers={};
+function bindControls(slideEl,ctrl){
+  let step=0;
+  const next=slideEl.querySelector('[data-act="next"]');
+  const back=slideEl.querySelector('[data-act="back"]');
+  function sync(){ if(back)back.disabled=step<=0; if(next)next.disabled=step>=ctrl.max; ctrl.render(step); }
+  function go(d){ const prev=step; step=Math.max(0,Math.min(ctrl.max,step+d)); if(step!==prev){sync();return true;} return false; }
+  if(next)next.addEventListener('click',()=>go(1));
+  if(back)back.addEventListener('click',()=>go(-1));
+  ctrl.reset=()=>{step=0;sync();};
+  sync();
+  return {go,reset:ctrl.reset};
+}
+
+/* ============ the Oatmakers world scene ============ */
+/* One builder, one geometry, many instances: slides 3, 4 and the four
+   chapter slides all mount their own copy, so the audience sees a single
+   evolving scene as the deck progresses. */
+const SITE_X=[660,885,1110,1335], SITE_Y=[120,520]; // cards 200x150
+function siteCenter(n){const c=(n-1)%4,r=n<=4?0:1;return {x:SITE_X[c]+100,y:SITE_Y[r]+75};}
+
+const BADGE_STATES={
+  theory:{b:[['v1.2','g'],['v1.2','g'],['v1.2','g'],['v1.2','g'],['v1.2','g'],['v1.2','g'],['v1.2','g'],['v1.2','g']],w:[]},
+  chaos:{b:[['v1.2','g'],['v1.2','g'],['v1.2+Bob','a'],['v1.1','a'],['v1.0?','r'],['v1.2-test','a'],['v1.1+fix','r'],['???','r']],w:[]},
+  chaosW:{b:[['v1.2','g'],['v1.2','g'],['v1.2+Bob','a'],['v1.1','a'],['v1.0?','r'],['v1.2-test','a'],['v1.1+fix','r'],['???','r']],w:[5,8]},
+  u1:{b:[['v1.3','g'],['v1.2','g'],['v1.2+Bob','a'],['v1.1','a'],['v1.0?','r'],['v1.2-test','a'],['v1.1+fix','r'],['???','r']],w:[5,8]},
+  u4:{b:[['v1.3','g'],['v1.3','g'],['v1.3','g'],['v1.3','g'],['v1.0?','r'],['v1.2-test','a'],['v1.1+fix','r'],['???','r']],w:[5,8]},
+  usbEnd:{b:[['v1.3','g'],['v1.3','g'],['v1.3+Bob','a'],['v1.3','g'],['v1.1','r'],['v1.2-test','a'],['v1.3?','a'],['???','r']],w:[5,8]},
+  day3:{b:[['v2.0','g'],['v1.3','g'],['v1.3+Bob','a'],['v1.3','g'],['v1.1','r'],['v1.2-test','a'],['v1.3?','a'],['???','r']],w:[5,8]},
+  final:{b:[['v2.0','g'],['v2.0','g'],['v2.0','g'],['v2.0','g'],['v2.0','g'],['v2.0','g'],['v2.0','g'],['v2.0','g']],w:[]},
+  v21:{b:[['v2.1','g'],['v2.1','g'],['v2.1','g'],['v2.1','g'],['v2.1','g'],['v2.1','g'],['v2.1','g'],['v2.1','g']],w:[]}
+};
+
+function buildWorld(mountId){
+  const mount=document.getElementById(mountId);
+  const svg=el('svg',{viewBox:'0 0 1560 780',preserveAspectRatio:'xMidYMid meet'},mount);
+  const defs=el('defs',{},svg);
+  const mkArrow=(id,color)=>{
+    const m=el('marker',{id:mountId+'-'+id,viewBox:'0 0 10 10',refX:'8',refY:'5',markerWidth:'6.5',markerHeight:'6.5',orient:'auto-start-reverse'},defs);
+    el('path',{d:'M0,0 L10,5 L0,10 z',fill:color},m);
+  };
+  mkArrow('arrg','#C8902F'); mkArrow('arrf','#4ade80');
+  const AG='url(#'+mountId+'-arrg)', AF='url(#'+mountId+'-arrf)';
+  const parts={}, badges=[], warns=[];
+
+  /* ---- 8 sites ---- */
+  const sitesArr=[];
+  for(let n=1;n<=8;n++){
+    const c=(n-1)%4,r=n<=4?0:1,x=SITE_X[c],y=SITE_Y[r];
+    // position lives on an untransformed wrapper: the .vpop CSS transform
+    // (the scale pop) overrides a transform attribute on the same element
+    const wrap=el('g',{transform:'translate('+x+','+y+')'},svg);
+    const g=el('g',{class:'vpop'},wrap);
+    g.style.transitionDelay=((n-1)*70)+'ms';
+    el('rect',{class:'scard',x:0,y:0,width:200,height:150,rx:16},g);
+    const f=el('g',{transform:'translate(56,22)'},g);
+    el('path',{class:'gsite',d:'M0,50 L0,20 L22,8 L22,20 L44,8 L44,20 L66,8 L66,20 L88,20 L88,50 Z'},f);
+    el('rect',{class:'gsite',x:70,y:-6,width:9,height:16},f);
+    txt({class:'slabel',x:100,y:100},g,'Site '+n);
+    const bg=el('g',{class:'badge b-x'},g);
+    el('rect',{x:50,y:112,width:100,height:26,rx:9},bg);
+    const bt=txt({x:100,y:125},bg,'');
+    badges.push({g:bg,t:bt});
+    const w=el('g',{class:'warntri vshow',transform:'translate(164,10)'},g);
+    el('path',{d:'M13,2 L25,22 H1 Z'},w);
+    txt({x:13,y:19},w,'!');
+    warns.push(w);
+    sitesArr.push(g);
+  }
+  parts.sites=sitesArr;
+
+  function setBadge(i,t,c){badges[i-1].t.textContent=t;badges[i-1].g.setAttribute('class','badge b-'+c);}
+  function setBadges(name,opts={}){
+    const st=BADGE_STATES[name];
+    st.b.forEach((bc,ix)=>{
+      const apply=()=>{ setBadge(ix+1,bc[0],bc[1]);
+        if(opts.flick){const g=badges[ix].g;g.classList.remove('flick');void g.getBoundingClientRect();g.classList.add('flick');} };
+      if(opts.stagger){setTimeout(apply,ix*opts.stagger);}else{apply();}
+    });
+    warns.forEach((w,ix)=>reveal(w,st.w.includes(ix+1)));
+  }
+
+  /* ---- pipeline nodes (left column) ---- */
+  function pipeNode(key,x,y,w,h,label,sub){
+    const g=el('g',{class:'pnode vpop'},svg);
+    el('rect',{class:'card',x,y,width:w,height:h,rx:14},g);
+    txt({class:'nl',x:x+18,y:y+30},g,label);
+    if(sub)txt({class:'ns',x:x+18,y:y+50},g,sub);
+    parts[key]=g;
+    return g;
+  }
+  /* HQ */
+  const hq=el('g',{class:'pnode vpop'},svg);
+  el('rect',{class:'card',x:70,y:55,width:210,height:90,rx:14},hq);
+  const hb=el('g',{transform:'translate(88,72) scale(0.28)'},hq);
+  el('use',{href:'#ob-light'},hb);
+  txt({class:'nl',x:155,y:95},hq,'HQ');
+  txt({class:'ns',x:155,y:115},hq,'Engineering');
+  parts.hq=hq;
+
+  /* gwbk chip + its red X (day 1 retires it) */
+  const gw=el('g',{class:'gwbkchip vshow'},svg);
+  el('rect',{x:70,y:158,width:210,height:26,rx:8},gw);
+  txt({x:175,y:175,'text-anchor':'middle'},gw,'backup_final_v3_REALLY_FINAL.gwbk');
+  parts.gwbk=gw;
+  const gx=el('g',{class:'redx vshow'},svg);
+  el('line',{x1:255,y1:150,x2:290,y2:190},gx);
+  el('line',{x1:290,y1:150,x2:255,y2:190},gx);
+  parts.gwbkx=gx;
+
+  /* repo node + mini branch graph + hotfix arc */
+  const repo=el('g',{class:'pnode vpop'},svg);
+  el('rect',{class:'card',x:70,y:215,width:210,height:160,rx:14},repo);
+  txt({class:'nl',x:88,y:242},repo,'Git');
+  txt({class:'ns',x:130,y:242},repo,'one shared history');
+  el('line',{class:'link',x1:175,y1:155,x2:175,y2:213,'marker-end':AG},repo);
+  parts.repo=repo;
+  const mg=el('g',{class:'minig vshow'},svg);
+  const lanes=[['main',272],['fix/null-reading',312],['feature/v2.0',352]];
+  lanes.forEach(L=>{
+    el('line',{class:'lane',x1:90,y1:L[1],x2:260,y2:L[1]},mg);
+    txt({class:'lname',x:90,y:L[1]-7},mg,L[0]);
+  });
+  [[120,272],[160,272],[130,312],[185,312],[150,352],[205,352],[245,352]].forEach(p=>{
+    el('circle',{cx:p[0],cy:p[1],r:5,stroke:p[1]===352?'#f0b765':'#4ade80'},mg);
+  });
+  parts.repograph=mg;
+  const hf=el('g',{class:'vshow'},svg);
+  el('path',{d:'M166,268 C190,246 216,246 240,266',stroke:'#4ade80','stroke-width':2,fill:'none','marker-end':AF},hf);
+  el('circle',{cx:245,cy:272,r:5,fill:'#101d14',stroke:'#4ade80','stroke-width':2},hf);
+  txt({class:'lname',x:203,y:250,'text-anchor':'middle',fill:'#86efac'},hf,'fix · v1.2.1');
+  parts.hotfix=hf;
+
+  /* green check pulse on the repo (day 2 payoff) */
+  const ck=el('g',{class:'vpop'},svg);
+  el('circle',{cx:280,cy:218,r:15,fill:'#16a34a'},ck);
+  el('path',{d:'M272,218 l6,6 l11,-12',stroke:'#fff','stroke-width':3.2,fill:'none','stroke-linecap':'round','stroke-linejoin':'round'},ck);
+  parts.check=ck;
+
+  /* CI node + strip + runner-behind-the-wall */
+  const ci=pipeNode('ci',70,415,210,110,'CI','');
+  txt({class:'ns',x:120,y:445},ci,'GitHub Actions');
+  el('line',{class:'link',x1:175,y1:375,x2:175,y2:413,'marker-end':AG},ci);
+  const strip=el('g',{class:'vshow'},svg);
+  [[88,455,174,'workflow'],[102,481,146,'jobs'],[116,505,118,'steps']].forEach(c=>{
+    el('rect',{x:c[0],y:c[1],width:c[2],height:20,rx:6,fill:'rgba(200,144,47,.12)',stroke:'#C8902F','stroke-width':1.2},strip);
+    txt({class:'nm',x:c[0]+10,y:c[1]+14},strip,c[3]);
+  });
+  parts.cistrip=strip;
+  const run=el('g',{class:'pnode vpop'},svg);
+  el('rect',{class:'wall',x:288,y:432,width:200,height:92,rx:12},run);
+  txt({class:'walllab',x:300,y:426},run,'your network');
+  el('rect',{class:'card',x:302,y:448,width:172,height:58,rx:10},run);
+  txt({class:'nl',x:318,y:472,'font-size':14},run,'runner');
+  txt({class:'ns',x:318,y:492},run,'self-hosted, next to Ignition');
+  el('line',{class:'link',x1:280,y1:470,x2:300,y2:470},run);
+  parts.runner=run;
+
+  /* release node + the two delivery routes + sidecars */
+  const art=pipeNode('art',70,615,210,95,'Release','image or files, versioned');
+  const routes=el('g',{class:'vshow'},svg);
+  el('line',{class:'link',x1:135,y1:527,x2:135,y2:613,'marker-end':AG},routes);
+  el('line',{class:'link',x1:215,y1:527,x2:215,y2:613,'marker-end':AG},routes);
+  txt({class:'nm',x:96,y:560,fill:'#d8c9a0'},routes,'files');
+  txt({class:'nm',x:225,y:560,fill:'#d8c9a0'},routes,'image');
+  parts.routes=routes;
+  const sc=el('g',{class:'vshow'},svg);
+  [[300,618,'DB migrations'],[300,650,'3rd-party modules'],[300,682,'external JARs']].forEach(c=>{
+    el('rect',{x:c[0],y:c[1],width:150,height:24,rx:8,fill:'rgba(126,148,97,.14)',stroke:'#a9bd8f','stroke-width':1.2},sc);
+    txt({class:'nm',x:c[0]+10,y:c[1]+16,fill:'#dfe8d4'},sc,c[2]);
+    el('line',{x1:282,y1:c[1]+12,x2:298,y2:c[1]+12,stroke:'#a9bd8f','stroke-width':1.2},sc);
+  });
+  parts.sidecars=sc;
+
+  /* environment ladder + vault */
+  const lad=el('g',{class:'vshow'},svg);
+  const ENVY={local:120,test:265,staging:410,production:555};
+  Object.keys(ENVY).forEach(k=>{
+    const y=ENVY[k];
+    const g=el('g',{class:'envchip'+(k==='production'?' production':'')},lad);
+    el('rect',{x:490,y:y,width:130,height:50,rx:12},g);
+    txt({x:555,y:y+26},g,k);
+  });
+  [[170,263],[315,408],[460,553]].forEach(p=>{
+    el('line',{class:'link',x1:555,y1:p[0],x2:555,y2:p[1]-2,'marker-end':AG},lad);
+  });
+  el('line',{class:'link',x1:282,y1:650,x2:487,y2:588,'marker-end':AG},lad);
+  parts.ladder=lad;
+  const va=el('g',{class:'pnode vpop'},svg);
+  el('rect',{class:'card',x:470,y:635,width:170,height:58,rx:10},va);
+  el('path',{d:'M492,668 v-7 a8,8 0 0 1 16,0 v7 M488,668 h24 v16 h-24 z',stroke:'#EBBE58','stroke-width':2,fill:'none','stroke-linejoin':'round'},va);
+  txt({class:'nl',x:524,y:663,'font-size':13.5},va,'secrets');
+  txt({class:'ns',x:524,y:681,'font-size':11},va,'per environment');
+  parts.vault=va;
+
+  /* fan-out from production to all 8 sites */
+  const fan=el('g',{class:'vshow'},svg);
+  for(let n=1;n<=8;n++){
+    const c=siteCenter(n);
+    const ty=n<=4?c.y+123:c.y-83;
+    el('line',{class:'fanl',x1:622,y1:580,x2:c.x,y2:ty,'marker-end':AF},fan);
+  }
+  parts.fan=fan;
+
+  /* USB courier, his routes, the missed visit, the sneaker-net arc */
+  const P={};
+  P.p1=el('path',{d:'M285,110 C430,40 600,90 740,180',fill:'none',stroke:'none'},svg);
+  P.h2=el('path',{d:'M780,195 C850,148 900,148 965,188',fill:'none',stroke:'none'},svg);
+  P.h3=el('path',{d:'M1005,195 C1070,148 1130,148 1190,188',fill:'none',stroke:'none'},svg);
+  P.h4=el('path',{d:'M1230,195 C1290,148 1350,148 1415,188',fill:'none',stroke:'none'},svg);
+  P.dep=el('path',{d:'M285,655 C500,720 660,340 745,215',fill:'none',stroke:'none'},svg);
+  P.jrn=el('path',{d:'M175,240 L175,600 L300,650 L470,600 L556,560',fill:'none',stroke:'none'},svg);
+  const guy=el('g',{class:'guy vshow',transform:'translate(-60,-60)'},svg);
+  el('circle',{cx:0,cy:-16,r:7},guy);
+  el('rect',{class:'bod',x:-6,y:-8,width:12,height:17,rx:5},guy);
+  el('rect',{class:'usb',x:9,y:-5,width:11,height:7,rx:1.5},guy);
+  parts.guy=guy;
+  const ux=el('g',{class:'redx vshow'},svg);
+  el('line',{x1:505,y1:345,x2:537,y2:379},ux);
+  el('line',{x1:537,y1:345,x2:505,y2:379},ux);
+  parts.usbx=ux;
+  const sn=el('g',{class:'vshow'},svg);
+  el('path',{class:'sneaker',d:'M1210,278 C1140,350 1140,450 1205,512',},sn);
+  const snl=txt({class:'slbl red',x:1085,y:390,'text-anchor':'middle'},sn,'');
+  el('tspan',{x:1085,dy:0},snl).textContent='screenshots';
+  el('tspan',{x:1085,dy:16},snl).textContent='over Teams';
+  parts.sneaker=sn;
+  const dot=el('g',{class:'vshow',transform:'translate(-60,-60)'},svg);
+  el('circle',{class:'cdot',cx:0,cy:0,r:9},dot);
+  parts.dot=dot;
+
+  function showSet(set){
+    for(const k in parts){
+      if(k==='guy'||k==='dot')continue; // actors are driven by the hooks, not the show-sets
+      const p=parts[k];
+      if(Array.isArray(p))p.forEach(e=>reveal(e,set.has(k)));
+      else reveal(p,set.has(k));
+    }
+  }
+  return {svg,parts,paths:P,setBadges,setBadge,showSet,guy,dot};
+}
+
+/* generic world-scene controller: cumulative show-sets + badge snapshots + hooks */
+function worldCtrl(vizId,leadId,BASE,steps,hooks){
+  const W=buildWorld(vizId);
+  const lead=document.getElementById(leadId);
+  let last=-1;
+  const ctrl={max:steps.length-1,render(s){
+    const on=new Set(BASE);
+    for(let i=0;i<=s;i++)(steps[i].add||[]).forEach(k=>on.add(k));
+    W.showSet(on);
+    let stIdx=-1;
+    for(let i=s;i>=0;i--){if(steps[i].badges){stIdx=i;break}}
+    if(stIdx>=0){
+      const anim=(s>last&&stIdx===s);
+      W.setBadges(steps[stIdx].badges,anim?(steps[s].badgeOpts||{}):{});
+    }
+    if(hooks)hooks(s,last,W);
+    lead.innerHTML=steps[s].t;
+    last=s;
+  }};
+  return ctrl;
+}
+
+/* generic HTML-reveal controller */
+function htmlCtrl(slideIdx,leadId,texts,extra){
+  const slide=slides[slideIdx];
+  const items=[...slide.querySelectorAll('.reveal[data-step]')];
+  const lead=document.getElementById(leadId);
+  return {max:texts.length-1,render(s){
+    items.forEach(it=>it.classList.toggle('show',+it.dataset.step<=s));
+    if(extra)extra(s,slide);
+    lead.innerHTML=texts[s];
+  }};
+}
+function chip(id,on){const c=document.getElementById(id);if(c)c.classList.toggle('show',on);}
+
+/* ---------- slide 2: the company ---------- */
+controllers.company=htmlCtrl(1,'company-step',[
+  'A quick tour of the client before things go wrong.',
+  'One line design, six subsystems, eight identical sites.',
+  'The same Ignition project everywhere. This screen is about to matter.',
+  'Three people, eight sites, one shared project. Now, the way they ship it...'
+]);
+
+/* ---------- slide 3: eight sites, one project ---------- */
+controllers.sites=worldCtrl('viz-sites','sites-step',['hq'],[
+  {t:'Everything ships from here.'},
+  {add:['sites'],badges:'theory',t:'Eight sites. Same project. Same version. That is the theory.'},
+  {badges:'chaos',badgeOpts:{flick:true},t:'The practice.'},
+  {badges:'chaosW',t:'Nobody can prove what runs where. Nobody can diff a gateway against a memory.'}
+]);
+
+/* ---------- slide 4: how a change travels ---------- */
+controllers.usb=worldCtrl('viz-usb','usb-step',['hq','sites'],[
+  {add:['gwbk'],badges:'chaosW',t:'A change is made at HQ. Now it has to get to eight sites.'},
+  {badges:'u1',t:'Deployment method: Karl, and a USB stick.'},
+  {add:['usbx'],badges:'u4',t:'Site 5 never gets the visit. Karl went on holiday.'},
+  {add:['sneaker'],t:'Sites also help each other. Sideways. Untracked.'},
+  {badges:'usbEnd',badgeOpts:{flick:true},t:'Eight sites, six versions, zero history. This is normal here.'}
+],(s,last,W)=>{
+  if(s<1){reveal(W.guy,false);return;}
+  if(s===1&&last===0){snapTo(W.guy,W.paths.p1,0);moveAlong(W.guy,W.paths.p1,1500);}
+  else if(s===2&&last===1){moveAlong(W.guy,W.paths.h2,850,()=>moveAlong(W.guy,W.paths.h3,850,()=>moveAlong(W.guy,W.paths.h4,850)));}
+  else{snapTo(W.guy,s===1?W.paths.p1:W.paths.h4,1);reveal(W.guy,true);}
+});
+
+/* ---------- slide 5: the pain montage ---------- */
+controllers.pains=htmlCtrl(4,'pains-step',[
+  "Let's name what Oatmakers is living with.",
+  'There is a backup. Somewhere. Probably.',
+  'Deploys happen when someone drives to the site.',
+  'Same project, different behavior, no way to compare.',
+  'Changes have no author, no reason, no way back.',
+  'There is no staging. There is only production.',
+  "And everything depends on one person's memory.",
+  'This is the diagnosis. The cure takes four days.'
+]);
+
+/* ---------- slide 6: the v2.0 timeline ---------- */
+(function(){
+  const mount=document.getElementById('viz-wip');
+  const svg=el('svg',{viewBox:'0 0 1560 700',preserveAspectRatio:'xMidYMid meet'},mount);
+  const g=el('g',{class:'tl'},svg);
+  el('line',{class:'base',x1:120,y1:380,x2:1440,y2:380},g);
+  txt({class:'cl',x:120,y:340,'text-anchor':'start',fill:'#c3cfbc','font-size':14},g,'the project · the only copy');
+  const shas=['c41f2','9d08a','5b7e1'];
+  [260,420,580].forEach((x,i)=>{
+    el('circle',{class:'c',cx:x,cy:380,r:16},g);
+    txt({class:'cl',x:x,y:420},g,shas[i]);
+  });
+  const tag=el('g',{class:'tagflag'},g);
+  el('rect',{x:460,y:262,width:240,height:44,rx:10},tag);
+  txt({x:580,y:284},tag,'v1.2 · live at all sites');
+  el('line',{x1:580,y1:306,x2:580,y2:360,stroke:'#4ade80','stroke-width':1.5,'stroke-dasharray':'4 4'},tag);
+  const wips=el('g',{class:'vshow'},g); // must live under .tl for the timeline styles
+  const WB=[[760,'new nav',1],[940,'half a screen',0],[1120,'renamed 40 tags',1],[1300,'does not open yet',0]];
+  WB.forEach(w=>{
+    el('circle',{class:'c wip',cx:w[0],cy:380,r:16},wips);
+    const by=w[2]?306:426;
+    const bw=Math.max(96,w[1].length*8.4+22);
+    const b=el('g',{class:'wipbadge'},wips);
+    el('rect',{x:w[0]-bw/2,y:by,width:bw,height:28,rx:8},b);
+    txt({x:w[0],y:by+15},b,w[1]);
+    txt({class:'wl',x:w[0],y:w[2]?352:462},wips,'WIP');
+  });
+  const br=el('g',{class:'vshow'},g);
+  el('path',{class:'bracket',d:'M700,500 L700,524 L1360,524 L1360,500'},br);
+  txt({class:'bracketlab',x:1030,y:560},br,'the only copy of the project is now half finished');
+  const lead=document.getElementById('wip-step');
+  const texts=[
+    'Management wants v2.0. The team starts building. On the same copy that production came from.',
+    'Two weeks in: screens renamed, tags moved, nothing finished. Every save lands on the only copy.',
+    'No branch. No fallback. Remember this picture. It is about to be 3 AM.'
+  ];
+  controllers.wip={max:2,render(s){
+    reveal(wips,s>=1);reveal(br,s>=2);
+    lead.innerHTML=texts[s];
+  }};
+})();
+
+/* ---------- slide 8: the plan ---------- */
+controllers.plan=htmlCtrl(6,'plan-step',[
+  'Four days. Eight labs. One company to fix.',
+  'Day 1: get the history and the branching right. The hotfix week, replayed calmly.',
+  'Day 2: automate the checking. A robot reviews every change before a human does.',
+  'Day 3: automate the shipping, the Ignition way.',
+  'Day 4: promote through environments, fan out to all eight sites, and cap it off yourself.'
+]);
+
+/* ---------- slides 9-12: the four chapters ---------- */
+controllers.day1=worldCtrl('viz-day1','day1-step',['hq','sites'],[
+  {badges:'usbEnd',t:'Where we left Oatmakers.'},
+  {add:['repo','gwbk','gwbkx'],t:'Day 1: every change gets a home. One shared history, with an author and a reason for every change.'},
+  {add:['repograph'],t:'Branches make parallel work safe. v2.0 builds on its own lane while production stays shippable.'},
+  {add:['hotfix'],t:'And the 3 AM scenario gets a calm answer: a fix branched off v1.2, one reviewed PR, merged and tagged v1.2.1. You will do this with your own hands in Lab 02.'},
+  {t:'The sites have not changed yet. But the truth finally has an address.'}
+],(s)=>{chip('chips-day1-a',s>=4);chip('chips-day1-b',s>=4);});
+
+controllers.day2=worldCtrl('viz-day2','day2-step',['hq','sites','repo','repograph','hotfix'],[
+  {badges:'usbEnd',t:'The history exists. Nothing guards it yet.'},
+  {add:['ci'],t:'Day 2: a robot reviews every change before a human does. Linters and validation, on every push.'},
+  {add:['cistrip'],t:'GitHub Actions: workflows made of jobs made of steps. You will write these yourself.'},
+  {add:['runner'],t:'The runner lives where Ignition lives, behind your firewall. A server, a container, or simply your laptop: in the labs you run one locally.'},
+  {add:['check'],t:'Every change is now proven before it ships. Next problem: the shipping itself.'}
+],(s)=>{chip('chips-day2-a',s>=4);chip('chips-day2-b',s>=4);});
+
+const DAY3_BASE=['hq','sites','repo','repograph','hotfix','ci','cistrip','runner','check'];
+controllers.day3=worldCtrl('viz-day3','day3-step',DAY3_BASE,[
+  {badges:'usbEnd',t:'Proven changes, still delivered by hand.'},
+  {add:['art','routes'],t:'Day 3: two ways to deliver an Ignition project, file-based or image-based, and when to use which.'},
+  {add:['sidecars'],t:'Everything the project needs rides in the same delivery: database migrations, third-party modules, external JARs.'},
+  {badges:'day3',t:'The first automated deploy. No USB. No prayer. Seven sites to go.'}
+],(s,last,W)=>{
+  chip('chips-day3-a',s>=3);
+  if(s<3){reveal(W.dot,false);return;}
+  if(s===3&&last===2){snapTo(W.dot,W.paths.dep,0);moveAlong(W.dot,W.paths.dep,1600);}
+  else{snapTo(W.dot,W.paths.dep,1);reveal(W.dot,true);}
+});
+
+const DAY4_BASE=DAY3_BASE.concat(['art','routes','sidecars']);
+controllers.day4=worldCtrl('viz-day4','day4-step',DAY4_BASE,[
+  {badges:'day3',t:'One site is not a rollout.'},
+  {add:['ladder'],t:'Day 4: changes climb an environment ladder. local, test, staging, production. Production is the last rung, not the first.'},
+  {add:['vault'],t:'Each environment keeps its own credentials. None of them live in Git.'},
+  {add:['fan'],badges:'final',badgeOpts:{stagger:120},t:'One promotion, eight identical sites.'},
+  {t:'And then you run the whole map yourself, end to end. That is Lab 08, the capstone.'}
+],(s)=>{chip('chips-day4-a',s>=4);chip('chips-day4-b',s>=4);chip('chips-day4-c',s>=4);});
+
+/* ---------- slide 13: finale ---------- */
+const FINALE_BASE=DAY4_BASE.concat(['ladder','vault','fan']);
+controllers.finale=worldCtrl('viz-finale','finale-step',FINALE_BASE,[
+  {badges:'final',t:'Friday afternoon at Oatmakers.'},
+  {badges:'v21',badgeOpts:{stagger:110},t:'A change merged at 9:00 is at every site by 9:20. Reviewed, tested, versioned, reversible.'},
+  {t:'That is what this week builds. Now let us build it.'}
+],(s,last,W)=>{
+  chip('ba-strip',s>=2);
+  if(s<1){reveal(W.dot,false);return;}
+  if(s===1&&last===0){snapTo(W.dot,W.paths.jrn,0);moveAlong(W.dot,W.paths.jrn,2200);}
+  else{snapTo(W.dot,W.paths.jrn,1);reveal(W.dot,true);}
+});
+
+/* ============ wire controllers to their slides + reset on entry ============ */
+const ctrlBySlide={1:'company',2:'sites',3:'usb',4:'pains',5:'wip',6:'plan',7:'day1',8:'day2',9:'day3',10:'day4',11:'finale'};
+const bound={};
+for(const idx in ctrlBySlide){const name=ctrlBySlide[idx];bound[idx]=bindControls(slides[idx],controllers[name]);}
+// reset a slide's animation when you scroll onto it
+let lastIdx=-1;
+function onView(){const i=curIndex();if(i!==lastIdx){lastIdx=i;if(bound[i])bound[i].reset();}}
+deck.addEventListener('scroll',()=>requestAnimationFrame(onView));
+onView();
+</script>
+</body>
+</html>
