@@ -1,0 +1,86 @@
+# CI/CD Masterclass — Preflight
+
+> Run this **at least 7 days before Day 1** to validate that your environment is ready.
+
+The preflight script checks that you have all the tools required for the masterclass installed and working, and that you can successfully pull and run an Ignition 8.3 Docker image.
+
+## Quick start
+
+```bash
+mkdir -p ~/mustry-academy && cd ~/mustry-academy     # Windows: this must be your LINUX home
+git clone https://github.com/mustry-academy/cicd-preflight.git
+cd cicd-preflight
+./scripts/preflight.sh
+```
+
+> **Windows:** run this inside WSL, and keep every course repo in your Linux home
+> (`~/…`), never on your Windows drive (`/mnt/c/…`). The script fails if you are on
+> `/mnt/c` — see [Platform notes](#platform-notes) for why.
+
+The script writes a report to `./preflight-report.txt`. **Paste the contents of that file into the Discord `#preflight-help` channel** so the TA can confirm you're ready or help debug.
+
+### Options
+
+```
+--no-pull       Skip pulling the course images (use locally cached ones)
+--skip-smoke    Skip starting the throwaway gateway container
+--quiet         Only print warnings, failures and the summary
+-h, --help      Show this help and exit
+```
+
+The image pulls and gateway smoke test are the slow steps; `--no-pull --skip-smoke` makes for a fast re-run while you're fixing the lighter checks. Run `./scripts/preflight.sh --help` to see this list anytime.
+
+## What it checks
+
+Every check is one of two tiers:
+
+- **Required** — you cannot complete Day 1 without it. A miss is a hard failure and the script exits non-zero.
+- **Recommended** — things work without it, but the labs are rougher. A miss is only a warning and never changes the exit code.
+
+<!-- Keep this table in sync with the checks in scripts/preflight.sh (top to bottom). -->
+
+| Check | Tier |
+|---|---|
+| Operating system (and WSL2 on Windows) | Required |
+| Working directory is on the Linux filesystem, not `/mnt/c` (WSL only) | Required |
+| Not running as root / under `sudo` | Required |
+| `git` ≥ 2.40, with a commit identity (`user.name` / `user.email`) | Required |
+| `core.autocrlf` is not `true` (CRLF checkouts break every lab script) | Required |
+| `curl` installed | Required |
+| `jq` and `openssl` installed | Recommended |
+| Clock within 5 minutes of GitHub's (WSL2 drifts after hibernate) | Required |
+| `python3` ≥ 3.10 that can create a venv with pip (Lab 03 linters) | Required |
+| `docker` ≥ 24, daemon running, and `docker compose` v2 | Required |
+| Memory available to Docker ≥ 8 GB (labs 04–06 run three gateways + DB + runner) | Recommended |
+| CPUs available to Docker ≥ 4 | Recommended |
+| Logged in to Docker Hub (anonymous pulls are rate-limited per IP — the classroom shares one) | Recommended |
+| `gh` (GitHub CLI) installed and authenticated | Required |
+| `gh` token has the `repo` and `workflow` scopes (Lab 03 pushes workflow files) | Required |
+| `git push` can authenticate to GitHub (gh credential helper or SSH key) | Required |
+| VS Code installed (`code` on PATH) | Recommended |
+| Ignition Designer Launcher installed (best-effort detection) | Recommended |
+| No locally installed Ignition gateway (its service squats on 8088) | Recommended |
+| At least 20 GB free disk space | Recommended |
+| At least 8 GB total RAM | Recommended |
+| Containers can reach GitHub and GHCR over HTTPS (detects corporate TLS interception) | Required |
+| Lab ports are free: 8088–8090, 8060–8062, 5432 | Required |
+| Can pull every course image (`ignition:8.3.6`, `ignition:8.3.8`, `timescaledb`, `github-runner`) | Required |
+| Gateway container (uid 2003) can write to a bind mount from the working directory | Required |
+| Gateway container starts and responds over HTTP | Required |
+
+## If something fails
+
+1. Read the suggestion the script prints
+2. Check the [`troubleshooting.md`](./troubleshooting.md) guide
+3. Post your `preflight-report.txt` in the Discord `#preflight-help` channel
+4. The TA will follow up within 24h on weekdays
+
+## Platform notes
+
+- **Windows:** you must use **WSL2 with Docker Desktop's WSL2 backend**. Run the preflight script from inside Ubuntu (or your WSL distro of choice). Native Windows / Git Bash setups are not supported. **Keep all course repos in your Linux home (`~/…`), never under `/mnt/c/…`.** A repo on the Windows drive is governed by Windows ACLs rather than your WSL user, so your Windows user, your WSL user and the gateway container's user are three different identities: `chown` and `chmod` do not stick, Docker bind mounts lose permission bits, and the only thing that seems to help is running WSL as a Windows administrator — which hides the problem and makes every later lab worse. The lab setup scripts refuse to run from there, and none of them ever need `sudo`. Note that the **disk space and RAM figures are measured inside WSL2, not for your whole Windows machine** — that's deliberate, since Docker images, volumes and containers live in WSL2. The RAM number is the WSL2 VM's allocation (configurable in `C:\Users\<you>\.wslconfig`).
+- **macOS:** Apple Silicon is fully supported. Ignition publishes `linux/arm64` images.
+- **Linux:** Docker Engine + Docker Compose v2. The smoothest experience.
+
+## Licence
+
+Apache 2.0. See [`LICENSE`](./LICENSE).
