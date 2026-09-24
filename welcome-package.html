@@ -1,0 +1,1100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Welcome Package - CI/CD for Ignition</title>
+<style>
+  /* ---- Brand fonts: served from mustrysolutions.com ---- */
+  @import url('https://mustrysolutions.com/fonts/visby/visby.css');
+  @import url('https://mustrysolutions.com/fonts/baton/baton.css');
+  /* IBM Plex Mono kept for code/labels - Mustry brand has no custom monospace. */
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --ink: #10172A;          /* mustrysolutions.com dark-500 */
+    --ink-2: #223053;
+    --ink-3: #475569;
+    --paper: #ffffff;
+    --paper-2: #eff4ff;      /* lightest brand blue tint */
+    --paper-3: #dbe4ff;
+    --rule: rgba(16, 23, 42, 0.10);
+    --rule-strong: rgba(16, 23, 42, 0.22);
+    --accent: #295EF6;       /* Mustry primary blue */
+    --accent-2: #0940de;
+    --accent-soft: #dbe4ff;
+    --accent-tint: #c6d4fd;
+    --sans: "Baton Turbo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --display: "Visby", "Baton Turbo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --serif: Georgia, "Times New Roman", serif;
+  }
+  :root { --ink-soft: rgba(16,23,42,0.74); }
+
+  @page {
+    size: A4;
+    margin: 20mm 18mm 18mm 18mm;
+  }
+  @page :first { margin: 0; }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    font-size: 10.5pt;
+    line-height: 1.5;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ---- Cover ---- */
+  .cover {
+    height: 297mm;
+    width: 210mm;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 28mm 24mm;
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .cover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(55% 45% at 10% 5%, rgba(41,94,246,0.32) 0%, transparent 60%),
+      radial-gradient(50% 50% at 100% 100%, rgba(41,94,246,0.18) 0%, transparent 65%),
+      radial-gradient(40% 40% at 95% 10%, rgba(150,176,251,0.08) 0%, transparent 60%);
+  }
+  .cover::after {
+    content: "";
+    position: absolute;
+    right: -60mm;
+    top: 50mm;
+    width: 240mm;
+    height: 240mm;
+    background-image: url('assets/logo.png');
+    background-repeat: no-repeat;
+    background-size: 120mm auto;
+    background-position: right top;
+    opacity: 0.04;
+    filter: brightness(2.5);
+  }
+  .cover > * { position: relative; z-index: 1; }
+  /* Small logo, top-left of the cover, on its own. */
+  .cover-logo { display: flex; align-items: flex-start; }
+  .cover-logo img { height: 8mm; width: auto; display: block; }
+
+  /* Big "Mustry Academy" wordmark, centered as its own element. */
+  .cover-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+  }
+  .cover-brand strong {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 48pt;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+  .cover-brand .sub {
+    font-family: var(--mono);
+    font-size: 17pt;
+    letter-spacing: 0.42em;
+    text-indent: 0.42em;
+    text-transform: uppercase;
+    color: var(--accent-tint);
+  }
+
+  /* "WELCOME PACKAGE": the headline of the cover, made to stand out. */
+  .cover-headline {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 40pt;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  /* "CI/CD for Ignition": secondary, intentionally understated. */
+  .cover-title {
+    font-family: var(--mono);
+    font-size: 12pt;
+    line-height: 1.4;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: rgba(250,248,244,0.7);
+    margin: 12px 0 0;
+  }
+  .cover-title .accent { color: var(--accent-tint); }
+  .cover-sub {
+    font-size: 13pt;
+    line-height: 1.45;
+    color: rgba(250,248,244,0.78);
+    max-width: 130mm;
+    margin-top: 22px;
+  }
+  .cover-meta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    font-family: var(--mono);
+    font-size: 9pt;
+    color: rgba(250,248,244,0.7);
+    border-top: 1px solid rgba(255,255,255,0.16);
+    padding-top: 22px;
+  }
+  .cover-meta > div { border-left: 2px solid var(--accent); padding-left: 14px; }
+  .cover-meta .k { color: var(--accent-tint); display: block; margin-bottom: 6px; letter-spacing: 0.14em; text-transform: uppercase; font-size: 7.5pt; }
+  .cover-meta .v { font-family: var(--display); font-weight: 800; color: var(--paper); font-size: 13pt; letter-spacing: -0.005em; }
+  .cover-terminal {
+    font-family: var(--mono);
+    font-size: 9pt;
+    line-height: 1.8;
+    color: #cfd6e6;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-top: 8px;
+  }
+  .cover-terminal .p { color: #7d8aae; }
+  .cover-terminal .ok { color: #9DCE92; }
+
+  /* ---- Content pages ---- */
+  .section {
+    page-break-inside: auto;
+  }
+  .section + .section { margin-top: 18px; }
+
+  h2.h {
+    font-family: var(--display);
+    font-size: 22pt;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+    margin: 4px 0 4px;
+    line-height: 1.1;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 8pt;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .eyebrow::before {
+    content: ""; width: 22px; height: 1.5px; background: var(--accent); display:inline-block;
+  }
+  h3.sh {
+    font-family: var(--display);
+    font-size: 13pt;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 14px 0 5px;
+  }
+  p { margin: 0 0 9px; orphans: 2; widows: 2; }
+  .lead { font-size: 11pt; color: var(--ink-soft); }
+  a { color: var(--accent); text-decoration: none; }
+  .mono { font-family: var(--mono); font-size: 0.92em; }
+  strong { font-weight: 600; }
+
+  /* ---- Typography polish: balanced headings, smart prose wrap ---- */
+  /* Headings get balance: line lengths are evened out, no orphaned tails. */
+  h1, h2.h, h3.sh, .day .dt, .card .ct, .callout .ct,
+  .timeline-row .what .t, .contact .v {
+    text-wrap: balance;
+  }
+  /* Prose gets pretty: Chrome rebalances the last lines to avoid orphans. */
+  p, .lead, .day .ds, .card .cb, .callout .cb,
+  .req-row .how, .checklist li .dd {
+    text-wrap: pretty;
+  }
+
+  .section-break { page-break-before: always; }
+
+  /* avoid breaking right after a heading */
+  h2.h, h3.sh { page-break-after: avoid; }
+  .card, .timeline-row, .req-row, .checklist li { page-break-inside: avoid; }
+
+  /* ---- Page header band on content pages ---- */
+  .page-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1.5px solid var(--ink);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    gap: 16px;
+  }
+  .page-head .left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  /* ---- Logical page wrapper: a flex column sized to the printable area so
+     the footer can be pinned to the bottom of every content page. The cover
+     is not a .page, so it never gets a footer. ---- */
+  .page {
+    display: flex;
+    flex-direction: column;
+    min-height: 256mm;     /* ≈ A4 height minus @page top+bottom margins */
+  }
+  /* ---- Page footer band: pinned to the bottom of each .page via margin-top:auto ---- */
+  .page-foot {
+    margin-top: auto;
+    padding-top: 9px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .page-foot img { height: 34px; width: auto; display: block; }
+  .page-head .pname { font-weight: 500; font-size: 9.5pt; letter-spacing: -0.005em; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .page-head .pnum { font-family: var(--mono); font-size: 8.5pt; color: var(--ink-3); letter-spacing: 0.1em; }
+
+  /* ---- Cards ---- */
+  .card {
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 16px 18px;
+    background: #ffffff;
+    margin: 10px 0;
+  }
+  .card.tight { padding: 12px 16px; }
+  .card .ct { font-weight: 600; font-size: 10.5pt; margin-bottom: 4px; }
+  .card .cb { color: var(--ink-soft); font-size: 9.5pt; }
+
+  /* Instructor avatar photo (page 1 note) */
+  .instructor-photo {
+    width: 104px;
+    height: 104px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: 52% 14%;
+    display: block;
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  /* Instructor signature on page 1 */
+  .signature { margin-top: 18px; }
+  .signature .nm { font-family: var(--display); font-weight: 800; font-size: 13pt; letter-spacing: -0.01em; line-height: 1.1; }
+  .signature .rl { font-size: 9.3pt; color: var(--ink-3); margin-top: 1px; }
+
+  /* ---- Instructor page: stat cards - mirror the .day card motif ---- */
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0 4px; }
+  .stat {
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-tint));
+  }
+  .stat .n {
+    font-family: var(--display);
+    font-variant-numeric: proportional-nums;
+    font-weight: 800;
+    font-size: 30pt;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--accent);
+    margin-top: 6px;
+  }
+  .stat .l { font-size: 9.2pt; color: var(--ink-soft); margin-top: 10px; line-height: 1.45; }
+
+  /* ---- Instructor page: profile block ---- */
+  .instructor-profile {
+    display: grid;
+    grid-template-columns: 50mm 1fr;
+    gap: 22px;
+    align-items: start;
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    padding: 18px;
+    margin-top: 14px;
+    background: #ffffff;
+    page-break-inside: avoid;
+  }
+  .instructor-profile .who { display: flex; flex-direction: column; gap: 12px; }
+  .instructor-profile .photo {
+    width: 50mm;
+    height: 58mm;
+    border-radius: 12px;
+    object-fit: cover;
+    object-position: 50% 22%;
+    display: block;
+  }
+  /* LinkedIn QR under the photo - reuses the .qr-card motif from other pages */
+  .instructor-profile .qr-card { min-width: 0; padding: 9px 10px; }
+  .instructor-profile .qr-card img { width: 22mm; height: 22mm; }
+  .instructor-profile .name { font-family: var(--display); font-weight: 800; font-size: 18pt; letter-spacing: -0.01em; line-height: 1.1; }
+  .instructor-profile .role { color: var(--accent); font-weight: 600; font-size: 10.5pt; margin-top: 2px; }
+  .instructor-profile p { font-size: 9.7pt; color: var(--ink-soft); margin: 12px 0 0; }
+  .cred-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .cred-tag {
+    font-family: var(--mono);
+    font-size: 8pt;
+    letter-spacing: 0.02em;
+    color: var(--ink-2);
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 5px 11px;
+  }
+
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--paper-2);
+    padding: 9px 14px;
+    border-radius: 0 10px 10px 0;
+    margin: 10px 0;
+    font-size: 9.5pt;
+  }
+  .callout .ct { font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+  .callout .cb { color: var(--ink-2); }
+
+  /* ---- Discord join band (page 1): text + QR, mirrors the .contact motif ---- */
+  .discord-join {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 22px;
+    align-items: center;
+    background: var(--paper-2);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-top: 8px;
+    page-break-inside: avoid;
+  }
+  .discord-join .dj-body { min-width: 0; }
+  .discord-join .qr-card { min-width: 34mm; }
+
+  /* ---- Requirements rows ---- */
+  .req {
+    margin-top: 14px;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .req-row {
+    display: grid;
+    grid-template-columns: 40mm 1fr;
+    gap: 12px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--rule);
+    align-items: start;
+  }
+  .req-row:last-child { border-bottom: none; }
+  .req-row:nth-child(even) { background: var(--paper-2); }
+  .req-row .tool { font-family: var(--display); font-weight: 800; font-size: 10.5pt; letter-spacing: -0.005em; }
+  .req-row .tool .v { font-family: var(--mono); font-weight: 500; color: var(--accent); font-size: 8.5pt; display:block; margin-top: 3px; letter-spacing: 0.02em; }
+  .req-row .how { font-size: 9.5pt; color: var(--ink-soft); line-height: 1.5; }
+  .req-row .how .mono { color: var(--ink-2); }
+
+  /* ---- Timeline ---- */
+  .timeline { margin-top: 10px; position: relative; padding-left: 30mm; }
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 30mm;
+    top: 6px;
+    bottom: 6px;
+    width: 1.5px;
+    background: linear-gradient(180deg, var(--accent) 0%, var(--accent-tint) 100%);
+  }
+  .timeline-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 6px 0 6px 18px;
+    position: relative;
+  }
+  .timeline-row::before {
+    content: "";
+    position: absolute;
+    left: -4.5px;
+    top: 11px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 3px #ffffff;
+  }
+  .timeline-row .when {
+    position: absolute;
+    left: calc(-30mm + 14px);
+    top: 6px;
+    width: calc(30mm - 30px);
+    font-family: var(--mono);
+    font-size: 9pt;
+    font-weight: 600;
+    color: var(--ink);
+    text-align: right;
+  }
+  .timeline-row .when .sub { display:block; color: var(--ink-3); font-weight: 400; font-size: 7.8pt; margin-top: 2px; letter-spacing: 0.04em; }
+  .timeline-row .what .t { font-family: var(--display); font-weight: 800; font-size: 11pt; margin-bottom: 2px; letter-spacing: -0.005em; }
+  .timeline-row .what .d { font-size: 9.3pt; color: var(--ink-soft); line-height: 1.4; }
+
+  /* ---- Day grid ---- */
+  .days {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .day {
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+  }
+  .day::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-tint));
+  }
+  .day .n {
+    font-family: var(--display);
+    font-variant-numeric: proportional-nums;
+    font-size: 30pt;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+  }
+  .day .n .of { font-family: var(--mono); font-size: 8pt; color: var(--ink-3); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 400; margin-left: 7px; margin-right: auto; }
+  .day .day-icon { width: 22px; height: 22px; flex: none; color: var(--accent); }
+  .day .dt { font-family: var(--display); font-weight: 800; font-size: 12pt; margin: 14px 0 4px; letter-spacing: -0.005em; line-height: 1.2; }
+  .day .ds { font-size: 9.2pt; color: var(--ink-soft); line-height: 1.4; margin: 0 0 8px; }
+  .day ul { margin: 0; padding: 0; list-style: none; }
+  .day li { font-size: 8.8pt; color: var(--ink-soft); padding-left: 14px; position: relative; line-height: 1.45; margin-bottom: 4px; }
+  .day li::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 5px; height: 5px; border-radius: 50%; background: var(--accent-tint); }
+
+  /* ---- Schedule (two columns: morning | afternoon) ---- */
+  .sched {
+    margin-top: 8px;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    page-break-inside: avoid;
+  }
+  .sched-col { display: flex; flex-direction: column; }
+  .sched-col + .sched-col { border-left: 1px solid var(--rule); }
+  .sched-row {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 7px 12px;
+    font-family: var(--mono); font-size: 8.5pt;
+  }
+  .sched-row:nth-child(odd) { background: var(--paper-2); }
+  .sched-row .tm { color: var(--ink-3); font-variant-numeric: tabular-nums; letter-spacing: 0.01em; white-space: nowrap; }
+  .sched-row .lb { color: var(--ink); text-align: right; font-family: var(--sans); font-weight: 500; font-size: 9pt; line-height: 1.25; }
+
+  /* ---- Checklist ---- */
+  .checklist { list-style: none; margin: 10px 0 0; padding: 0; page-break-inside: avoid; }
+  .checklist li {
+    display: grid; grid-template-columns: 18px 1fr; gap: 14px; align-items: start;
+    padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: 10pt;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li .box {
+    width: 14px; height: 14px; border: 1.5px solid var(--accent); background: var(--paper-2);
+    border-radius: 4px; margin-top: 2px;
+  }
+  .checklist li .tt { font-weight: 600; }
+  .checklist li .dd { color: var(--ink-soft); font-size: 9.3pt; display:block; margin-top: 2px; line-height: 1.4; }
+
+  /* ---- Two col ---- */
+  .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 8px; }
+
+  /* ---- Footer note ---- */
+  .endnote {
+    margin-top: 22px; padding-top: 14px; border-top: 1.5px solid var(--ink);
+    font-size: 9pt; color: var(--ink-3); font-family: var(--mono); letter-spacing: 0.04em;
+  }
+
+  /* ---- Preflight code + QR side-by-side ---- */
+  .preflight-block {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: stretch;
+    margin: 12px 0;
+  }
+  .preflight-code {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 9.5pt;
+    line-height: 1.9;
+    margin: 0;
+  }
+  .preflight-code .p { color: #7d8aae; }
+  .qr-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    background: #ffffff;
+    min-width: 36mm;
+  }
+  .qr-card img {
+    width: 26mm;
+    height: 26mm;
+    display: block;
+  }
+  .qr-label {
+    font-family: var(--mono);
+    font-size: 7.5pt;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    text-align: center;
+    line-height: 1.35;
+  }
+
+  /* contact band */
+  .contact {
+    background: var(--paper-2);
+    border-radius: 14px;
+    padding: 20px 22px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 22px;
+    align-items: center;
+    margin-top: 16px;
+  }
+  .contact-body { border-left: 2px solid var(--accent); padding-left: 16px; }
+  .contact-lead { font-family: var(--display); font-weight: 800; font-size: 15pt; letter-spacing: -0.01em; line-height: 1.15; color: var(--ink); }
+  .contact-note { font-size: 9.7pt; color: var(--ink-2); margin: 8px 0 0; max-width: 120mm; }
+  .contact-note .mono { color: var(--ink); }
+  .contact-qr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    background: #ffffff;
+    border-radius: 10px;
+    min-width: 32mm;
+  }
+  .contact-qr img { width: 24mm; height: 24mm; display: block; }
+</style>
+</head>
+<body>
+
+<!-- ============================ COVER ============================ -->
+<div class="cover">
+  <div>
+    <div class="cover-logo">
+      <img src="assets/logo-light.png" alt="Mustry Academy" />
+    </div>
+    <div class="cover-brand" style="margin-top:18mm;">
+      <strong>Mustry</strong><span class="sub">Academy</span>
+    </div>
+  </div>
+
+  <div>
+    <h1 class="cover-headline">Welcome Package</h1>
+    <div class="cover-title">CI/CD for <span class="accent">Ignition</span></div>
+    <p class="cover-sub">
+      Everything you need to know before the first day: what to install, what to read,
+      and what to expect from this course.
+    </p>
+
+    <div class="cover-terminal">
+      <span class="p">$</span> git push origin feature/sensor-dashboard<br>
+      <span class="p">&gt;</span> CI: 14 checks passed, image built<br>
+      <span class="ok">✓ deployed to prod gateway. see you on Day 1.</span>
+    </div>
+  </div>
+
+  <div class="cover-meta">
+    <div><span class="k">Format</span><span class="v">Live · online</span></div>
+    <div><span class="k">Dates</span><span class="v">See your calendar invite</span></div>
+  </div>
+</div>
+
+<!-- ============================ PAGE 1: WELCOME ============================ -->
+<div class="page">
+<div class="page-head">
+  <div class="left">
+    <span class="pname">CI/CD for Ignition - Welcome Package</span>
+  </div>
+  <span class="pnum">01 · WELCOME</span>
+</div>
+
+<div class="section">
+  <div class="eyebrow">A note from your instructor</div>
+  <h2 class="h">Welcome to the cohort.</h2>
+  <p class="lead">
+    Thanks for joining CI/CD for Ignition! I'm excited to get to know you. Over the course we'll move
+    from "how does Git actually work" all the way to multi-gateway deployments, secrets
+    management, and a local development workflow.
+  </p>
+  <p>
+    We've sent you this welcome package to make sure that by the time we kick off on Day&nbsp;1, everyone has a working environment
+    and nobody is installing Docker while the rest of the room waits. Please read it
+    in full, and complete the <strong>preflight check</strong> at least two days before we begin.
+  </p>
+
+  <div class="signature">
+    <div class="nm">Jasper Louage</div>
+    <div class="rl">Founder, Mustry Solutions · Lead instructor</div>
+  </div>
+  <p style="margin-top:10px; font-size:9.5pt; color:var(--ink-3);">
+    More on who's teaching you on the next page.
+  </p>
+</div>
+
+<div class="section" style="margin-top:22px;">
+  <div class="eyebrow">First things first</div>
+  <h2 class="h">Join us on Discord.</h2>
+  <div class="discord-join">
+    <div class="dj-body">
+      <p style="font-size:9.7pt; margin-bottom:6px;">
+        Discord is the cohort's home base. Everything outside the live sessions happens
+        there: pre-reads and announcements, environment help when the preflight misbehaves,
+        and a place to talk to your instructor and the rest of the room. The channels we
+        point you to later in this package, such as <span class="mono">#general</span> and
+        <span class="mono">#preflight-help</span>, all live here.
+      </p>
+      <p style="font-size:9.7pt; margin:0;">
+        Your personal invite is in your welcome email, or scan the code to join now. Do this
+        first, before you start installing anything, and say hello in <span class="mono">#general</span>.
+      </p>
+    </div>
+    <div class="qr-card">
+      <img src="qr/discord.svg" alt="QR code for Discord invite" />
+      <div class="qr-label">Scan to join<br>the Discord</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:22px;">
+  <div class="eyebrow">What this course is, and isn't</div>
+  <h2 class="h">Set your expectations.</h2>
+  <div class="twocol">
+    <div>
+      <h3 class="sh">This course is</h3>
+      <p style="font-size:9.7pt;">
+        A hands-on, engineering-focused masterclass on the practices around shipping
+        Ignition: version control, automated pipelines, reproducible deployments, and
+        a fast local development workflow. You'll write code, break things, and fix them.
+      </p>
+    </div>
+    <div>
+      <h3 class="sh">This course is not</h3>
+      <p style="font-size:9.7pt;">
+        An Ignition fundamentals course. We assume you're already comfortable building
+        in Ignition, at the level of a current <a href="https://inductiveuniversity.com/">Inductive University</a> 8.3 Credential.
+        We build on top of that, not alongside it. If you're unsure whether your background is a fit, email us before the first day and we'll talk it through.
+      </p>
+    </div>
+  </div>
+</div>
+
+  <div class="page-foot"><img src="assets/logo.png" alt="Mustry Solutions" /></div>
+</div>
+
+<!-- ============================ PAGE 2: YOUR INSTRUCTOR ============================ -->
+<div class="page section-break">
+<div class="page-head">
+  <div class="left">
+    <span class="pname">CI/CD for Ignition - Welcome Package</span>
+  </div>
+  <span class="pnum">02 · YOUR INSTRUCTOR</span>
+</div>
+
+<div class="section">
+  <div class="eyebrow">Your instructor</div>
+  <h2 class="h">Built and shipped, not just taught</h2>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="n">5+ years</div>
+      <div class="l">hands-on with the Ignition platform</div>
+    </div>
+    <div class="stat">
+      <div class="n">5+ clients</div>
+      <div class="l">with CI/CD pipelines we built and shipped</div>
+    </div>
+  </div>
+
+  <div class="instructor-profile">
+    <div class="who">
+      <img class="photo" src="assets/jasper-1.jpg" alt="Jasper Louage" />
+      <div class="qr-card">
+        <img src="qr/linkedin.svg" alt="QR code for Jasper Louage on LinkedIn" />
+        <div class="qr-label">Scan to connect<br>on LinkedIn</div>
+      </div>
+    </div>
+    <div>
+      <div class="name">Jasper Louage</div>
+      <div class="role">Founder, Mustry Solutions · Lead instructor</div>
+      <p>
+        Jasper is the founder of Mustry Solutions and an Industry 4.0 integration expert
+        working at the intersection of IT and OT. He has spent years architecting and
+        shipping Ignition systems for manufacturers.
+      </p>
+      <p>
+        He is a firm believer in continuous learning and sharing knowledge, so the course
+        is built to leave your team able to run CI/CD on their own.
+      </p>
+      <div class="cred-tags">
+        <span class="cred-tag">Ignition Gold 8.3 Certified</span>
+        <span class="cred-tag">Kubernetes &amp; containerized deploys</span>
+        <span class="cred-tag">MSc Automation</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <div class="page-foot"><img src="assets/logo.png" alt="Mustry Solutions" /></div>
+</div>
+
+<!-- ============================ PAGE 3: SYSTEM REQUIREMENTS ============================ -->
+<div class="page section-break">
+<div class="page-head">
+  <div class="left">
+    <span class="pname">CI/CD for Ignition - Welcome Package</span>
+  </div>
+  <span class="pnum">03 · SYSTEM REQUIREMENTS</span>
+</div>
+
+<div class="section">
+  <div class="eyebrow">Before you do anything else</div>
+  <h2 class="h">What to install.</h2>
+  <p class="lead">
+    Everything runs locally on Docker. Install it all, then run the preflight script (next page).
+  </p>
+
+  <div class="req">
+    <div class="req-row">
+      <div class="tool">Docker Desktop<span class="v">≥ 24</span></div>
+      <div class="how">Give it <strong>≥&nbsp;8&nbsp;GB RAM</strong> and <strong>≥&nbsp;4 CPUs</strong> (Settings → Resources), and use the <strong>WSL2 backend</strong> on Windows. A free <a href="https://hub.docker.com/">Docker Hub</a> login helps — anonymous pulls are rate-limited, worse on shared networks. <a href="https://www.docker.com/products/docker-desktop/">docker.com</a></div>
+    </div>
+    <div class="req-row">
+      <div class="tool">Git<span class="v">≥ 2.40</span></div>
+      <div class="how">Set <span class="mono">user.name</span> / <span class="mono">user.email</span>, and leave <span class="mono">core.autocrlf</span> off (or <span class="mono">input</span>) — CRLF checkouts break the lab scripts. <a href="https://git-scm.com/">git-scm.com</a></div>
+    </div>
+    <div class="req-row">
+      <div class="tool">Python<span class="v">≥ 3.10</span></div>
+      <div class="how">Needed for the lab scripts and linters. Must create a venv with pip: on Ubuntu/WSL install <span class="mono">python3</span> and <span class="mono">python3-venv</span>; on macOS, <span class="mono">brew install python</span>.</div>
+    </div>
+    <div class="req-row">
+      <div class="tool">A GitHub account</div>
+      <div class="how">Free — every lab pushes to your own fork. Create one at <a href="https://github.com/signup">github.com</a> and <strong>verify your email address</strong> first.</div>
+    </div>
+    <div class="req-row">
+      <div class="tool">GitHub CLI<span class="v">gh</span></div>
+      <div class="how">Run <span class="mono">gh auth login -s workflow</span> — without that scope GitHub rejects pushes that touch a workflow file. Accept its offer to set up git or upload an SSH key so <span class="mono">git push</span> works. <a href="https://cli.github.com/">cli.github.com</a></div>
+    </div>
+    <div class="req-row">
+      <div class="tool">VS Code</div>
+      <div class="how">Plus the <strong>Docker</strong> extension, with <span class="mono">code</span> on your PATH. Any editor works, but our demos use VS Code. <a href="https://code.visualstudio.com/">code.visualstudio.com</a></div>
+    </div>
+    <div class="req-row">
+      <div class="tool">Hardware</div>
+      <div class="how"><strong>16&nbsp;GB RAM</strong> — labs 04–06 run three gateways plus a database, and Docker needs 8&nbsp;GB of that to itself. Plus <strong>20&nbsp;GB free disk</strong> for images and volumes, measured <strong>inside WSL2</strong> on Windows.</div>
+    </div>
+  </div>
+
+  <h3 class="sh">Platform notes</h3>
+  <div class="twocol" style="grid-template-columns:1fr 1fr 1fr; gap:12px;">
+    <div class="card tight">
+      <div class="ct" style="font-size:10pt;">Windows</div>
+      <div class="cb" style="font-size:9pt;">Install WSL2 and enable Docker Desktop's WSL2 backend. Run labs inside WSL, not PowerShell/Git Bash, and <strong>clone into your Linux home, never <span class="mono">/mnt/c/…</span></strong>. Install <span class="mono">curl</span> via <span class="mono">apt</span>.</div>
+    </div>
+    <div class="card tight">
+      <div class="ct" style="font-size:10pt;">macOS</div>
+      <div class="cb" style="font-size:9pt;">Apple Silicon is fully supported (Ignition publishes arm64 images). <span class="mono">curl</span> ships with the OS.</div>
+    </div>
+    <div class="card tight">
+      <div class="ct" style="font-size:10pt;">Linux</div>
+      <div class="cb" style="font-size:9pt;">Docker Engine + Compose v2. Add your user to the <span class="mono">docker</span> group so you never need <span class="mono">sudo</span>.</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="ct">Corporate laptop?</div>
+    <div class="cb">If Docker or Discord is blocked, or you're behind a TLS-inspecting proxy (Zscaler, Netskope, …), tell us at intake. Browsers can look fine while containers fail HTTPS.</div>
+  </div>
+</div>
+
+  <div class="page-foot"><img src="assets/logo.png" alt="Mustry Solutions" /></div>
+</div>
+
+<!-- ============================ PAGE 4: PREFLIGHT ============================ -->
+<div class="page section-break">
+<div class="page-head">
+  <div class="left">
+    <span class="pname">CI/CD for Ignition - Welcome Package</span>
+  </div>
+  <span class="pnum">04 · PREFLIGHT</span>
+</div>
+
+<div class="section">
+  <div class="eyebrow">The one task that matters most</div>
+  <h2 class="h">Run the preflight check.</h2>
+  <p class="lead">
+    Once you've installed everything, run our preflight script. It validates every tool,
+    pulls the course images (Ignition&nbsp;8.3.6 and&nbsp;8.3.8, TimescaleDB, and the GitHub runner),
+    checks ports and bind mounts, and starts a test gateway. Most of the wait is image pulls.
+  </p>
+
+  <div class="preflight-block">
+    <div class="card preflight-code">
+      <span class="p">$</span> mkdir -p ~/mustry-academy &amp;&amp; cd ~/mustry-academy<br>
+      <span class="p">$</span> git clone {{PREFLIGHT_REPO_URL}}<br>
+      <span class="p">$</span> cd cicd-preflight<br>
+      <span class="p">$</span> ./scripts/preflight.sh
+    </div>
+    <div class="qr-card">
+      <img src="qr/preflight.svg" alt="QR code for preflight repo" />
+      <div class="qr-label">Scan to open the<br>preflight repo</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="ct">Windows: where you clone decides whether the labs work</div>
+    <div class="cb">Run this inside WSL, and note that first line: <span class="mono">~/mustry-academy</span> is your <strong>Linux home</strong>. Keep every lab repo there, never on your Windows drive (<span class="mono">/mnt/c/…</span>) — there, Windows decides file ownership, so it breaks in ways <span class="mono">chown</span> cannot fix and you end up needing <span class="mono">sudo</span> to edit your own project files. Our scripts refuse to run from <span class="mono">/mnt/c</span> and never need <span class="mono">sudo</span>. Check with <span class="mono">pwd</span>: it must not start with <span class="mono">/mnt/</span>.</div>
+  </div>
+
+  <p>
+    The script writes <span class="mono">preflight-report.txt</span>.
+    <strong>Paste it into <span class="mono">#preflight-help</span> on Discord</strong>
+    so we can confirm you're ready. On failure, start with the script's suggestion, then
+    <span class="mono">troubleshooting.md</span> in the repo.
+  </p>
+
+  <div class="callout">
+    <div class="ct">Deadline</div>
+    <div class="cb">Please have a passing preflight at least <strong>two days before Day 1</strong>. Stuck at any point? Say so in #preflight-help and you get a 1:1 with the TA straight away.</div>
+  </div>
+
+  <h3 class="sh">Fill in the intake survey</h3>
+  <div class="preflight-block">
+    <p style="margin:0; align-self:center;">
+      Once your preflight passes, please <a href="{{SURVEY_URL}}"><strong>fill in the intake survey</strong></a>
+      so we have everything we need to get you set up for the first day.
+    </p>
+    <div class="qr-card">
+      <img src="qr/survey.svg" alt="QR code for intake survey" />
+      <div class="qr-label">Scan to open the<br>intake survey</div>
+    </div>
+  </div>
+
+  <h3 class="sh">A word on Ignition licensing</h3>
+  <p style="font-size:9.7pt;">
+    You don't need an Ignition license. The labs run Ignition 8.3 in <strong>trial mode</strong>
+    (every module, two hours at a time, unlimited resets from the gateway page). Exercises fit that window.
+  </p>
+</div>
+
+  <div class="page-foot"><img src="assets/logo.png" alt="Mustry Solutions" /></div>
+</div>
+
+<!-- ============================ PAGE 5: THE COURSE ============================ -->
+<div class="page section-break">
+<div class="page-head">
+  <div class="left">
+    <span class="pname">CI/CD for Ignition - Welcome Package</span>
+  </div>
+  <span class="pnum">05 · THE COURSE</span>
+</div>
+
+<div class="section">
+  <div class="eyebrow">What we'll cover</div>
+  <h2 class="h">A typical four days</h2>
+  <p class="lead">
+    This is how the material runs over a typical four-day course, and each day builds on the last.
+    Some cohorts spread the same content over more sessions or other adjustments are made.
+  </p>
+
+  <div class="days">
+    <div class="day">
+      <div class="n">01<span class="of">/ 04</span><svg class="day-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2.4"/><circle cx="6" cy="19" r="2.4"/><circle cx="18" cy="7" r="2.4"/><path d="M6 7.4v9.2"/><path d="M18 9.4c0 3.5-2.5 5.6-7.2 6.4"/></svg></div>
+      <div class="dt">Foundations &amp; the Git mindset</div>
+      <div class="ds">By the end of Day 1, Git stops feeling like incantations and starts feeling like a tool you reach for without thinking.</div>
+      <ul>
+        <li>Why version control matters for Ignition</li>
+        <li>Git internals, demystified</li>
+        <li>Branching strategies compared</li>
+        <li>Pull requests done right</li>
+        <li>Everyday Git workflows, hands-on</li>
+      </ul>
+    </div>
+    <div class="day">
+      <div class="n">02<span class="of">/ 04</span><svg class="day-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="2.3"/><circle cx="12" cy="12" r="2.3"/><path d="M7.3 12h2.4"/><path d="M14.3 12h5"/><path d="M17 9.6 19.7 12 17 14.4"/></svg></div>
+      <div class="dt">Collaboration &amp; automation</div>
+      <div class="ds">The day you build the safety net you've always wanted: linters that fail loudly and pipelines that catch mistakes before they reach a gateway.</div>
+      <ul>
+        <li>Validation and linters as a safety net</li>
+        <li>GitHub Actions: workflows, jobs, steps</li>
+        <li>Self-hosted runners</li>
+        <li>Ignition 8.3 file structure</li>
+      </ul>
+    </div>
+    <div class="day">
+      <div class="n">03<span class="of">/ 04</span><svg class="day-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4.5" width="16" height="6" rx="1.6"/><rect x="4" y="13.5" width="16" height="6" rx="1.6"/><path d="M7.5 7.5h.01"/><path d="M7.5 16.5h.01"/></svg></div>
+      <div class="dt">Ignition-specific deployments</div>
+      <div class="ds">Everything the generic CI/CD books skip about Ignition: file layout, multi-gateway promotion, and what to leave on the cutting-room floor.</div>
+      <ul>
+        <li>Image-based vs file-based deploys</li>
+        <li>Deploying the database with your code</li>
+        <li>Third-party modules</li>
+        <li>External JAR libraries</li>
+      </ul>
+    </div>
+    <div class="day">
+      <div class="n">04<span class="of">/ 04</span><svg class="day-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c2.6 1.7 4 4.7 4 8 0 1.7-.4 3.3-1.1 4.7H9.1A10.3 10.3 0 0 1 8 11c0-3.3 1.4-6.3 4-8Z"/><circle cx="12" cy="9.5" r="1.6"/><path d="M9.1 15.7 7 18l1.8.3M14.9 15.7 17 18l-1.8.3"/><path d="M10.4 18.5c.5 1.4 1.6 2.5 1.6 2.5s1.1-1.1 1.6-2.5"/></svg></div>
+      <div class="dt">Ignition in the real world</div>
+      <div class="ds">Tying it together for the parts the demos never cover: live databases, real secrets, and a local loop you'll actually want to use after the course ends.</div>
+      <ul>
+        <li>Multi-gateway</li>
+        <li>Configuration options explored</li>
+        <li>Secrets management, painlessly</li>
+        <li>Capstone brief</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="sh">A typical live day · we may adapt it per cohort</h3>
+  <div class="sched">
+    <div class="sched-col">
+      <div class="sched-row"><span class="tm">09:00 – 10:00</span><span class="lb">Teaching</span></div>
+      <div class="sched-row"><span class="tm">10:00 – 11:00</span><span class="lb">We do together</span></div>
+      <div class="sched-row"><span class="tm">11:00 – 12:00</span><span class="lb">Breakout rooms: you do, we help</span></div>
+    </div>
+    <div class="sched-col">
+      <div class="sched-row"><span class="tm">13:00 – 14:00</span><span class="lb">Teaching</span></div>
+      <div class="sched-row"><span class="tm">14:00 – 15:00</span><span class="lb">We do together</span></div>
+      <div class="sched-row"><span class="tm">15:00 – 16:00</span><span class="lb">Breakout rooms: you do, we help</span></div>
+      <div class="sched-row"><span class="tm">16:00 – 17:00</span><span class="lb">Office hour: questions &amp; deeper dives</span></div>
+    </div>
+  </div>
+</div>
+
+  <div class="page-foot"><img src="assets/logo.png" alt="Mustry Solutions" /></div>
+</div>
+
+<!-- ============================ PAGE 6: TIMELINE + CHECKLIST ============================ -->
+<div class="page section-break">
+<div class="page-head">
+  <div class="left">
+    <span class="pname">CI/CD for Ignition - Welcome Package</span>
+  </div>
+  <span class="pnum">06 · YOUR TIMELINE</span>
+</div>
+
+<div class="section">
+  <div class="eyebrow">From now until Day 1</div>
+  <h2 class="h">What happens when.</h2>
+
+  <div class="timeline">
+    <div class="timeline-row">
+      <div class="when">Now<span class="sub">T −21 days</span></div>
+      <div class="what"><div class="t">You're reading this</div><div class="d">Join the Discord if you haven't yet (page 1), and skim this package end to end.</div></div>
+    </div>
+    <div class="timeline-row">
+      <div class="when">This week<span class="sub">T −14 days</span></div>
+      <div class="what"><div class="t">Install &amp; pre-reads</div><div class="d">Install the tools on page 3. Complete the short intake survey. Optional pre-reads land in Discord.</div></div>
+    </div>
+    <div class="timeline-row">
+      <div class="when">Cutoff<span class="sub">T −2 days</span></div>
+      <div class="what"><div class="t">Preflight must pass</div><div class="d">Green preflight posted in Discord. Still stuck? Ask for your 1:1 with the TA right away. No surprises on Day 1.</div></div>
+    </div>
+    <div class="timeline-row">
+      <div class="when">Day 1<span class="sub">T 0</span></div>
+      <div class="what"><div class="t">We begin</div><div class="d">The room opens 15 minutes early for any last-minute fixes. Content starts on the hour, sharp.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:22px;">
+  <div class="eyebrow">Tick these off</div>
+  <h2 class="h">Your pre-course checklist.</h2>
+  <ul class="checklist">
+    <li><span class="box"></span><span><span class="tt">Joined the Discord server</span><span class="dd">Invite link is on page 1 and in your welcome email. Say hello in #general.</span></span></li>
+    <li><span class="box"></span><span><span class="tt">Installed Docker, Git, Python, gh, and VS Code</span><span class="dd">Everything on page 3, including git identity and Python ≥&nbsp;3.10 with venv.</span></span></li>
+    <li><span class="box"></span><span><span class="tt">Authenticated GitHub for both gh and git push</span><span class="dd"><span class="mono">gh auth login -s workflow</span>; confirm a plain <span class="mono">git push</span> works.</span></span></li>
+    <li><span class="box"></span><span><span class="tt">Gave Docker enough resources</span><span class="dd">≥&nbsp;8&nbsp;GB RAM and ≥&nbsp;4 CPUs in Docker Desktop (or <span class="mono">.wslconfig</span> on Windows).</span></span></li>
+    <li><span class="box"></span><span><span class="tt">Ran the preflight script</span><span class="dd">And pasted the report into #preflight-help at least two days before Day&nbsp;1.</span></span></li>
+    <li><span class="box"></span><span><span class="tt">Completed the intake survey</span><span class="dd">Eleven questions, five minutes. It tunes Day 1 to the actual room.</span></span></li>
+    <li><span class="box"></span><span><span class="tt">Added the course dates to your calendar</span><span class="dd">Calendar invites are in your welcome email.</span></span></li>
+  </ul>
+</div>
+
+  <div class="page-foot"><img src="assets/logo.png" alt="Mustry Solutions" /></div>
+</div>
+
+<!-- ============================ PAGE 7: LOGISTICS + CONTACT ============================ -->
+<div class="page section-break">
+<div class="page-head">
+  <div class="left">
+    <span class="pname">CI/CD for Ignition - Welcome Package</span>
+  </div>
+  <span class="pnum">07 · GOOD TO KNOW</span>
+</div>
+
+<div class="section">
+  <div class="eyebrow">A few last things</div>
+  <h2 class="h">Good to know.</h2>
+
+  <h3 class="sh">Recordings</h3>
+  <p style="font-size:9.7pt;">Every session is recorded and made available to you on our eLearning platform, so you can revisit anything at your own pace after each day.</p>
+
+  <div class="contact">
+    <div class="contact-body">
+      <div class="contact-lead">Questions? Ask on Discord.</div>
+      <p class="contact-note">
+        Drop them in <span class="mono">#general</span> or <span class="mono">#preflight-help</span>
+        and you'll usually get an answer fast, from us or from the rest of the cohort.
+        Prefer email? Reach us any time at <strong>info@mustrysolutions.com</strong>.
+      </p>
+    </div>
+    <div class="contact-qr">
+      <img src="qr/discord.svg" alt="QR code for Discord invite" />
+      <div class="qr-label">Scan to join<br>the Discord</div>
+    </div>
+  </div>
+
+  <div class="endnote">
+    Mustry Academy · CI/CD for Ignition. We're glad you're here. See you on Day 1.
+  </div>
+</div>
+
+  <div class="page-foot"><img src="assets/logo.png" alt="Mustry Solutions" /></div>
+</div>
+
+</body>
+</html>
