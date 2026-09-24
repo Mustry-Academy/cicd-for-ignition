@@ -4,7 +4,7 @@
 
 extends: default
 
-# The lab's tool venv (see Setup) lives in the repo root and contains
+# The lab's tool venv (see Setup) lives in the lab folder and contains
 # third-party YAML we don't own — keep the linter out of it.
 ignore: |
   .venv/

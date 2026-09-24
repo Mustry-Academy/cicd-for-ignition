@@ -6,8 +6,8 @@
 # planted issue is a mistake a real Ignition project picks up — a brittle binding,
 # a runaway poll rate, a hand-edited resource with broken JSON, and so on.
 #
-# Reset back to a clean tree at any time with:
-#   git restore . && rm -f .github/workflows/example.yml
+# Reset back to a clean tree at any time (from the lab folder) with:
+#   git restore . && rm -f ../../.github/workflows/lab03-example.yml
 
 set -euo pipefail
 
@@ -64,10 +64,12 @@ s = s.replace('"parent": ""', '"parent": "",', 1)   # trailing comma → invalid
 p.write_text(s)
 PY
 
-# 3. actionlint — a throwaway workflow pinned to a deprecated action
-mkdir -p .github/workflows
-cat > .github/workflows/example.yml <<'YML'
-name: Example workflow
+# 3. actionlint — a throwaway workflow pinned to a deprecated action. Workflows
+# live in the repo-root .github/workflows/, so that's where this one goes too.
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+mkdir -p "$REPO_ROOT/.github/workflows"
+cat > "$REPO_ROOT/.github/workflows/lab03-example.yml" <<'YML'
+name: Lab 03 · Example workflow
 on: workflow_dispatch
 jobs:
   smoke:
@@ -81,12 +83,12 @@ cat <<'EOF'
 Seeded issues into the working tree:
   1. docker-compose.yml              — yamllint    (trailing whitespace)
   2. scripts/scan.sh                 — shellcheck  (SC2086, unquoted variable)
-  3. .github/workflows/example.yml   — actionlint  (deprecated actions/checkout@v2)
+  3. .github/workflows/lab03-example.yml (repo root) — actionlint (deprecated actions/checkout@v2)
   4. overview/view.json (Kiln)       — ign-lint    (brittle + dangling component reference)
   5. overview/view.json (Clock)      — ign-lint    (poll faster than the 1000ms floor)
   6. overview/view.json (Power tile) — ign-lint    (snake_case component name)
   7. project.json                    — validate.sh (malformed JSON: trailing comma)
 
 Find them with the linters. When you're done, reset to a clean tree with:
-  git restore . && rm -f .github/workflows/example.yml
+  git restore . && rm -f ../../.github/workflows/lab03-example.yml
 EOF

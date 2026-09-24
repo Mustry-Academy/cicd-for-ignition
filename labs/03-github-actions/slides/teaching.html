@@ -722,7 +722,7 @@ scripts/validate.sh
       <span class="num">07</span>
       <div>
         <div class="title">Your validators run inside a pipeline</div>
-        <div class="lead">The linter run you did by hand in Chapter 1 already <b>had the shape of</b> a pipeline: a trigger, then steps that pass or fail. Wrap it in <span class="inlinecode">ci.yml</span> and your validators now <b>run inside the pipeline, as steps</b>, triggered automatically on every push and PR.</div>
+        <div class="lead">The linter run you did by hand in Chapter 1 already <b>had the shape of</b> a pipeline: a trigger, then steps that pass or fail. Wrap it in <span class="inlinecode">lab03-ci.yml</span> and your validators now <b>run inside the pipeline, as steps</b>, triggered automatically on every push and PR.</div>
       </div>
     </div>
     <div class="split">
@@ -743,7 +743,7 @@ on: pull_request        <span class="cm"># the trigger</span>
         <div class="catcard">
           <div class="pn">SAME SHAPE, TWO SCALES</div>
           <h4>Trigger → steps → pass/fail</h4>
-          <p>Run it by hand and the trigger is <b>you</b>. Put it in <span class="inlinecode">ci.yml</span> and the trigger is <b>a pull request</b>. The steps and the pass/fail are identical. That's the whole leap.</p>
+          <p>Run it by hand and the trigger is <b>you</b>. Put it in <span class="inlinecode">lab03-ci.yml</span> and the trigger is <b>a pull request</b>. The steps and the pass/fail are identical. That's the whole leap.</p>
         </div>
         <div class="catcard c2" style="margin-top:16px">
           <div class="pn">WHY IT MATTERS TODAY</div>
@@ -766,13 +766,13 @@ on: pull_request        <span class="cm"># the trigger</span>
 
   <div class="stage-wrap">
     <div class="vtitle">Workflow ⊃ jobs ⊃ steps</div>
-    <p class="lead" style="text-align:center;margin:6px auto 0;color:#c4cfde">One YAML file in <span class="mono" style="color:#dbe4f0">.github/workflows/</span>: this is the lab's real <span class="mono" style="color:#dbe4f0">ci.yml</span>, drawn as boxes.</p>
+    <p class="lead" style="text-align:center;margin:6px auto 0;color:#c4cfde">One YAML file in the repo root's <span class="mono" style="color:#dbe4f0">.github/workflows/</span>: this is the lab's real <span class="mono" style="color:#dbe4f0">lab03-ci.yml</span>, drawn as boxes.</p>
 
     <div class="anat">
       <div class="wfbox reveal" data-step="0">
         <div class="wfl">
-          <span class="n">workflow · <span class="mono" style="font-weight:600">.github/workflows/ci.yml</span></span>
-          <span class="m">on: pull_request + push · permissions: contents: read · name: CI</span>
+          <span class="n">workflow · <span class="mono" style="font-weight:600">.github/workflows/lab03-ci.yml</span></span>
+          <span class="m">on: pull_request + push · permissions: contents: read · name: Lab 03 · CI</span>
         </div>
         <div class="jobrow">
           <div class="jobbox reveal" data-step="1">
@@ -893,18 +893,19 @@ on: pull_request        <span class="cm"># the trigger</span>
     </div>
     <div class="cols2">
       <div>
-        <div class="code"><pre><span class="cm"># the lab's ci.yml: real triggers</span>
+        <div class="code"><pre><span class="cm"># the lab's lab03-ci.yml: real triggers</span>
 on:
   pull_request:          <span class="cm"># every PR update</span>
     paths:               <span class="cm"># …that touches code we check</span>
-      - <span class="cmd2">"projects/**"</span>
-      - <span class="cmd2">"scripts/**"</span>
-      - <span class="cmd2">"docker-compose.yml"</span>
-      - <span class="cmd2">".github/workflows/**"</span>
-      - <span class="cmd2">".yamllint.yml"</span>
-      - <span class="cmd2">"rule_config.json"</span>
+      - <span class="cmd2">"labs/03-github-actions/projects/**"</span>
+      - <span class="cmd2">"labs/03-github-actions/scripts/**"</span>
+      - <span class="cmd2">"labs/03-github-actions/docker-compose.yml"</span>
+      - <span class="cmd2">".github/workflows/lab03-*.yml"</span>
+      - <span class="cmd2">"labs/03-github-actions/.yamllint.yml"</span>
+      - <span class="cmd2">"labs/03-github-actions/rule_config.json"</span>
   push:
-    branches: [main]     <span class="cm"># backstop after merge</span></pre></div>
+    branches: [main]     <span class="cm"># backstop after merge</span>
+    paths: [<span class="cmd2">"labs/03-github-actions/**"</span>, …]</pre></div>
       </div>
       <div>
         <ul class="checks">
@@ -916,12 +917,13 @@ on:
         <div class="callout" style="margin-top:16px">
           <div class="lab">Filter discipline</div>
           <p>Too narrow (one file) and view changes sneak past. Too broad (<code>"**"</code>) and the filter is pointless. Cover the <b>directories the checks actually read</b>, including the configs like <code>rule_config.json</code>.</p>
+          <p><b>Monorepo:</b> GitHub only reads the root <code>.github/workflows/</code>, so every lab's workflow lives there. The <code>labs/03-…</code> prefix keeps this one off the other labs' changes.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>.github/workflows/ci.yml</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>.github/workflows/lab03-ci.yml</span></div>
 </section>
 
 <!-- 16 · RUNNER MODEL (stepped, dark) -->
@@ -975,19 +977,23 @@ on:
     <div class="sechead">
       <span class="num">10</span>
       <div>
-        <div class="title">Reading the lab's <span class="mono" style="font-size:34px">ci.yml</span></div>
+        <div class="title">Reading the lab's <span class="mono" style="font-size:34px">lab03-ci.yml</span></div>
         <div class="lead">This is the file you'll build from scratch in the We-do and finish in the lab. Two independent jobs: the Part 1 linters, and the validator.</div>
       </div>
     </div>
     <div class="cols2">
-      <div class="code"><pre>name: CI
+      <div class="code"><pre>name: Lab 03 · CI
 on:
   pull_request:
-    paths: [<span class="cmd2">"projects/**"</span>, <span class="cmd2">"scripts/**"</span>, …]
+    paths: [<span class="cmd2">"labs/03-github-actions/projects/**"</span>, …]
   push:
     branches: [main]
+    paths: [<span class="cmd2">"labs/03-github-actions/**"</span>, …]
 permissions:
   contents: read          <span class="cm"># least privilege</span>
+defaults:
+  run:                    <span class="cm"># run: steps start in the lab</span>
+    working-directory: labs/03-github-actions
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -997,8 +1003,8 @@ jobs:
         with:
           python-version: <span class="cmd2">"3.12"</span>   <span class="cm"># quoted!</span>
       - run: pip install yamllint==1.35.1 ign-lint==0.6.1
-      - run: yamllint -c .yamllint.yml .
-      - uses: raven-actions/actionlint@v2
+      - run: yamllint -c .yamllint.yml . ../../.github/workflows/lab03-*.yml
+      - uses: raven-actions/actionlint@v2   <span class="cm"># + with: lab03-*.yml</span>
       - run: shellcheck scripts/*.sh   <span class="cm"># apt-get install first</span>
       - run: ign-lint --config rule_config.json --files <span class="cmd2">"projects/**/view.json"</span>
       - run: docker compose config -q
@@ -1203,7 +1209,7 @@ tar xzf actions-runner.tar.gz
     <div class="eyebrow">Now we make it real</div>
     <div class="title" style="max-width:24ch;color:#fff">Next: we <em style="font-style:normal;color:var(--peri2)">break</em> the project on purpose, and let the machines find it.</div>
     <ul class="checks" style="max-width:960px;margin-top:22px">
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We-do (10:00).</b> <span class="mono">scripts/seed.sh</span> plants seven realistic bugs, including the brittle binding and the runaway poll you just saw. We run every linter live, read the output, fix one finding each. Then we build <span class="mono">ci.yml</span> from scratch, open a PR, watch a secret get masked, and register an ephemeral runner.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We-do (10:00).</b> <span class="mono">scripts/seed.sh</span> plants seven realistic bugs, including the brittle binding and the runaway poll you just saw. We run every linter live, read the output, fix one finding each. Then we build <span class="mono">lab03-ci.yml</span> from scratch, open a PR, watch a secret get masked, and register an ephemeral runner.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do (11:00, breakout rooms).</b> You hunt the remaining findings yourself, tune <span class="mono">.yamllint.yml</span>, then finish the workflow in <b>your own repo</b>: path filters, compose validation, a badge, and a required check that blocks a red PR.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The payoff.</b> By lunch, "broken project files can't reach <span class="mono">main</span>" is not a promise, it's a setting. <b>After lunch (Lab 04) we point that green pipeline at a real gateway and actually deploy.</b></span></li>
     </ul>

@@ -224,7 +224,7 @@ body{
       <div class="pcard p2">
         <div class="pn">PART 2 · SOLO · YOUR OWN REPO</div>
         <h4>Make CI the gatekeeper</h4>
-        <p>Finish <span class="inlinecode">ci.yml</span>: path filters, compose check, then branch protection that <b>blocks a red PR</b>.</p>
+        <p>Finish <span class="inlinecode">lab03-ci.yml</span>: path filters, compose check, then branch protection that <b>blocks a red PR</b>.</p>
         <div class="gate">gate → docs-only PR skipped · red PR blocked</div>
       </div>
       <div class="pcard">
@@ -249,27 +249,25 @@ body{
     <div class="stage">Setup · before Part 1</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num warm">SETUP · 1</span><div><div class="title">First: your own fork, with Actions on</div><div class="lead">Fork the lab and clone it, then make it <b>yours</b>.</div></div></div>
+    <div class="sechead"><span class="num warm">SETUP · 1</span><div><div class="title">First: your own fork, with Actions on</div><div class="lead">One fork of <b>cicd-for-ignition</b> holds every lab. Check yours is ready.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx"><b>Fork &amp; clone in one go.</b> From your course folder <span class="inlinecode">~/mustry-academy/</span>, <span class="inlinecode">gh repo fork … --clone</span> forks the lab to <i>your</i> account (if you haven't already) <b>and</b> clones your fork — <span class="inlinecode">origin</span> → your fork, <span class="inlinecode">upstream</span> → Mustry-Academy. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx"><b>Point <span class="inlinecode">gh</span> at your fork:</b> <span class="inlinecode">gh repo set-default</span> so PRs target <b>your</b> fork, not the source. Check with <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b>.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Open it in VS Code</b> with <span class="inlinecode">code .</span> from inside the repo, then work from its integrated terminal.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx"><b>Enable Actions on the fork.</b> Open its <b>Actions</b> tab on github.com and click <i>enable workflows</i> — forks start dormant, so until you do this your PRs run <b>no CI at all</b>.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx"><b>Go to the lab folder.</b> Your fork lives in <span class="inlinecode">~/mustry-academy/cicd-for-ignition</span>; this lab is <span class="inlinecode">labs/03-github-actions</span> inside it. No fork yet? <span class="inlinecode">gh repo fork … --clone</span> forks the course repo to <i>your</i> account <b>and</b> clones it — <span class="inlinecode">origin</span> → your fork, <span class="inlinecode">upstream</span> → Mustry-Academy.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Point <span class="inlinecode">gh</span> at your fork</b> (once per clone): <span class="inlinecode">gh repo set-default</span> so PRs target <b>your</b> fork, not the source. Check with <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b>.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Open it in VS Code</b> with <span class="inlinecode">code .</span> from inside the <b>lab folder</b>, then work from its integrated terminal.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Enable Actions on the fork</b> (once for the whole course). Open its <b>Actions</b> tab on github.com and click <i>enable workflows</i> — forks start dormant, so until you do this your PRs run <b>no CI at all</b>.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># 1: from your course folder, fork + clone in one go</span>
-cd ~/mustry-academy
-gh repo fork Mustry-Academy/cicd-lab-03-github-actions --clone
-<span class="cm">#    …or press "Fork" on github.com, then clone YOUR fork:</span>
-git clone git@github.com:&lt;you&gt;/cicd-lab-03-github-actions.git
-cd cicd-lab-03-github-actions
+        <div class="code"><pre><span class="cm"># 1: into this lab's folder in your fork</span>
+cd ~/mustry-academy/cicd-for-ignition/labs/03-github-actions
+<span class="cm">#    no fork yet? from ~/mustry-academy, once:</span>
+<span class="cm">#    gh repo fork Mustry-Academy/cicd-for-ignition --clone</span>
 
 <span class="cm"># 2: make gh target YOUR fork for PRs; check the remote</span>
-gh repo set-default &lt;you&gt;/cicd-lab-03-github-actions
+gh repo set-default &lt;you&gt;/cicd-for-ignition
 git remote -v          <span class="cm"># origin → your username? good.</span>
 
-<span class="cm"># 3: open in VS Code</span>
+<span class="cm"># 3: open the lab folder in VS Code</span>
 code .
 
 <span class="cm"># 4: fork's Actions tab → enable workflows</span></pre></div>
@@ -334,7 +332,7 @@ pip install --upgrade pip
 pip install yamllint==1.35.1 ign-lint==0.6.1</pre></div>
         <div class="goal warn-g" style="margin-top:18px">
           <span class="badge">Port 8088 busy?</span>
-          <p>That's your <b>Lab 02 gateway</b>, still running from yesterday — <span class="inlinecode">restart: unless-stopped</span> keeps it alive, reboots included. Deliberate lesson: a port is a machine-wide resource, and two gateways can't share one. Tear it down first (its state survives in its volume): <span class="inlinecode">cd ../cicd-lab-02-* &amp;&amp; scripts/teardown.sh</span>, then re-run <span class="inlinecode">scripts/setup.sh</span> here.</p>
+          <p>That's your <b>Lab 02 gateway</b>, still running from yesterday — <span class="inlinecode">restart: unless-stopped</span> keeps it alive, reboots included. Deliberate lesson: a port is a machine-wide resource, and two gateways can't share one. Tear it down first (its state survives in its volume): <span class="inlinecode">cd ../02-branching-and-prs &amp;&amp; scripts/teardown.sh</span>, then come back and re-run <span class="inlinecode">scripts/setup.sh</span> here.</p>
         </div>
       </div>
     </div>
@@ -366,14 +364,16 @@ docker compose restart
 <span class="cm"># run all five checks · note every finding + its file</span>
 yamllint -c .yamllint.yml . <span class="cm"># YAML style + syntax</span>
 shellcheck scripts/*.sh     <span class="cm"># shell-script bugs</span>
-actionlint                  <span class="cm"># Actions workflows · actions must be @v4</span>
+<span class="cm"># actionlint — Actions workflows (repo root) · actions must be @v4</span>
+actionlint -config-file .github/actionlint.yaml \
+  ../../.github/workflows/lab03-*.yml
 <span class="cm"># ign-lint — Perspective views, the one to linger on:</span>
 ign-lint --config rule_config.json \
   --files <span class="cmd2">"projects/**/view.json"</span>
 scripts/validate.sh         <span class="cm"># JSON + code.py parses</span></pre></div>
         <div class="goal warn-g" style="margin-top:18px">
           <span class="badge">Escape hatch</span>
-          <p>Made a mess? Reset to a clean tree any time: <span class="inlinecode">git restore . &amp;&amp; rm -f .github/workflows/example.yml</span>, then re-seed and start over. And resist <span class="inlinecode">git diff</span> — it spoils all seven answers at once; reading the <b>linters'</b> output is the exercise.</p>
+          <p>Made a mess? Reset to a clean tree any time: <span class="inlinecode">git restore . &amp;&amp; rm -f ../../.github/workflows/lab03-example.yml</span>, then re-seed and start over. And resist <span class="inlinecode">git diff</span> — it spoils all seven answers at once; reading the <b>linters'</b> output is the exercise.</p>
         </div>
       </div>
     </div>
@@ -427,7 +427,7 @@ scripts/validate.sh         <span class="cm"># JSON + code.py parses</span></pre
     <ul class="checks" style="margin-top:26px;max-width:900px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Steps 0-2:</b> pick up the skeleton, add path filters + Compose validation.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Step 3:</b> <b>branch protection on <span class="mono" style="color:#dbe4f0">main</span></b> — direct pushes rejected, red PRs blocked.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Step 4:</b> sanity check against the shipped <span class="mono" style="color:#dbe4f0">.github/workflows/ci.yml</span>.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Step 4:</b> sanity check against the shipped workflow you set aside, <span class="mono" style="color:#dbe4f0">.github/ci-reference.yml</span>.</span></li>
     </ul>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2 · steps 1 → 4</span></div>
@@ -443,19 +443,24 @@ scripts/validate.sh         <span class="cm"># JSON + code.py parses</span></pre
     <div class="sechead"><span class="num phase2">PART 2 · 0</span><div><div class="title">Create the workflow from the skeleton</div><div class="lead">The repo ships the finished workflow. One script sets it aside and scaffolds a bare starting point — so your typing goes into the checks that matter, not the boilerplate.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix p">0</div><div class="tx"><b>Run <span class="inlinecode">scripts/prepare-part2.sh</span>.</b> It announces each step as it does two mechanical things: sets the shipped answer aside (<span class="inlinecode">git mv ci.yml → .github/ci-reference.yml</span>, your reference for step 4) and drops a bare two-job skeleton into <span class="inlinecode">.github/workflows/ci.yml</span>.</div></div>
+        <div class="step"><div class="ix p">0</div><div class="tx"><b>Run <span class="inlinecode">scripts/prepare-part2.sh</span>.</b> It announces each step as it does two mechanical things: sets the shipped answer aside (<span class="inlinecode">git mv lab03-ci.yml → .github/ci-reference.yml</span>, your reference for step 4) and drops a bare two-job skeleton into <span class="inlinecode">.github/workflows/lab03-ci.yml</span> at the <b>repo root</b>: GitHub only runs workflows from there.</div></div>
         <div class="step"><div class="ix p">0</div><div class="tx"><b>Open that skeleton</b> (at right): a <span class="inlinecode">validate</span> job and a <span class="inlinecode">lint</span> job, each just <span class="inlinecode">checkout</span> + <b>TODOs</b>. The structure is given; the real steps are yours to type across steps 1-2.</div></div>
         <div class="step"><div class="ix p">0</div><div class="tx">Rather do it by hand? The script only runs the <span class="inlinecode">git mv</span> and writes the file below — skip it and type both yourself if you prefer.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># sets the shipped answer aside, scaffolds the skeleton</span>
-scripts/prepare-part2.sh
-
-<span class="cm"># what it drops into .github/workflows/ci.yml:</span>
-name: CI
-on: [pull_request]            <span class="cm"># TODO 1: paths + push</span>
+        <div class="code"><pre>scripts/prepare-part2.sh    <span class="cm"># set answer aside, scaffold</span>
+<span class="cm"># what it drops into .github/workflows/lab03-ci.yml:</span>
+name: Lab 03 · CI
+on:
+  pull_request:
+    paths:                    <span class="cm"># TODO 1: narrow + push backstop</span>
+      - <span class="cmd2">"labs/03-github-actions/**"</span>
+      - <span class="cmd2">".github/workflows/lab03-*.yml"</span>
 permissions:
   contents: read
+defaults:                     <span class="cm"># run: steps start in the lab</span>
+  run:
+    working-directory: labs/03-github-actions
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -489,8 +494,8 @@ jobs:
     <div class="sechead"><span class="num phase2">PART 2 · 1-2</span><div><div class="title">Refine it: path filters &amp; Compose</div><div class="lead">Don't spin up two VMs to lint files a PR never touched.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix p">1</div><div class="tx">Add the <span class="inlinecode">paths:</span> filter plus a <span class="inlinecode">push: branches: [main]</span> backstop trigger (see code block).</div></div>
-        <div class="step"><div class="ix p">1</div><div class="tx"><b>Prove it works:</b> open a PR that touches <b>only</b> <span class="inlinecode">README.md</span> → the workflow must be <b>skipped</b>, not run-and-passed. Check the PR's checks panel.</div></div>
+        <div class="step"><div class="ix p">1</div><div class="tx">Narrow the <span class="inlinecode">paths:</span> filter to what the checks read, plus a <span class="inlinecode">push: branches: [main]</span> backstop trigger (see code block). Paths are always <b>repo-root-relative</b>.</div></div>
+        <div class="step"><div class="ix p">1</div><div class="tx"><b>Prove it works:</b> open a PR that touches <b>only</b> the lab's <span class="inlinecode">README.md</span> → the workflow must be <b>skipped</b>, not run-and-passed. Check the PR's checks panel.</div></div>
         <div class="step"><div class="ix p">2</div><div class="tx">Add <span class="inlinecode">docker compose config -q</span> as a final step of the <b>lint</b> job. It catches Compose-level issues yamllint can't see: undefined services, port-string typos, malformed env maps.</div></div>
       </div>
       <div>
@@ -498,14 +503,17 @@ jobs:
 on:
   pull_request:
     paths:
-      - <span class="cmd2">"projects/**"</span>
-      - <span class="cmd2">"scripts/**"</span>
-      - <span class="cmd2">"docker-compose.yml"</span>
-      - <span class="cmd2">".github/workflows/**"</span>
-      - <span class="cmd2">".yamllint.yml"</span>
-      - <span class="cmd2">"rule_config.json"</span>
+      - <span class="cmd2">"labs/03-github-actions/projects/**"</span>
+      - <span class="cmd2">"labs/03-github-actions/scripts/**"</span>
+      - <span class="cmd2">"labs/03-github-actions/docker-compose.yml"</span>
+      - <span class="cmd2">".github/workflows/lab03-*.yml"</span>
+      - <span class="cmd2">"labs/03-github-actions/.yamllint.yml"</span>
+      - <span class="cmd2">"labs/03-github-actions/rule_config.json"</span>
   push:
     branches: [main]
+    paths:
+      - <span class="cmd2">"labs/03-github-actions/**"</span>
+      - <span class="cmd2">".github/workflows/lab03-*.yml"</span>
 
 <span class="cm"># 2: lint job, final step:</span>
       - run: docker compose config -q</pre></div>
@@ -529,7 +537,7 @@ on:
     <div class="sechead"><span class="num phase2">PART 2 · 3-4</span><div><div class="title">Protect <span class="mono" style="font-size:30px">main</span>, then try to break in</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix p">3</div><div class="tx"><b>Protect <span class="inlinecode">main</span></b>: Settings → Branches → add a rule with the <b>four ticks</b> in the block. Grant <b>no bypass</b>: it's your repo, and a wall you can step over teaches you nothing.</div></div>
+        <div class="step"><div class="ix p">3</div><div class="tx"><b>Protect <span class="inlinecode">main</span></b>: Settings → Branches → add a rule with the <b>four ticks</b> in the block. Grant <b>no bypass</b>: it's your repo, and a wall you can step over teaches you nothing. <b>Delete the rule when you finish Lab 03</b>: every lab shares this <span class="inlinecode">main</span>, and other labs' PRs would wait forever on <span class="inlinecode">lint</span> + <span class="inlinecode">validate</span>.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx"><b>Try the forbidden route:</b> commit straight to <span class="inlinecode">main</span> and push (see code block). <b>GitHub rejects the push.</b> Direct commits to <span class="inlinecode">main</span> are dead.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx"><b>Now the proper route:</b> the same change on a branch, open a PR, wait for <b><span class="inlinecode">lint</span></b> and <b><span class="inlinecode">validate</span></b> to go green, merge. The merge button is now the only door in.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx"><b>Break it on purpose:</b> re-run <span class="inlinecode">scripts/seed.sh</span> (or just set the Clock to <span class="inlinecode">now(250)</span> by hand), commit on a branch, open a PR → <b>confirm GitHub blocks the merge</b>. Fix <i>forward</i> (e.g. <span class="inlinecode">now(1500)</span>, not an exact revert — an empty diff re-triggers nothing), re-push, watch it go green.</div></div>
@@ -563,7 +571,7 @@ git commit -am <span class="cmd2">"fix: now(1500)"</span> &amp;&amp; git push   
 
 <span class="cm"># 4 · sanity: diff vs the reference you set aside</span>
 git diff --no-index \
-  .github/ci-reference.yml .github/workflows/ci.yml</pre></div>
+  .github/ci-reference.yml ../../.github/workflows/lab03-ci.yml</pre></div>
         <div class="goal good-g" style="margin-top:16px">
           <span class="badge">✅ The moment</span>
           <p>The whole lab in two screenshots: a direct push <b>rejected at the command line</b>, and a red PR with a <b>disabled merge button</b>. "Please run the linters" just became "<b>you cannot merge</b>."</p>
@@ -650,15 +658,15 @@ docker logs -f lab03-runner</pre></div>
     <div class="sechead"><span class="num warm">HANDS-ON · 2</span><div><div class="title">Route one job to your runner and watch it run locally</div><div class="lead">The repo ships a manual workflow that targets your runner by label. Dispatch it, then flip to the logs and watch it run on your own machine.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx"><b>Use the shipped workflow.</b> The repo already has <span class="inlinecode">.github/workflows/runner-demo.yml</span> — <span class="inlinecode">runs-on: [self-hosted, local-lab03]</span> routes it to your container, and <span class="inlinecode">workflow_dispatch</span> means only <i>you</i> can trigger it. Nothing to write.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx"><b>Dispatch it:</b> <span class="inlinecode">gh workflow run runner-demo.yml</span>, then switch to the <span class="inlinecode">docker logs</span> terminal — the steps execute <b>live, locally</b>.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx"><b>Use the shipped workflow.</b> The repo already has <span class="inlinecode">.github/workflows/lab03-runner-demo.yml</span> (repo root) — <span class="inlinecode">runs-on: [self-hosted, local-lab03]</span> routes it to your container, and <span class="inlinecode">workflow_dispatch</span> means only <i>you</i> can trigger it. Nothing to write.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Dispatch it:</b> <span class="inlinecode">gh workflow run lab03-runner-demo.yml</span>, then switch to the <span class="inlinecode">docker logs</span> terminal — the steps execute <b>live, locally</b>.</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>It goes green:</b> the job is a single <span class="inlinecode">echo</span>, so it always succeeds. The proof is <i>where</i> it ran — the hostname in the log is your container's, not a GitHub machine's. The labels did the routing.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx"><b>Ephemeral payoff:</b> one job done, the container exits (<span class="inlinecode">--rm</span>) and the runner <b>drops off the Runners tab</b> on its own.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># the repo ships this — you just dispatch it:</span>
-<span class="cm">#   .github/workflows/runner-demo.yml</span>
-name: runner-demo
+<span class="cm">#   .github/workflows/lab03-runner-demo.yml</span>
+name: Lab 03 · runner-demo
 on: workflow_dispatch         <span class="cm"># manual only — never a PR</span>
 jobs:
   hello:
@@ -667,7 +675,7 @@ jobs:
       - run: echo "ran on $(hostname)"
 
 <span class="cm"># dispatch it, then watch the docker logs terminal:</span>
-gh workflow run runner-demo.yml</pre></div>
+gh workflow run lab03-runner-demo.yml</pre></div>
         <div class="goal warn-g" style="margin-top:16px">
           <span class="badge">Worth knowing</span>
           <p>This job stays green because <span class="inlinecode">echo</span> exists everywhere. A bare runner has <b>only</b> what <i>you</i> install: the moment a job needs shellcheck or Python, self-hosted means <i>you</i> own that toolchain. Labs 04-05 do this for real against a gateway.</p>
@@ -688,7 +696,7 @@ gh workflow run runner-demo.yml</pre></div>
     <div class="sechead"><span class="num warm">HANDS-ON · 3</span><div><div class="title">Tear it down — cleanup is the exercise</div><div class="lead">A lingering runner or token is a standing risk. If you did the hands-on, these steps are <b>not</b> optional.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx"><b>The workflow stays</b> — <span class="inlinecode">runner-demo.yml</span> is <span class="inlinecode">workflow_dispatch</span>-only, so it never fires unless you dispatch it. Nothing to delete; the <b>runner</b> is what you tear down.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx"><b>The workflow stays</b> — <span class="inlinecode">lab03-runner-demo.yml</span> is <span class="inlinecode">workflow_dispatch</span>-only, so it never fires unless you dispatch it. Nothing to delete; the <b>runner</b> is what you tear down.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Confirm the runner is gone</b> from <span class="inlinecode">Settings → Actions → Runners</span>. Ephemeral already exited after its one job; if one lingers "Offline", remove it by hand.</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Kill the container</b> if it's somehow still up: <span class="inlinecode">docker rm -f lab03-runner</span>. The <span class="inlinecode">gh</span> registration token auto-expires; if you minted a classic <b>PAT</b>, delete it now.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx"><b>That's the whole loop:</b> register → route → run → tear down. In Labs 04-05 you'll point a runner at a real gateway and actually deploy.</div></div>
@@ -721,15 +729,15 @@ docker rm -f lab03-runner   <span class="cm"># no-op if it already exited</span>
     <div class="sechead"><span class="num warm">OPTIONAL · 1</span><div><div class="title">Stretch 1: block bad commits <em style="font-style:italic">before</em> they leave your machine</div><div class="lead">CI catches it on the PR; <span class="inlinecode">pre-commit</span> catches it at <span class="inlinecode">git commit</span>. The repo ships the config: <span class="inlinecode">.pre-commit-config.yaml</span> wires all four linters.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx">Install and enable the hook: <span class="inlinecode">pip install pre-commit</span> → <span class="inlinecode">pre-commit install</span>.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx">Baseline run over everything: <span class="inlinecode">pre-commit run --all-files</span>, which should be clean after Part 1.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx">Install the tool: <span class="inlinecode">pip install pre-commit</span>. No <span class="inlinecode">pre-commit install</span>: <span class="inlinecode">scripts/setup.sh</span> already pointed git at the repo's hook dispatcher, which runs this lab's config on any commit that touches the lab.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx">Baseline run over the whole lab: <span class="inlinecode">pre-commit run --all-files --config .pre-commit-config.yaml</span>, which should be clean after Part 1.</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Prove it works:</b> make a bad change (for example break one of the shell scripts), try to commit, and <b>ign-lint blocks the commit</b>.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx">Undo the bad change. If the commit went through anyway: did <span class="inlinecode">pre-commit install</span> run? Is <span class="inlinecode">.git/hooks/pre-commit</span> populated?</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx">Undo the bad change. If the commit went through anyway: is <span class="inlinecode">pre-commit</span> on your PATH? Does <span class="inlinecode">git config core.hooksPath</span> print <span class="inlinecode">scripts/git-hooks</span>? If not, re-run <span class="inlinecode">scripts/setup.sh</span>.</div></div>
       </div>
       <div>
         <div class="code"><pre>pip install pre-commit
-pre-commit install
-pre-commit run --all-files
+git config core.hooksPath     <span class="cm"># → scripts/git-hooks</span>
+pre-commit run --all-files --config .pre-commit-config.yaml
 
 <span class="cm"># 3: sabotage, then try to commit</span>
 <span class="cm">#     (edit the Clock binding → now(250))</span>
@@ -773,7 +781,7 @@ gh secret set EXAMPLE_SECRET --body <span class="cmd2">"hunter2"</span>
 
 <span class="cm"># C: cancel superseded runs (workflow-level)</span>
 concurrency:
-  group: <span class="cmd2">"${{ github.workflow }}-${{ github.ref }}"</span>
+  group: <span class="cmd2">"lab03-${{ github.workflow }}-${{ github.ref }}"</span>
   cancel-in-progress: true
 <span class="cm">#    push twice fast → first run: cancelled</span></pre></div>
         <div class="goal" style="margin-top:16px">
@@ -802,7 +810,7 @@ concurrency:
     </ul>
     <div class="goal" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14);border-left-color:var(--peri2)">
       <span class="badge" style="background:var(--peri2);color:var(--navy)">Next</span>
-      <p style="color:#c4cfde">Before Lab 04: skim <span class="mono" style="color:#dbe4f0">docs/self-hosted-runners.md</span>, because you'll register a real one there. Lab 04 opens up the <b style="color:#fff">Ignition 8.3 file structure</b> itself: <span class="mono" style="color:#dbe4f0">project.json</span>, view resources, and deploying project files to a gateway properly, all on the CI foundation you just laid.</p>
+      <p style="color:#c4cfde">Before Lab 04: <b style="color:#fff">delete the branch protection rule</b> on your fork's <span class="mono" style="color:#dbe4f0">main</span> (every lab shares it), and skim <span class="mono" style="color:#dbe4f0">docs/self-hosted-runners.md</span>, because you'll register a real one there. Lab 04 opens up the <b style="color:#fff">Ignition 8.3 file structure</b> itself: <span class="mono" style="color:#dbe4f0">project.json</span>, view resources, and deploying project files to a gateway properly, all on the CI foundation you just laid.</p>
     </div>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 03 complete</span></div>

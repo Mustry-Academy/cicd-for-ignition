@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # One-shot setup for the Lab 03 gateway:
 #   - sanity-checks the host (docker + compose v2)
+#   - sets the repo-wide git config (pre-commit dispatcher, diff driver)
 #   - ensures .env is in place (copies from .env.example)
 #   - brings up the single Ignition gateway
 #   - waits for it to report RUNNING
@@ -21,6 +22,10 @@ cd "$PROJECT_ROOT"
 # shellcheck source=preflight.sh disable=SC1091
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/preflight.sh"
 lab_preflight
+
+# ---- Repo-wide git config (hooks dispatcher + resource.json diff driver) ----
+# One script at the repo root owns this for every lab; re-running is harmless.
+"$(git -C "$PROJECT_ROOT" rev-parse --show-toplevel)/scripts/install-git-config.sh"
 
 GREEN=$'\033[0;32m'; YELLOW=$'\033[1;33m'; RED=$'\033[0;31m'; NC=$'\033[0m'
 [ -n "${NO_COLOR:-}" ] && { GREEN=""; YELLOW=""; RED=""; NC=""; }

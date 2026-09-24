@@ -49,7 +49,7 @@ The other tools are generic. `ign-lint` is the one that actually understands Ign
 > of an Ignition-aware linter running as a required CI check. The specific tool may evolve or
 > be replaced; the practice won't.
 
-It's configured by a repo-root `rule_config.json`, which is tuned so this lab's clean `lab-project` passes with zero findings. Built-in rules worth knowing:
+It's configured by the lab's `rule_config.json`, which is tuned so this lab's clean `lab-project` passes with zero findings. Built-in rules worth knowing:
 
 - **NamePatternRule** — enforces naming conventions per node type: components → `PascalCase`, properties → `camelCase`, message handlers → `kebab-case`, custom methods → `snake_case`. Severity is set per node type (in this lab, component and custom-method violations are `error`; property and message-handler violations are `warning`).
 - **PollingIntervalRule** — flags `now()` / expression polling faster than a configured minimum. In this lab the minimum is **1000 ms**; anything faster is a finding (a 250 ms poll on a Perspective binding is a real performance footgun at scale).

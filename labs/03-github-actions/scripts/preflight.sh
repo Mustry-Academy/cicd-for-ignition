@@ -127,14 +127,29 @@ pf_on_drvfs() {
   return 1
 }
 
+# The clone's top folder: this lab lives in labs/<lab>/ of a bigger repo.
+# Walks up to the .git entry instead of asking git, which refuses to answer
+# ("dubious ownership") in exactly the broken setups this file repairs.
+pf_clone_root() {
+  local d="$PWD"
+  while [ "$d" != "/" ]; do
+    [ -e "$d/.git" ] && { echo "$d"; return 0; }
+    d="$(dirname "$d")"
+  done
+  echo "$PWD"
+}
+
 pf_check_filesystem() {
   [ "${LAB_SKIP_PREFLIGHT:-}" = "1" ] && return 0
   pf_is_wsl || return 0
   pf_on_drvfs || return 0
 
-  local suggested="$HOME/${PWD##*/}"
+  # Move the whole clone, not just this lab folder inside it.
+  local clone suggested
+  clone="$(pf_clone_root)"
+  suggested="$HOME/${clone##*/}"
   echo "" >&2
-  echo "${RED}This repo is on the Windows filesystem ($PWD).${NC}" >&2
+  echo "${RED}This repo is on the Windows filesystem ($clone).${NC}" >&2
   echo "" >&2
   echo "Under WSL that path is a DrvFs mount: file ownership is decided by" >&2
   echo "Windows ACLs, not by your WSL user. Your Windows user, your WSL user" >&2
@@ -145,11 +160,11 @@ pf_check_filesystem() {
   echo "" >&2
   echo "${GREEN}Move the clone into the WSL filesystem and re-run:${NC}" >&2
   echo "" >&2
-  echo "    mv \"$PWD\" \"$suggested\"" >&2
-  echo "    cd \"$suggested\"" >&2
+  echo "    mv \"$clone\" \"$suggested\"" >&2
+  echo "    cd \"$suggested${PWD#"$clone"}\"" >&2
   echo "    scripts/setup.sh" >&2
   echo "" >&2
-  echo "Then reopen it in VS Code with:  code \"$suggested\"" >&2
+  echo "Then reopen it in VS Code with:  code \"$suggested${PWD#"$clone"}\"" >&2
   echo "(Docker Desktop must have WSL2 integration enabled for this distro.)" >&2
   echo "" >&2
 
@@ -431,7 +446,7 @@ pf_configure_git() {
   # reclaim above this is normally moot, but a repo cloned from Windows can
   # still trip it.
   git status >/dev/null 2>&1 || {
-    git config --global --add safe.directory "$PWD" 2>/dev/null || true
+    git config --global --add safe.directory "$(pf_clone_root)" 2>/dev/null || true
   }
 }
 

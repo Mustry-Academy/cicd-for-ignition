@@ -19,12 +19,13 @@ automated, file-based deployment is the subject of Labs 04–05. The goal here i
 ## What you'll do
 
 - **Part 1 — Linters as your safety net:** yamllint, shellcheck, actionlint, **ign-lint**, `scripts/validate.sh`
-- **Part 2 — GitHub Actions:** build `ci.yml`, path filters, required check
+- **Part 2 — GitHub Actions:** build `lab03-ci.yml`, path filters, required check
 - **Part 3 — Self-hosted runners:** a look ahead (short demo) — hands-on comes in Labs 04–05
 
 ## Setup
 
-You'll need Docker (Compose V2) and Python 3.10+. Clone, copy the env file, and confirm
+You'll need Docker (Compose V2) and Python 3.10+. From this lab's folder in your fork
+(`~/mustry-academy/cicd-for-ignition/labs/03-github-actions`), copy the env file and confirm
 the gateway boots:
 
 ```bash
@@ -37,8 +38,8 @@ scripts/setup.sh        # boots one Ignition gateway, waits for RUNNING, prints 
 > yesterday — its `restart: unless-stopped` policy keeps it alive, reboots included. This
 > collision is left in deliberately: a port is a machine-wide resource, and two gateways
 > can't share one. Tear Lab 02 down first (its state survives in its Docker volume):
-> `cd ../cicd-lab-02-branching-and-prs && scripts/teardown.sh`, then re-run
-> `scripts/setup.sh` here.
+> `cd ../02-branching-and-prs && scripts/teardown.sh`, then `cd ../03-github-actions` and
+> re-run `scripts/setup.sh`.
 
 Install the linters:
 
@@ -87,26 +88,28 @@ pip install yamllint==1.35.1 ign-lint==0.6.1            # ign-lint needs Python 
 ### Your own repo (needed for Part 2)
 
 Part 2 has you open pull requests and set a *required status check* on `main` — both need
-a repo **you** control (you need admin rights to configure branch protection). You already
-forked the lab and cloned your fork, so `origin` is your own repo — nothing more to set up.
-Just point `gh` at your fork so PRs land there and not on the source repo:
+a repo **you** control (you need admin rights to configure branch protection). That's the
+`cicd-for-ignition` fork you made at the start of the course: `origin` is your own repo, and
+every lab lives in it. If you skipped the one-time course setup, point `gh` at your fork now
+so PRs land there and not on the source repo:
 
 ```bash
-# make gh target YOUR fork for PRs, not the source repo:
-gh repo set-default <you>/cicd-lab-03-github-actions
+# make gh target YOUR fork for PRs, not the source repo (once per clone):
+gh repo set-default <you>/cicd-for-ignition
 ```
 
 Confirm `origin` is your fork with `git remote -v`. (No `upstream` remote is needed — the
 lab never pulls from the source repo.)
 
-Two fork gotchas, both one-time:
+Two fork gotchas, both one-time for the whole course (check them now if Actions never ran
+on your fork yet):
 
 1. **Enable workflows on the fork.** GitHub keeps Actions dormant on fresh forks: open your
    fork's **Actions** tab on github.com and click *"I understand my workflows, go ahead and
    enable them"*. Until you do, PRs in your fork run **no CI at all**.
 2. **Watch the PR base.** New pull requests default to the *source* repo
-   (`Mustry-Academy/...`). The `gh repo set-default` above fixes the CLI; in the web UI,
-   check that the base branch is **your fork's** `main` before you click create.
+   (`Mustry-Academy/cicd-for-ignition`). The `gh repo set-default` above fixes the CLI; in the
+   web UI, check that the base branch is **your fork's** `main` before you click create.
 
 Open PRs inside your own fork: you own it, so you can configure branch protection and merge
 your own PRs once CI is green.
@@ -135,11 +138,12 @@ This plants a handful of issues into your working tree — at least one for ever
 including three realistic Ignition findings in the Perspective view: a **brittle, broken
 binding**, a **runaway poll rate**, and a **mis-named component**. Hunt them down with the
 linters — and resist `git diff`, which spoils every answer at once; reading the linters'
-output is the exercise. Reset to a clean tree
-any time with:
+output is the exercise. The planted workflow lands in the repo-root `.github/workflows/`,
+because that's the only place workflows live (Part 2 explains why). Reset to a clean tree
+any time, from the lab folder, with:
 
 ```bash
-git restore . && rm -f .github/workflows/example.yml
+git restore . && rm -f ../../.github/workflows/lab03-example.yml
 ```
 
 ### We-do
@@ -165,7 +169,10 @@ fix one finding.
    `view.json`, walks the component tree, and checks naming conventions, binding poll
    rates, brittle references, and the Python embedded in views, all without a running
    gateway.
-4. `actionlint`: GitHub Actions workflow syntax + expression typing (run it on the seeded `example.yml`).
+4. `actionlint -config-file .github/actionlint.yaml ../../.github/workflows/lab03-*.yml`: GitHub
+   Actions workflow syntax + expression typing (this picks up the seeded `lab03-example.yml`).
+   The workflows sit at the repo root, and `-config-file` points at this lab's config, which
+   declares the self-hosted runner label Part 3 uses.
 5. `shellcheck scripts/*.sh`: catches almost every shell scripting bug ever made.
 
 Spend the most time on **ign-lint** — it's the one that's genuinely Ignition-aware, and
@@ -182,7 +189,7 @@ Hunt every planted issue, fix them all, then make the config your own. (The step
 match the assignment slides.)
 
 1. Run `scripts/seed.sh` for a fresh broken state (reset first if your tree still carries
-   We-do fixes: `git restore . && rm -f .github/workflows/example.yml`).
+   We-do fixes: `git restore . && rm -f ../../.github/workflows/lab03-example.yml`).
 2. Run each of `yamllint`, `shellcheck`, `actionlint`, `ign-lint`, and `scripts/validate.sh`,
    and write down each finding — make a list: *what the tool flagged*, in *which file*.
 3. Spend the most time reading **ign-lint**'s output. It fires two rules on one binding
@@ -203,21 +210,25 @@ match the assignment slides.)
 > then reload the Overview page. A running gateway only picks up bind-mounted edits on a
 > project scan or a restart.
 
-> Stuck on a finding? [`instructor-notes/lab-key.md`](../instructor-notes/lab-key.md) has the
-> walkthrough — but give it a genuine attempt yourself first; the diagnostic skill is most
-> of the lesson.
+> Stuck on a finding? Give it a genuine attempt first — the diagnostic skill is most of the
+> lesson — then ask the instructor or on Discord.
 
 ### Stretch `[OPTIONAL]` — block bad commits before they leave your machine
 
 CI catches it on the PR; [`pre-commit`](https://pre-commit.com) catches it at `git commit`.
 The repo ships the config: `.pre-commit-config.yaml` wires all four linters.
 
-1. Install and enable the hook: `pip install pre-commit`, then `pre-commit install`.
-2. Baseline run over everything: `pre-commit run --all-files` — should be clean after Part 1.
+1. Install the tool: `pip install pre-commit`. There's no `pre-commit install` step:
+   `scripts/setup.sh` already pointed git at the repo's hook dispatcher
+   (`core.hooksPath=scripts/git-hooks`), which runs this lab's `.pre-commit-config.yaml`
+   whenever a commit touches `labs/03-github-actions/`. One clone, several labs, one hook.
+2. Baseline run over the whole lab: `pre-commit run --all-files --config .pre-commit-config.yaml`
+   — should be clean after Part 1.
 3. **Prove it works:** make a bad change (set a binding to `now(250)`), try to commit, and
    watch the ign-lint hook refuse the commit.
-4. Undo the bad change. If the commit went through anyway: did `pre-commit install` run? Is
-   `.git/hooks/pre-commit` populated?
+4. Undo the bad change. If the commit went through anyway: is `pre-commit` on your PATH
+   (`pre-commit --version`, venv active)? Does `git config core.hooksPath` print
+   `scripts/git-hooks`? If not, re-run `scripts/setup.sh`.
 
 > **Two nets.** Pre-commit is the *fast, local* net; CI is the *enforced, shared* one. You
 > want both: local for speed, CI because hooks are opt-in and can be skipped.
@@ -244,7 +255,7 @@ Start from a clean tree (Part 1 fixes applied, `.yamllint.yml` in place).
 > `scripts/validate.sh` and the linters *by hand* at a terminal. That is a pipeline: an event
 > (you typing) triggers steps (the commands) that pass or fail (the exit code). All Part 2 does
 > is change the trigger from "you remembering" to "a pull request", and move the steps into
-> `ci.yml`. Same steps, same pass/fail, different trigger. When you build the workflow below,
+> `lab03-ci.yml`. Same steps, same pass/fail, different trigger. When you build the workflow below,
 > notice you're not writing new *checks*, you're just wrapping the ones you already ran. (And
 > this afternoon in Lab 04, a *deploy* is the same shape again: trigger, steps, pass/fail, where
 > the steps ship files to a gateway.)
@@ -257,36 +268,56 @@ workflow  ──contains──▶  jobs  ──contains──▶  steps  ──r
    └── on (triggers), permissions, concurrency
 ```
 
+> **Monorepo note: where workflows live.** GitHub only reads workflows from
+> `.github/workflows/` at the **repo root** — a `labs/03-github-actions/.github/workflows/`
+> folder is silently ignored. So this lab's workflow is `.github/workflows/lab03-ci.yml` at
+> the top of your fork, next to the other labs' workflows. Two settings keep it in its lane,
+> and you'll see them in every workflow below:
+>
+> - **`paths:`** on each `pull_request` / `push` trigger, scoped to `labs/03-github-actions/**`
+>   (plus the workflow file itself). Without it, a change to *any* lab would run Lab 03's CI.
+> - **`defaults: run: working-directory: labs/03-github-actions`**, so every `run:` step
+>   starts in the lab folder and the commands are exactly the ones you type locally.
+>   It covers `run:` steps only; `uses:` steps and their `with:` paths still see the repo root.
+>
+> Real monorepos, with many projects sharing one `.github/`, scope their CI the same way.
+
 The repo ships the **finished** workflow — it's the answer key, and your fork has it too.
 Set it aside first, so you're building your own rather than admiring ours (you'll compare
 against it in step 4).
 
 The quickest path is `scripts/prepare-part2.sh` — it prints each action as it runs, does the
 `git mv`, and scaffolds a bare two-job skeleton (`validate` + `lint`, each just `checkout` plus
-TODO markers) into a fresh `.github/workflows/ci.yml`:
+TODO markers) into a fresh `.github/workflows/lab03-ci.yml` at the repo root:
 
 ```bash
 scripts/prepare-part2.sh
-git add -A && git commit -m "chore: set aside reference workflow, scaffold ci.yml skeleton"
+git add -A && git commit -m "chore: set aside reference workflow, scaffold lab03-ci.yml skeleton"
 ```
 
 Prefer to do it by hand? The script only runs the `git mv` and writes that skeleton file — so
-just do both yourself:
+just do both yourself (from the lab folder):
 
 ```bash
-git mv .github/workflows/ci.yml .github/ci-reference.yml
+git mv ../../.github/workflows/lab03-ci.yml .github/ci-reference.yml
 git commit -m "chore: set aside the reference workflow"
 ```
 
-Either way, `.github/workflows/ci.yml` is now yours to build out — filling in the TODOs, not
-copying the reference. Start with the gateway-free validator job:
+Either way, `.github/workflows/lab03-ci.yml` (repo root) is now yours to build out — filling
+in the TODOs, not copying the reference. Start with the gateway-free validator job:
 
 ```yaml
-name: CI
+name: Lab 03 · CI
 on:
   pull_request:
+    paths:                                # monorepo: only this lab's changes
+      - "labs/03-github-actions/**"
+      - ".github/workflows/lab03-*.yml"
 permissions:
   contents: read
+defaults:
+  run:
+    working-directory: labs/03-github-actions   # run: steps start in the lab folder
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -309,8 +340,11 @@ Then flesh out the `lint` job with the Part 1 linters, including `ign-lint`:
         with:
           python-version: "3.12"
       - run: pip install yamllint==1.35.1 ign-lint==0.6.1
-      - run: yamllint -c .yamllint.yml .
+      - run: yamllint -c .yamllint.yml . ../../.github/workflows/lab03-*.yml
       - uses: raven-actions/actionlint@v2
+        with:                             # a `uses:` step: paths are repo-root-relative
+          files: ".github/workflows/lab03-*.yml"
+          flags: "-config-file labs/03-github-actions/.github/actionlint.yaml"
       - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends shellcheck
       - run: shellcheck scripts/*.sh
       - run: ign-lint --config rule_config.json --files "projects/**/view.json"
@@ -334,24 +368,30 @@ you go:
 
 Make the workflow yours.
 
-**1 — Path filters.** Add a `paths:` filter so the workflow skips docs-only PRs:
+**1 — Path filters.** Narrow the `paths:` filter from "anything in this lab" to the files
+the checks actually read, so the workflow skips docs-only PRs. Add a `push` backstop on
+`main`, scoped to the lab the same way:
 
 ```yaml
 on:
   pull_request:
     paths:
-      - "projects/**"
-      - "scripts/**"
-      - "docker-compose.yml"
-      - ".github/workflows/**"
-      - ".yamllint.yml"
-      - "rule_config.json"
+      - "labs/03-github-actions/projects/**"
+      - "labs/03-github-actions/scripts/**"
+      - "labs/03-github-actions/docker-compose.yml"
+      - ".github/workflows/lab03-*.yml"
+      - "labs/03-github-actions/.yamllint.yml"
+      - "labs/03-github-actions/rule_config.json"
   push:
     branches: [main]
+    paths:
+      - "labs/03-github-actions/**"
+      - ".github/workflows/lab03-*.yml"
 ```
 
-Open a PR that touches **only** `README.md` and confirm the workflow is **skipped** (not
-just passed). Hold that thought — it collides with required checks in step 3.
+`paths:` patterns are always relative to the **repo root**; `working-directory` doesn't
+change that. Open a PR that touches **only** `labs/03-github-actions/README.md` and confirm
+the workflow is **skipped** (not just passed). Hold that thought — it collides with required checks in step 3.
 
 **2 — Compose validation.** Add a final step to the lint job:
 
@@ -374,6 +414,12 @@ repo admin:
 (If your Settings page offers the newer **rulesets** UI instead, the same four rules exist
 there — but leave **Restrict updates** *unticked*: it doesn't just block direct pushes, it
 blocks PR merges too.)
+
+> **This rule is temporary.** Your fork's `main` is shared by every lab, and branch
+> protection can't be scoped to a folder. Leave the rule on for the rest of this lab, then
+> **delete it when you finish Lab 03** (Settings → Branches, or Settings → Rules →
+> Rulesets). Otherwise a PR for any other lab that doesn't report `lint` and `validate`
+> hangs on "Expected — waiting for status" for the reason the next callout explains.
 
 Now prove the wall exists, from both sides:
 
@@ -403,14 +449,15 @@ Now prove the wall exists, from both sides:
 > understand *why* the PR hangs — this exact interaction bites real teams.
 
 **4 — Sanity check.** Commit any remaining changes. Your workflow should *structurally*
-match the reference you set aside at the start of this Part (`.github/ci-reference.yml`) —
-same triggers, jobs, and step order; step `name:` labels and comments may differ — see
-[`instructor-notes/lab-key.md`](../instructor-notes/lab-key.md) for the walkthrough.
+match the reference you set aside at the start of this Part (`.github/ci-reference.yml` in
+this lab folder) — same triggers, jobs, and step order; step `name:` labels and comments
+may differ.
 
 ### Stretch `[OPTIONAL]`
 
 - **Fix the docs-only-PR hang** with the no-op twin from the step 3 callout: a second
-  workflow whose `paths-ignore:` mirrors the real filter list, with jobs named exactly
+  workflow (`.github/workflows/lab03-ci-noop.yml`) whose `paths-ignore:` mirrors the real
+  filter list, with jobs named exactly
   `lint` and `validate` that just `echo` and exit 0 — the *job* names are what the
   required checks match on (the workflow's `name:` is cosmetic). Mind the caveat in
   GitHub's docs: a PR touching both docs *and* code triggers both workflows, and two
@@ -424,7 +471,7 @@ same triggers, jobs, and step order; step `name:` labels and comments may differ
   `leak? ***`. Delete the echo step afterwards; the exercise is watching the masking work,
   not keeping a leak around.
 - **Cancel superseded runs.** Add a workflow-level `concurrency:` group
-  (`group: ${{ github.workflow }}-${{ github.ref }}`, `cancel-in-progress: true`) so a
+  (`group: lab03-${{ github.workflow }}-${{ github.ref }}`, `cancel-in-progress: true`) so a
   force-push doesn't leave a stale run burning minutes — the `concurrency` box from the
   mental-model diagram, in practice. Prove it: push two commits in quick succession and
   watch the first run flip to *cancelled*.
@@ -494,12 +541,12 @@ docker logs -f lab03-runner          # watch for "Listening for Jobs"
 ```
 
 **2 — Dispatch the shipped workflow.** The repo already ships
-[`.github/workflows/runner-demo.yml`](../.github/workflows/runner-demo.yml) —
+[`.github/workflows/lab03-runner-demo.yml`](../../../.github/workflows/lab03-runner-demo.yml) —
 manual-only (`workflow_dispatch`), with `runs-on: [self-hosted, local-lab03]`, so there is
 nothing to write. Fire it, then flip to the runner's logs:
 
 ```bash
-gh workflow run runner-demo.yml   # then watch the docker logs terminal
+gh workflow run lab03-runner-demo.yml   # then watch the docker logs terminal
 ```
 
 The job runs live in `docker logs`, on your machine, not GitHub's infra. It is deliberately
@@ -537,7 +584,8 @@ You built a CI safety net for an Ignition project, end to end:
 - **An understanding of self-hosted runners** — when they're worth it, and the security
   weight they carry.
 
-**Before Lab 04:** skim [`docs/self-hosted-runners.md`](../docs/self-hosted-runners.md) — you'll register a real runner there.
+**Before Lab 04:** delete the branch protection rule on your fork's `main` (Part 2, step 3),
+and skim [`docs/self-hosted-runners.md`](../docs/self-hosted-runners.md) — you'll register a real runner there.
 
 **What's next:** Lab 04 opens up the Ignition file structure itself — `project.json`, view
 exports, and how to deploy project files to a gateway properly — building on the CI
