@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 02 Assignment: Branching &amp; pull requests, applied to Ignition</title>
+<link rel="icon" type="image/png" href="logos/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0e1b2e;
+  --navy2:#15233a;
+  --blue:#2563eb;
+  --blue-d:#1d4ed8;
+  --peri:#93a9f0;
+  --peri2:#a8bef7;
+  --peri-soft:#e8eefc;
+  --bg:#eef1f6;
+  --panel:#ffffff;
+  --panel2:#f5f8fc;
+  --line:#e3e9f1;
+  --line2:#d3dcea;
+  --txt:#15233a;
+  --txt-dim:#5a6a7e;
+  --txt-faint:#94a2b4;
+  --good:#16a34a; --good-soft:#e3f6ea;
+  --warn:#d97706; --warn-soft:#fbf0db;
+  --teal:#3bbdb4; --teal-l:#5fd6cd;
+  --shadow:0 1px 2px rgba(14,27,46,.05),0 10px 30px -16px rgba(14,27,46,.28);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--navy);
+  color:var(--txt);
+  font-family:'Libre Franklin',sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+
+/* ---- deck mechanics ---- */
+.deck{height:100vh;width:100vw;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth}
+.deck::-webkit-scrollbar{display:none}
+.slide{
+  height:100vh;width:100vw;scroll-snap-align:start;scroll-snap-stop:always;
+  display:flex;flex-direction:column;position:relative;
+  padding:64px 64px 40px;background:var(--bg);
+}
+.slide.dark{background:radial-gradient(120% 120% at 80% -10%,#1c3358 0%,#0e1b2e 55%)}
+
+/* progress + nav */
+.hud{position:fixed;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.08);z-index:50}
+.hud .bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--peri));width:0;transition:width .3s}
+.pager{position:fixed;right:22px;bottom:18px;z-index:50;font-size:11px;color:var(--txt-faint);font-family:'IBM Plex Mono'}
+.pager.on-dark{color:rgba(255,255,255,.55)}
+.hint{position:fixed;left:22px;bottom:16px;z-index:50;font-size:10.5px;color:var(--txt-faint);letter-spacing:.3px}
+.hint.on-dark{color:rgba(255,255,255,.4)}
+
+/* ---- logo ---- */
+.brandrow{display:flex;align-items:center;gap:13px}
+.logo-img{height:30px;width:auto;display:block}
+.logo-img.logo-lg{height:44px}
+
+/* slide chrome */
+.eyebrow{font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:14px}
+.dark .eyebrow{color:var(--peri2)}
+.title{font-weight:800;font-size:38px;line-height:1.05;letter-spacing:-1px;color:var(--navy)}
+.dark .title{color:#fff}
+.lead{font-size:16px;color:var(--txt-dim);line-height:1.5;max-width:820px;margin-top:14px}
+.dark .lead{color:#c4cfde}
+.sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:22px}
+.sechead .num{font-family:'IBM Plex Mono';font-size:12px;font-weight:600;color:#fff;background:var(--blue);padding:5px 11px;border-radius:8px;letter-spacing:.5px;white-space:nowrap}
+.sechead .num.phase2{background:var(--peri)}
+.sechead .num.warm{background:var(--teal)}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:40px}
+.topbar .stage{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt-faint);font-weight:600}
+.topbar .stage.on-dark{color:rgba(255,255,255,.5)}
+
+/* ---- cover ---- */
+.cover{flex:1;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.cover .big{font-weight:800;font-size:58px;line-height:1.02;letter-spacing:-1.6px;color:#fff;max-width:18ch}
+.cover .big em{font-style:normal;color:var(--peri2)}
+.cover .sub{font-size:17px;color:#aebbcd;max-width:64ch;line-height:1.55;margin-top:18px}
+.cover .for{margin-top:30px;display:flex;align-items:center;gap:14px;font-size:13px;color:#8fa0b6;flex-wrap:wrap}
+.cover .for .pill{border:1px solid rgba(255,255,255,.16);border-radius:30px;padding:7px 15px;color:#dbe4f0}
+.cover .for .pill b{color:#fff;font-weight:700}
+
+/* ---- generic layout ---- */
+.body{flex:1;display:flex;flex-direction:column;justify-content:center}
+
+/* ---- numbered task steps ---- */
+.steps{display:flex;flex-direction:column;gap:13px;margin-top:4px}
+.step{display:grid;grid-template-columns:34px 1fr;gap:15px;align-items:start}
+.step .ix{width:34px;height:34px;border-radius:10px;background:var(--peri-soft);color:var(--blue);font-weight:800;font-size:14px;display:grid;place-items:center;font-family:'IBM Plex Mono'}
+.step .ix.t{background:rgba(59,189,180,.16);color:var(--teal)}
+.step .ix.p{background:rgba(147,169,240,.22);color:var(--blue-d)}
+.step .tx{font-size:15px;color:var(--txt-dim);line-height:1.5;padding-top:5px}
+.step .tx b{color:var(--txt);font-weight:700}
+.step .tx code,.inlinecode{font-family:'IBM Plex Mono';font-size:13.5px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--blue-d)}
+
+/* code block */
+.code{background:var(--navy);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);margin-top:6px;overflow:auto}
+.code pre{font-family:'IBM Plex Mono';font-size:14px;color:#dbe6f5;line-height:1.7}
+.code .cm{color:#7d93ad}
+.code .cmd2{color:var(--peri2)}
+
+/* goal / objective banner */
+.goal{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--blue);border-radius:14px;padding:16px 20px;box-shadow:var(--shadow);margin-top:auto}
+.goal .badge{font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#fff;background:var(--blue);padding:5px 10px;border-radius:7px;white-space:nowrap}
+.goal p{font-size:14px;color:var(--txt-dim);line-height:1.5}
+.goal p b{color:var(--txt);font-weight:700}
+.goal.warn-g{border-left-color:var(--warn)}
+.goal.warn-g .badge{background:var(--warn)}
+.goal.good-g{border-left-color:var(--good)}
+.goal.good-g .badge{background:var(--good)}
+
+/* checklist (dark) */
+.checks{display:flex;flex-direction:column;gap:13px;margin-top:6px}
+.checks li{list-style:none;display:flex;gap:13px;align-items:flex-start;font-size:15.5px;color:var(--txt-dim);line-height:1.5}
+.checks li b{color:var(--txt);font-weight:700}
+.ck{flex:none;width:23px;height:23px;border-radius:7px;background:var(--peri-soft);display:grid;place-items:center;margin-top:1px}
+.ck svg{width:12px;height:12px;color:var(--blue)}
+.dark .checks li{color:#c4cfde}
+.dark .checks li b{color:#fff}
+.dark .ck{background:rgba(147,169,240,.18)}
+.dark .ck svg{color:var(--peri2)}
+
+/* phase map (cover-ish overview) */
+.pmap{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:10px}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.pcard:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--teal)}
+.pcard.p1:before{background:var(--blue)}
+.pcard.p2:before{background:var(--peri)}
+.pcard .pn{font-family:'IBM Plex Mono';font-size:11px;color:var(--txt-faint);font-weight:600;letter-spacing:1px}
+.pcard h4{font-size:18px;font-weight:800;letter-spacing:-.3px;margin:8px 0 4px}
+.pcard p{font-size:13px;color:var(--txt-dim);line-height:1.5;margin-top:8px}
+.pcard .gate{font-family:'IBM Plex Mono';font-size:11px;color:var(--blue);font-weight:600;margin-top:12px}
+
+/* two-column for parts */
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+
+/* mini strategy graphs — static echoes of the teaching deck's vizzes */
+.vizcard{background:var(--navy);border-radius:14px;padding:10px 14px 9px;box-shadow:var(--shadow)}
+.vizcard .vc-head{margin-bottom:6px}
+.vizcard .vc-head b{color:#fff;font-size:13.5px;font-weight:700;white-space:nowrap}
+.vizcard svg{width:100%;height:auto;display:block}
+.vizcard .vc-cap{color:#9fb0c6;font-size:12px;line-height:1.45;margin-top:7px}
+.vizcard .vc-cap b{color:#dbe4f0}
+.vizcard .lane{stroke:rgba(255,255,255,.08);stroke-width:1}
+.vizcard .lname{fill:#8fa5c0;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600}
+.vizcard .node{fill:var(--navy);stroke:var(--teal);stroke-width:2}
+.vizcard .edge{stroke:#fff;stroke-width:1.6;fill:none}
+.vizcard .edge.br{stroke:var(--teal)}
+.vizcard .rhead{fill:#8fa5c0;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;letter-spacing:1.2px;text-anchor:middle}
+.vizcard .rbox{fill:rgba(147,169,240,.10);stroke:#93a9f0;stroke-width:1.5}
+.vizcard .rbox.you{fill:rgba(59,189,180,.10);stroke:var(--teal)}
+.vizcard .rlab{fill:#dbe4f0;font-family:'IBM Plex Mono',monospace;font-size:12.5px;text-anchor:middle}
+.vizcard .ntx{fill:#9fb6cf;font-family:'IBM Plex Mono',monospace;font-size:11px;text-anchor:middle}
+.vizcard .redge{stroke:#fff;stroke-width:1.6;fill:none}
+.vizcard .redge.t{stroke:var(--teal)}
+.vizcard .redge.bad{stroke:#ef6f6f;stroke-dasharray:5 4}
+.vizcard .ah{fill:#fff}
+.vizcard .ah.t{fill:var(--teal)}
+.vizcard .ah.bad{fill:#ef6f6f}
+.vizcard .gtxt{fill:#5fd39a;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;text-anchor:middle}
+.vizcard .btxt{fill:#ef6f6f;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;text-anchor:middle}
+
+.foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--txt-faint);padding-top:22px}
+.dark .foot{color:rgba(255,255,255,.45)}
+
+@media print{
+  body{overflow:visible}
+  .deck{height:auto;overflow:visible}
+  .slide{height:100vh;page-break-after:always;break-after:page}
+  .hud,.pager,.hint{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- 1 · COVER -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img logo-lg" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Lab 02 · The assignment · 14:00-16:00</div>
+  </div>
+  <div class="cover">
+    <div class="eyebrow">The assignment · breakout rooms</div>
+    <div class="big">Live the <em>hotfix scenario</em> yourself.</div>
+    <div class="sub">In your breakout room, on your own fork of a real Ignition project: pick a strategy for your team, then run the release-week scenario for real. Ship a v2.0 feature, get ambushed by a P1 bug in production, and thread both through GitHub Flow with PRs your peers review.</div>
+    <div class="for">
+      <span>Floating to help</span>
+      <span class="pill"><b>Sam</b></span>
+      <span class="pill"><b>Jasper</b></span>
+      <span>·</span>
+      <span class="pill">share your screen</span>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 02 · Branching &amp; Pull Requests</span></div>
+</section>
+
+<!-- 2 · HOW THIS WORKS / RULES -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">The assignment · ground rules</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">READ FIRST</span><div><div class="title">How this works</div></div></div>
+    <div class="cols2">
+      <ul class="checks">
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Share your screen</b> in your breakout room. This is a "look over your shoulder" class, so we'll drop in where it's useful.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Work in your own fork.</b> Two repos are in play (see the diagram): <b>upstream</b>, the course repo you forked — you can't push there — and <b>your fork</b>, your own copy on GitHub, where your merge rights live (your clone knows it as the <span class="inlinecode">origin</span> remote). A PR's <b>base</b> is the repo + branch it merges <i>into</i>: in this lab, always <b>your fork</b>, base branch <span class="inlinecode">main</span>. Careful: GitHub's "Compare &amp; pull request" banner defaults the base repo to <b>upstream</b> — switch it to your fork every time. <span class="inlinecode">gh pr create</span> refuses to guess and errors until you run <span class="inlinecode">gh repo set-default</span> and pick your fork — setup step 4 does exactly that.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Run <span class="inlinecode">scripts/validate.sh</span> before every PR.</b> It's this lab's green/red signal (every project file valid JSON, every script parseable) and the PR template's first checkbox. Tomorrow, <b>Lab 03</b> turns this exact script into a CI gate no one can merge past — today, <i>you</i> are the CI.</span></li>
+      </ul>
+      <div>
+        <div class="vizcard">
+          <div class="vc-head"><b>Two repos, one rule</b></div>
+          <svg viewBox="0 0 640 305">
+            <text class="rhead" x="145" y="24">UPSTREAM · THE COURSE REPO</text>
+            <rect class="rbox" x="20" y="38" width="250" height="54" rx="10"/>
+            <text class="rlab" x="145" y="60">mustry-academy/cicd-lab-02-…</text>
+            <text class="ntx" x="145" y="80">read-only for you</text>
+            <text class="rhead" x="495" y="24">ORIGIN · YOUR FORK</text>
+            <rect class="rbox you" x="370" y="38" width="250" height="54" rx="10"/>
+            <text class="rlab" x="495" y="60">&lt;your-username&gt;/cicd-lab-02-…</text>
+            <text class="ntx" x="495" y="80">your merge rights live here</text>
+            <line class="redge" x1="270" y1="65" x2="362" y2="65"/>
+            <path class="ah" d="M370,65 l-10,-5 v10 z"/>
+            <text class="ntx" x="320" y="52">fork · once</text>
+            <path class="redge bad" d="M380,100 C350,135 300,135 272,104"/>
+            <path class="ah bad" d="M266,97 l13,0 l-6,11 z"/>
+            <text class="btxt" x="322" y="158">✗ PR's default base</text>
+            <rect class="rbox" x="310" y="220" width="250" height="54" rx="10"/>
+            <text class="rlab" x="435" y="242">~/mustry-academy/cicd-lab-02-…</text>
+            <text class="ntx" x="435" y="262">local · your clone</text>
+            <line class="redge t" x1="420" y1="220" x2="420" y2="100"/>
+            <path class="ah t" d="M420,92 l-5,10 h10 z"/>
+            <text class="ntx" x="458" y="140">git push</text>
+            <line class="redge" x1="510" y1="92" x2="510" y2="212"/>
+            <path class="ah" d="M510,220 l-5,-10 h10 z"/>
+            <text class="ntx" x="572" y="140">clone · once</text>
+            <text class="gtxt" x="320" y="298">✓ every PR: base repo = your fork · base branch = main</text>
+          </svg>
+          <div class="vc-cap" style="text-align:center;font-size:13px"><b>Fork once, clone once, push often.</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="goal good-g">
+      <span class="badge">Ask early</span>
+      <p>Stuck for more than a couple of minutes? <b>Say so in the room.</b> Don't sit blocked in silence; that's exactly what we're here for.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Discuss → run the scenario → review → merge</span></div>
+</section>
+
+<!-- 3 · THE MAP -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">The assignment · the plan</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">THE PLAN</span><div><div class="title">One scenario: discuss → ship → get ambushed → review</div></div></div>
+    <div class="pmap">
+      <div class="pcard">
+        <div class="pn">PART 1 · BREAKOUT ROOM</div>
+        <h4>Which strategy fits your team?</h4>
+        <p>In your room, discuss out loud: of Git Flow / GitHub Flow / trunk-based, which fits <b>your</b> team or project, and why? No writing, just the argument.</p>
+        <div class="gate">sets up the strategy you'll feel next</div>
+      </div>
+      <div class="pcard p1">
+        <div class="pn">PART 2 · THE SCENARIO · GITHUB FLOW</div>
+        <h4>Feature + P1 fix, live</h4>
+        <p>Ship a v2.0 view on a <span class="inlinecode">feature/*</span> branch. Mid-work a P1 bug hits production: fix it on a <span class="inlinecode">fix/*</span> branch and release it with a tag, GitHub Flow's way. PRs your peers review.</p>
+        <div class="gate">gate → scripts/validate.sh ✅ · reviewer invited</div>
+      </div>
+      <div class="pcard p2">
+        <div class="pn">PART 3 · REVIEW · +CONTRIBUTE</div>
+        <h4>Review &amp; merge, in release order</h4>
+        <p>Review a peer's PR with <span class="inlinecode">praise:</span> / <span class="inlinecode">suggestion:</span> / <span class="inlinecode">issue:</span>, respond to the review on yours, then merge: <b>the fix first, then the feature</b>.</p>
+        <div class="gate">stretch → rerun it in Git Flow</div>
+      </div>
+    </div>
+    <div class="goal">
+      <span class="badge">Why this order</span>
+      <p>You <b>argue</b> a strategy in Part 1, then <b>live</b> GitHub Flow's release week in Part 2 (the stretch lets you feel Git Flow's double-merge too). And the review loop only works if reviewers are <b>invited early</b>. Open PRs first, review while you wait.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Discuss → run the scenario → review → contribute</span></div>
+</section>
+
+<!-- 4 · SETUP · 1 · FORK & CLONE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Before you start · setup</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num warm">SETUP · 1</span><div><div class="title">First: your fork, on your machine, in VS Code</div><div class="lead">Same drill as this morning, for the Lab 02 repo. Everyone works from their own fork — that's where your merge rights live.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix t">1</div><div class="tx">Go back to the <b>parent folder from Lab 01</b>: <span class="inlinecode">~/mustry-academy/</span> — all 8 lab repos live side by side in here, one folder per lab.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the lab to <i>your</i> GitHub account and clones your fork, in one go. Prefer the website? Press <b>Fork</b> on github.com — but you still need to <span class="inlinecode">git clone</span> your fork afterwards.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Check the remotes:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b>: that's where every branch and PR in this lab goes. <span class="inlinecode">gh</span> also adds <span class="inlinecode">upstream</span> → the course repo, handy for pulling course updates.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Point <span class="inlinecode">gh</span> at your fork:</b> <span class="inlinecode">gh repo set-default</span>, and pick <b>your fork</b>. With two repos in play, <span class="inlinecode">gh pr create</span> refuses to run ("no default remote repository has been set") until you choose — and choosing upstream would aim your PRs at the course repo.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx">From inside the repo, open VS Code with <span class="inlinecode">code .</span> — then work from its integrated terminal (<span class="inlinecode">Ctrl+`</span>), which already sits in the right folder.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># 1: the parent folder from Lab 01</span>
+cd ~/mustry-academy
+
+<span class="cm"># 2: fork to your account + clone your fork</span>
+gh repo fork mustry-academy/cicd-lab-02-branching-and-prs --clone
+<span class="cm">#    …or press "Fork" on github.com, then clone YOUR fork:</span>
+git clone git@github.com:&lt;your-username&gt;/cicd-lab-02-branching-and-prs.git
+cd cicd-lab-02-branching-and-prs
+
+<span class="cm"># 3: origin → YOUR username? good.</span>
+git remote -v
+
+<span class="cm"># 4: tell gh where PRs go → pick YOUR fork</span>
+gh repo set-default &lt;your-username&gt;/cicd-lab-02-branching-and-prs
+
+<span class="cm"># 5: open VS Code right here</span>
+code .</pre></div>
+        <div class="goal warn-g" style="margin-top:18px">
+          <span class="badge">WSL2</span>
+          <p>Clone into your <b>Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span> — Git and the gateway's bind mount are far slower across the Windows boundary and line endings get messy. <span class="inlinecode">code .</span> from WSL opens a window <b>connected to WSL</b> automatically.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Setup 1 · fork &amp; clone → gateway next</span></div>
+</section>
+
+<!-- 5 · SETUP · 2 · GATEWAY & VALIDATOR -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Before you start · setup</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num warm">SETUP · 2</span><div><div class="title">Boot the gateway (optionally) &amp; meet the validator</div><div class="lead">Five minutes now saves twenty later. The gateway is optional: every exercise works from the files alone — or from the <b>Ignition Designer</b>, if that's your preferred way of working: a Designer save writes the same project files.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix t">1</div><div class="tx"><b>Create your <span class="inlinecode">.env</span>.</b> A <span class="inlinecode">.env</span> file holds settings that belong to <i>your machine (or local setup)</i>, not the repo — here the gateway's admin login, which <span class="inlinecode">docker compose</span> reads at boot. The repo ships only the <span class="inlinecode">.env.example</span> template; <span class="inlinecode">cp .env.example .env</span> makes your own copy, and <span class="inlinecode">.env</span> is <b>gitignored</b> — settings and passwords stay out of Git. (The defaults are fine for this throwaway gateway.)</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Boot the gateway.</b> <span class="inlinecode">scripts/setup.sh</span> is a small bash helper that lives in this repo (open it — it's readable): it checks Docker is there, runs <span class="inlinecode">docker compose up -d</span> to start the Ignition container, polls until the gateway reports <b>RUNNING</b> (cold start takes a few minutes), then prints the URL + the login from your <span class="inlinecode">.env</span>.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx">A running gateway <b>doesn't auto-detect your edits</b>: reload with <span class="inlinecode">docker compose restart</span>, or <span class="inlinecode">scripts/scan.sh</span> — it calls the gateway's <b>scan API</b>, after a one-time API key (<span class="inlinecode">.env.example</span> explains). The third route from the teaching deck: the <b>ignition-project-scan-endpoint</b> module, one clean scan endpoint built for scripts and CI.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx">Run <span class="inlinecode">scripts/validate.sh</span> once <b>now</b>, before you've changed anything, to know what green looks like. It's this lab's stand-in for a test suite: every <span class="inlinecode">.json</span> under <span class="inlinecode">projects/</span> must be valid JSON, every script must parse as Python — gateway-free, runs in a second, and it's the PR template's first checkbox.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre>cp .env.example .env      <span class="cm"># template → your local settings (gitignored)</span>
+
+<span class="cm"># optional: see the project run</span>
+scripts/setup.sh          <span class="cm"># boots the gateway → RUNNING</span>
+<span class="cm"># open http://localhost:8088</span>
+
+<span class="cm"># the PR gate: run before every PR</span>
+scripts/validate.sh       <span class="cm"># → ✓ all project files valid</span></pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">What you're editing</span>
+          <p><span class="inlinecode">projects/lab-project/</span>: the Oatmakers Site 04 oat-line overview + two script libraries. Done for the day? <span class="inlinecode">scripts/teardown.sh</span> stops the gateway.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Setup 2 · gateway → Part 1</span></div>
+</section>
+
+<!-- 6 · PART 1 · DISCUSS THE STRATEGY (breakout room) -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 1 · breakout room · discuss</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">PART 1</span><div><div class="title">Which strategy fits your team?</div><div class="lead">In your room, talk it through: no writing, just the argument. The three strategies from the teaching deck meet an actual team's reality.</div></div></div>
+    <div class="cols2">
+      <div>
+        <div class="steps">
+          <div class="step"><div class="ix t">1</div><div class="tx"><b>Go around the room.</b> Each person sketches their own team or project out loud: <b>release cadence · regulatory constraints · team size · how often production ships</b>.</div></div>
+          <div class="step"><div class="ix t">2</div><div class="tx"><b>Argue the fit.</b> For each person, the room agrees which of the three strategies fits <b>their</b> reality, and <i>why</i>. Disagreement is the point; talk it out.</div></div>
+          <div class="step"><div class="ix t">3</div><div class="tx"><b>Land on one for the room.</b> You'll run <b>Part 2 in GitHub Flow</b> regardless (it's the course's strategy), but knowing which one you'd actually pick is what makes feeling the difference land.</div></div>
+        </div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">No team?</span>
+          <p>Never worked on a multi-engineer team? Argue it for an <b>Ignition team you've consulted with</b>, or use the scenario in <span class="inlinecode">docs/branching-strategies.md</span> as a stand-in.</p>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="vizcard">
+          <div class="vc-head"><b>Git Flow</b></div>
+          <svg viewBox="0 14 648 140">
+            <line class="lane" x1="118" y1="28" x2="640" y2="28"/><line class="lane" x1="118" y1="56" x2="640" y2="56"/><line class="lane" x1="118" y1="84" x2="640" y2="84"/><line class="lane" x1="118" y1="112" x2="640" y2="112"/><line class="lane" x1="118" y1="140" x2="640" y2="140"/>
+            <text class="lname" x="8" y="32">main</text><text class="lname" x="8" y="60">hotfix/*</text><text class="lname" x="8" y="88">release/*</text><text class="lname" x="8" y="116">develop</text><text class="lname" x="8" y="144">feature/*</text>
+            <line class="edge" x1="130" y1="28" x2="347" y2="28"/><line class="edge" x1="347" y1="28" x2="577" y2="28"/>
+            <line class="edge" x1="173" y1="112" x2="391" y2="112"/><line class="edge" x1="391" y1="112" x2="490" y2="112"/><line class="edge" x1="490" y1="112" x2="620" y2="112"/>
+            <line class="edge" x1="217" y1="140" x2="260" y2="140"/><line class="edge" x1="260" y1="140" x2="434" y2="140"/>
+            <line class="edge br" x1="130" y1="28" x2="173" y2="112"/><line class="edge br" x1="173" y1="112" x2="217" y2="140"/>
+            <line class="edge br" x1="130" y1="28" x2="304" y2="56"/><line class="edge br" x1="304" y1="56" x2="347" y2="28"/><line class="edge br" x1="304" y1="56" x2="391" y2="112"/>
+            <line class="edge br" x1="391" y1="112" x2="434" y2="140"/><line class="edge br" x1="434" y1="140" x2="490" y2="112"/>
+            <line class="edge br" x1="490" y1="112" x2="533" y2="84"/><line class="edge br" x1="533" y1="84" x2="577" y2="28"/><line class="edge br" x1="533" y1="84" x2="620" y2="112"/>
+            <circle class="node" cx="130" cy="28" r="6"/><circle class="node" cx="347" cy="28" r="6"/><circle class="node" cx="577" cy="28" r="6"/>
+            <circle class="node" cx="304" cy="56" r="6"/>
+            <circle class="node" cx="533" cy="84" r="6"/>
+            <circle class="node" cx="173" cy="112" r="6"/><circle class="node" cx="391" cy="112" r="6"/><circle class="node" cx="490" cy="112" r="6"/><circle class="node" cx="620" cy="112" r="6"/>
+            <circle class="node" cx="217" cy="140" r="6"/><circle class="node" cx="260" cy="140" r="6"/><circle class="node" cx="434" cy="140" r="6"/>
+          </svg>
+          <div class="vc-cap">Two long-lived branches (<b>main</b> + <b>develop</b>) with release and hotfix branches between them — every hotfix and release merges <i>twice</i>.</div>
+        </div>
+        <div class="vizcard">
+          <div class="vc-head"><b>GitHub Flow</b></div>
+          <svg viewBox="0 18 648 92">
+            <line class="lane" x1="118" y1="30" x2="640" y2="30"/><line class="lane" x1="118" y1="64" x2="640" y2="64"/><line class="lane" x1="118" y1="98" x2="640" y2="98"/>
+            <text class="lname" x="8" y="34">main</text><text class="lname" x="8" y="68">fix/*</text><text class="lname" x="8" y="102">feature/*</text>
+            <line class="edge" x1="130" y1="30" x2="410" y2="30"/><line class="edge" x1="410" y1="30" x2="566" y2="30"/>
+            <line class="edge" x1="202" y1="98" x2="266" y2="98"/><line class="edge" x1="266" y1="98" x2="498" y2="98"/>
+            <line class="edge br" x1="130" y1="30" x2="202" y2="98"/>
+            <line class="edge br" x1="130" y1="30" x2="338" y2="64"/><line class="edge br" x1="338" y1="64" x2="410" y2="30"/>
+            <line class="edge br" x1="410" y1="30" x2="498" y2="98"/><line class="edge br" x1="498" y1="98" x2="566" y2="30"/>
+            <circle class="node" cx="130" cy="30" r="6"/><circle class="node" cx="410" cy="30" r="6"/><circle class="node" cx="566" cy="30" r="6"/>
+            <circle class="node" cx="338" cy="64" r="6"/>
+            <circle class="node" cx="202" cy="98" r="6"/><circle class="node" cx="266" cy="98" r="6"/><circle class="node" cx="498" cy="98" r="6"/>
+          </svg>
+          <div class="vc-cap">One long-lived <b>main</b>; every branch is short-lived and returns through a PR — merging <i>is</i> releasing, tags mark what shipped.</div>
+        </div>
+        <div class="vizcard">
+          <div class="vc-head"><b>Trunk-based</b></div>
+          <svg viewBox="0 22 648 68">
+            <line class="lane" x1="118" y1="34" x2="640" y2="34"/><line class="lane" x1="118" y1="78" x2="640" y2="78"/>
+            <text class="lname" x="8" y="38">main</text><text class="lname" x="8" y="82">short-lived/*</text>
+            <line class="edge" x1="130" y1="34" x2="227" y2="34"/><line class="edge" x1="227" y1="34" x2="411" y2="34"/><line class="edge" x1="411" y1="34" x2="508" y2="34"/><line class="edge" x1="508" y1="34" x2="609" y2="34"/>
+            <line class="edge br" x1="227" y1="34" x2="319" y2="78"/><line class="edge br" x1="319" y1="78" x2="411" y2="34"/>
+            <circle class="node" cx="130" cy="34" r="6"/><circle class="node" cx="227" cy="34" r="6"/><circle class="node" cx="411" cy="34" r="6"/><circle class="node" cx="508" cy="34" r="6"/><circle class="node" cx="609" cy="34" r="6"/>
+            <circle class="node" cx="319" cy="78" r="6"/>
+          </svg>
+          <div class="vc-cap">Everyone commits to <b>main</b>; branches live <i>hours</i>. Feature flags ship unfinished work dark — releasing is a flag flip, and it needs serious CI discipline.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 1 · the argument → now live GitHub Flow</span></div>
+</section>
+
+<!-- 7 · PART 2 DIVIDER · THE SCENARIO -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Part 2 · breakout rooms · the scenario</div>
+  </div>
+  <div class="body">
+    <div class="eyebrow">Part 2 · GitHub Flow · for real</div>
+    <div class="title" style="color:#fff;max-width:24ch">The release-week scenario, but this time it's you</div>
+    <p class="lead">The same story from the teaching deck. <b style="color:#fff">v1.2 is live in production.</b> You start shipping the v2.0 feature, and mid-work, a P1 bug in production ambushes you. You thread through GitHub Flow, exactly the way Chapter 1 drew it.</p>
+    <ul class="checks" style="margin-top:22px;max-width:920px">
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Step 1</b>, set the stage: one <span class="mono" style="color:#dbe4f0">main</span>, <span class="mono" style="color:#dbe4f0">v1.2</span> tagged as what's live.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Step 2</b>, the v2.0 feature: add a new Perspective view on a <span class="mono" style="color:#dbe4f0">feature/*</span> branch → PR.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Step 3</b>, the ambush: a P1 bug in production. Fix it on a <span class="mono" style="color:#dbe4f0">fix/*</span> branch — <b style="color:#fff">one</b> PR into <span class="mono" style="color:#dbe4f0">main</span>, released with the <span class="mono" style="color:#dbe4f0">v1.2.1</span> tag.</span></li>
+    </ul>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2 · steps 1 → 3</span></div>
+</section>
+
+<!-- 8 · PART 2 · STEP 1 · SET THE STAGE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 2 · step 1 · set the stage</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">STEP 1</span><div><div class="title">Mark a tag for production</div><div class="lead">One long-lived branch and a tag marking what's in production. This is the graph the scenario runs on.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix p">1</div><div class="tx">GitHub Flow needs just <b>one long-lived branch: <span class="inlinecode">main</span></b>. Every branch you cut starts there and returns there through a PR.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx"><b>Tag what's live: <span class="inlinecode">v1.2</span> on <span class="inlinecode">main</span>.</b> This is "production", the thing the P1 bug is running against. In GitHub Flow, <b>tags carry the release history</b>.</div></div>
+        <div class="step"><div class="ix p">3</div><div class="tx"><b>Push the tag</b> to your fork — your first real <span class="inlinecode">git push</span> of the course, named this morning, used now. The world matches the teaching-deck diagram.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># one long-lived branch: main is it</span>
+git switch main
+
+<span class="cm"># mark what's live in production</span>
+git tag v1.2
+git push origin v1.2      <span class="cm"># → "production" is v1.2</span></pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">Refresher</span>
+          <p><b>Both named in Lab 01 — today they graduate to used.</b> <b><span class="inlinecode">git tag</span></b> pins a permanent name to one exact commit; unlike a branch, it <b>never moves</b> — that's what makes it a release marker. <b><span class="inlinecode">git push</span></b> uploads your local commits and refs to a remote (<span class="inlinecode">origin</span> = your fork). Tags don't ride along with a normal push — <span class="inlinecode">git push origin v1.2</span> sends one explicitly — and a <b>new branch</b> needs <span class="inlinecode">git push -u origin &lt;branch&gt;</span> once; the <span class="inlinecode">-u</span> links it to your fork, so later pushes are plain <span class="inlinecode">git push</span>.</p>
+        </div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">The mental model</span>
+          <p><span class="inlinecode">main</span> = the one shared line of development · <span class="inlinecode">v1.2</span> = the exact commit customers are running · <b>releasing = merging to <span class="inlinecode">main</span> and tagging</b>. Every branch you cut next is short-lived: off <span class="inlinecode">main</span>, back to <span class="inlinecode">main</span>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stage set → ship the v2.0 feature</span></div>
+</section>
+
+<!-- 9 · PART 2 · STEP 2 · THE V2.0 FEATURE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 2 · step 2 · the v2.0 feature</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">STEP 2</span><div><div class="title">Create a feature branch and push it</div><div class="lead">Oatmakers' v2.0 scope starts with a <b>silo detail view</b>. A small, real Ignition change: add it so it goes live in the project. Off <span class="inlinecode">main</span>, the GitHub Flow way.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix p">1</div><div class="tx"><b>Branch off <span class="inlinecode">main</span></b> — in GitHub Flow every branch starts at <span class="inlinecode">main</span> and returns to it through a PR: <span class="inlinecode">feature/v2-silo-detail</span>.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx"><b>Add the view.</b> Easiest path: copy the <span class="inlinecode">overview</span> resource folder to <span class="inlinecode">silo-detail</span> under <span class="inlinecode">views/pages/</span>, edit its <span class="inlinecode">view.json</span> title, and register the page in <span class="inlinecode">page-config/config.json</span> so it's reachable.</div></div>
+        <div class="step"><div class="ix p">3</div><div class="tx"><b>Validate → commit.</b> <span class="inlinecode">scripts/validate.sh</span> green, then commit in <a href="https://www.conventionalcommits.org/" style="color:var(--blue-d)"><b>Conventional Commits</b></a> style: <span class="inlinecode">type(scope): summary</span>, where the type names the kind of change — today you'll need <span class="inlinecode">feat</span> and <span class="inlinecode">fix</span>. Machines can parse it too, which pays off when releases get automated.</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx"><b>Open the PR — on your fork.</b> After the push, GitHub shows a <b>"Compare &amp; pull request"</b> banner on your fork's page (or use <span class="inlinecode">gh pr create</span> — it targets your fork thanks to the <span class="inlinecode">gh repo set-default</span> from setup). Set <b>base repo = your fork</b>, base <span class="inlinecode">main</span>, compare <span class="inlinecode">feature/v2-silo-detail</span> — the banner defaults the base to the upstream course repo. Then fill in the template: <b>What · Why · How to test</b>.</div></div>
+        <div class="step"><div class="ix p">5</div><div class="tx"><b>Invite your reviewer, leave the PR open.</b> On your fork: <b>Settings → Collaborators → Add people</b> — a peer from your room or one of the tutors. Once they accept the invite, pick them under <b>Reviewers</b> on the PR; they'll review it in Part 3. <b>Don't merge yet</b> — the ambush comes first. (A copied view makes a big diff; that's fine — the review focuses on the page registration and valid JSON, not the line count.)</div></div>
+      </div>
+      <div>
+        <div class="code"><pre>git switch main
+git switch -c feature/v2-silo-detail
+
+<span class="cm"># add the silo detail view (copy overview → rename)</span>
+<span class="cm">#   projects/lab-project/…/views/pages/silo-detail/</span>
+<span class="cm">#   register route /silo-detail in page-config/config.json</span>
+
+scripts/validate.sh          <span class="cm"># → green</span>
+git add -A
+git commit -m <span class="cmd2">"feat(views): add v2.0 silo detail view"</span>
+git push -u origin feature/v2-silo-detail
+
+<span class="cm"># PR — from the banner on your fork, or:</span>
+gh pr create              <span class="cm"># base repo = YOUR fork · base = main</span>
+<span class="cm"># fork Settings → Collaborators → add your reviewer</span>
+<span class="cm"># request their review on the PR · don't merge yet</span></pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">See it live?</span>
+          <p>Gateway up? <span class="inlinecode">scripts/scan.sh</span> (or <span class="inlinecode">docker compose restart</span>), then open the project: your new page is there. That's the "it goes live" moment.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Feature open → then the P1 hits</span></div>
+</section>
+
+<!-- 10 · PART 2 · STEP 3 · THE P1 AMBUSH -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 2 · step 3 · the P1 ambush</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">STEP 3</span><div><div class="title">Create a fix branch and push it</div><div class="lead">Your feature is still open when a customer hits the null-reading crash <b>in v1.2, live</b>. It can't wait for v2.0. This is where merge order starts to matter.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix p">1</div><div class="tx"><b>Branch the fix off <span class="inlinecode">main</span></b>: <span class="inlinecode">fix/null-reading</span>. Because your feature PR is still <b>open</b>, <span class="inlinecode">main</span> <i>is</i> v1.2 — the fix carries no v2.0 work.</div></div>
+        <div class="step"><div class="ix p">!</div><div class="tx"><b>The bug:</b> <span class="inlinecode">lab.display.format_reading()</span> does <span class="inlinecode">"%.1f" % None</span> on a null reading (comms loss) and throws. <b>Fix:</b> a placeholder like <span class="inlinecode">"-- °C"</span> for <span class="inlinecode">None</span> / bad input, while keeping <span class="inlinecode">0</span> formatting as <span class="inlinecode">"0.0 °C"</span>.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx"><b>One PR into <span class="inlinecode">main</span> — same moves as the feature:</b> the "Compare &amp; pull request" banner on your fork (or <span class="inlinecode">gh pr create</span>), base repo = <b>your fork</b>, template filled in, and <b>request your reviewer</b> — already a collaborator, no new invite needed. That's the whole GitHub Flow ceremony: no <span class="inlinecode">develop</span>, no double-merge. <b>Don't merge yet</b>: Part 3 merges in order and tags <span class="inlinecode">v1.2.1</span>.</div></div>
+        <div class="step"><div class="ix p">3</div><div class="tx"><b>That's two PRs open</b> (feature → <span class="inlinecode">main</span>, fix → <span class="inlinecode">main</span>): your reviewer requested on each. <b>Merge order is the lesson</b>: the fix lands (and <span class="inlinecode">v1.2.1</span> is tagged) <i>before</i> the feature merges — in GitHub Flow, <b>merging is releasing</b>.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># the fix branches off main — which IS v1.2,</span>
+<span class="cm"># because the feature hasn't merged yet</span>
+git switch main
+git switch -c fix/null-reading
+
+<span class="cm"># fix format_reading() in lab/display/code.py</span>
+scripts/validate.sh
+git commit -am <span class="cmd2">"fix(display): placeholder for null readings"</span>
+git push -u origin fix/null-reading
+
+<span class="cm"># ONE PR: fix → main</span>
+gh pr create              <span class="cm"># banner works too · base repo = YOUR fork</span>
+<span class="cm"># request your reviewer → merged FIRST → tagged v1.2.1  (Part 3)</span></pre></div>
+        <div class="goal warn-g" style="margin-top:18px">
+          <span class="badge">The whole lesson</span>
+          <p><b>Merging is releasing:</b> whatever is on <span class="inlinecode">main</span> when you tag <span class="inlinecode">v1.2.1</span> ships in v1.2.1. Merge the feature first and your "patch" quietly ships half of v2.0. Order is the one ceremony GitHub Flow kept.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Two branches, two PRs → now review peers'</span></div>
+</section>
+
+<!-- 11 · PART 3A · REVIEW A PEER'S PR -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 3 · the review</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">PART 3 · A</span><div><div class="title">Review a peer's PR</div><div class="lead">You each have a fix PR and a feature PR open. Pair up in your room so <b>each PR gets one reviewer</b>.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix p">1</div><div class="tx"><b>Open the PR you were asked to review</b> — it's in your GitHub notifications; the <b>fix</b> is the richest to review.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx"><b>Read slowly (at least 5 minutes)</b> before writing anything. Fix PR: do valid readings still format (<span class="inlinecode">162.0</span> → <span class="inlinecode">"162.0 °C"</span>, and <span class="inlinecode">0</span> → <span class="inlinecode">"0.0 °C"</span>)? And, the GitHub Flow check: is the fix <b>just the fix</b> (no v2.0 work riding along), set to merge <b>before</b> the feature? Merging is releasing. Feature PR: JSON well-formed, page registered, change scoped?</div></div>
+        <div class="step"><div class="ix p">3</div><div class="tx"><b>Check their verification:</b> did they run <span class="inlinecode">validate.sh</span>? Could you actually follow their "How to test"? Read the description and commit message too.</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx"><b>Comment:</b> at minimum a <span class="inlinecode">praise:</span> and a <span class="inlinecode">suggestion:</span>, with an <span class="inlinecode">issue:</span> only if something is actually wrong. No quota; quality over quantity.</div></div>
+        <div class="step"><div class="ix p">5</div><div class="tx"><b>Verdict:</b> <b>Request changes</b> if you left at least one <span class="inlinecode">issue:</span>, else <b>Approve</b>.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># a review that helps: three real comments</span>
+praise: tight diff, one function, easy to review
+
+suggestion: lab.util.to_float(value, default=None)
+  swallows junk input for you — keep the None
+  check, though, or nulls format as "0.0 °C".
+
+issue: format_reading(0, "°C") now returns
+  "-- °C", but zero is a valid reading.</pre></div>
+        <div class="goal warn-g" style="margin-top:18px">
+          <span class="badge">Tone</span>
+          <p>Labels don't make rude feedback polite. <b>If you wouldn't say it in person, don't write it in the PR.</b> "?" is not a review comment.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Review submitted → respond &amp; merge next</span></div>
+</section>
+
+<!-- 12 · PART 3B · RESPOND & MERGE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 3 · respond &amp; merge</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">PART 3 · B</span><div><div class="title">Respond, then merge, in release order</div><div class="lead">Close the loop on both branches, in the right order: <b>the fix first (production is on fire), then the feature.</b></div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix p">1</div><div class="tx">On <b>your PRs</b>, react to <b>every</b> comment: <span class="inlinecode">+1</span> the praise, answer questions, push a <b>fix-up commit</b> for what you accept, and <b>decline with reasoning</b> what you don't.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx"><b>Additive commits, no force-push</b> during review. Re-request review when you're ready.</div></div>
+        <div class="step"><div class="ix p">3</div><div class="tx"><b>Merge the fix PR first</b> (production's on fire), then <b>tag <span class="inlinecode">v1.2.1</span> on <span class="inlinecode">main</span></b> — in GitHub Flow, the tag <i>is</i> the release. Delete the fix branch once it's merged.</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx"><b>Now finish the feature:</b> pull the fix down (<span class="inlinecode">git merge main</span>), push, then merge its PR into <span class="inlinecode">main</span> and delete the feature branch.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># a fix-up during review: additive, never force-push</span>
+git add -p
+git commit -m <span class="cmd2">"fix(display): reuse lab.util.to_float"</span>
+git push
+
+<span class="cm"># merge order = release order in GitHub Flow:</span>
+<span class="cm">#  1. fix → main, then tag the release</span>
+git switch main && git pull
+git tag v1.2.1 && git push origin v1.2.1
+
+<span class="cm">#  2. update the feature, then feature → main</span>
+git switch feature/v2-silo-detail
+git merge main -m <span class="cmd2">"merge main: pick up the v1.2.1 fix"</span>
+git push</pre></div>
+        <div class="goal good-g" style="margin-top:18px">
+          <span class="badge">The payoff</span>
+          <p>You didn't read about merge order; you <b>released</b> under a fake fire drill — fix, tag, then feature. That's GitHub Flow handling a release week.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Merged, in release order → stretch or debrief</span></div>
+</section>
+
+<!-- 13 · STRETCH 1 -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Optional stretch</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num warm">OPTIONAL · 1</span><div><div class="title">Stretch 1: now do it in Git Flow</div><div class="lead">Same scenario, the heavyweight strategy. The point isn't the code; it's <b>feeling</b> what Git Flow's ceremony buys — support for more than one live version — and what it costs.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix t">1</div><div class="tx"><b>Rewind the repo first.</b> After Part 2, <span class="inlinecode">main</span> already has both changes: reset your fork's <span class="inlinecode">main</span> back to <span class="inlinecode">v1.2</span> and clear the local feature and fix branches (it's your throwaway fork; force-push is fine <i>here</i> — and note it's exactly what Stretch 2's protection forbids on a shared repo).</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Build the Git Flow world:</b> a long-lived <span class="inlinecode">develop</span> next to <span class="inlinecode">main</span>. Rerun the two changes Git Flow's way: the view on <span class="inlinecode">feature/*</span> <b>off <span class="inlinecode">develop</span></b> → PR into <span class="inlinecode">develop</span>; the fix on <span class="inlinecode">hotfix/*</span> <b>off <span class="inlinecode">main</span></b> → <b>two PRs</b>, into <span class="inlinecode">main</span> (tag <span class="inlinecode">v1.2.1</span>) <b>and</b> into <span class="inlinecode">develop</span>.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Feel the difference.</b> The hotfix merges <b>twice</b> — skip the <span class="inlinecode">develop</span> merge and v2.0 regresses the fix next release. In Part 2, <span class="inlinecode">v1.2</span> lived in a tag; here a whole branch structure guards it. That's the trade-off, in your hands.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># rewind the fork to before the scenario</span>
+git switch main
+git reset --hard v1.2
+git push --force origin main
+git branch -D feature/v2-silo-detail fix/null-reading  <span class="cm"># local leftovers</span>
+git tag -d v1.2.1
+git push origin --delete v1.2.1         <span class="cm"># un-release the patch</span>
+
+<span class="cm"># the Git Flow world: TWO long-lived branches</span>
+git switch -c develop
+git push -u origin develop
+
+<span class="cm"># same two changes, Git Flow's way:</span>
+<span class="cm">#   feature/v2-… off develop → PR into develop</span>
+<span class="cm">#   hotfix/null-… off main   → TWO PRs:</span>
+<span class="cm">#     → main (tag v1.2.1)  AND  → develop</span>
+<span class="cm"># the hotfix merges TWICE — that's the point</span></pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">The takeaway</span>
+          <p>GitHub Flow answered release week with <b>one merge and a tag</b>. Git Flow's double-merge is what it costs to support <b>old versions</b> properly. <b>You now know both from the inside.</b></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stretch 1 of 2 · feel the difference</span></div>
+</section>
+
+<!-- 14 · STRETCH 2 -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Optional stretch</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num phase2">OPTIONAL · 2</span><div><div class="title">Stretch 2: protect <span class="mono" style="font-size:30px">main</span></div><div class="lead">Turn the strategy you argued for in Part 1 into settings a repo enforces, on a repo you own (your fork works).</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix p">1</div><div class="tx">Open <b>Settings → Branches</b> and add a protection rule for <span class="inlinecode">main</span>.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx"><b>Require a pull request before merging</b> with 1 approval.</div></div>
+        <div class="step"><div class="ix p">3</div><div class="tx"><b>Dismiss stale approvals</b> when new commits are pushed; an approve shouldn't survive a rewrite.</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx"><b>Restrict direct pushes to <span class="inlinecode">main</span></b> for everyone, <b>including admins</b> ("do not allow bypassing").</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># Settings → Branches → Add branch protection rule</span>
+[x] Require a pull request before merging
+      Required approvals: 1
+[x] Dismiss stale pull request approvals
+      when new commits are pushed
+[x] Do not allow bypassing the above settings</pre></div>
+        <div class="goal" style="margin-top:18px;border-left-color:var(--peri)">
+          <span class="badge" style="background:var(--peri);color:var(--navy)">No CI check, yet</span>
+          <p>We don't require "passing CI" here because Lab 02 ships <b>no CI on purpose</b>: <span class="inlinecode">validate.sh</span> is something <i>you</i> run. <b>Lab 03 turns it into a required status check</b> no one can merge past.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stretch 2 of 2 · optional</span></div>
+</section>
+
+<!-- 15 · DONE -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">The assignment → Debrief</div>
+  </div>
+  <div class="body">
+    <div class="eyebrow">Nicely done</div>
+    <div class="title" style="color:#fff;max-width:24ch">You didn't read GitHub Flow. You released with it.</div>
+    <ul class="checks" style="max-width:940px;margin-top:22px">
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You ran the <b>release-week scenario</b> for real: a v2.0 feature and a P1 fix, both through PRs into <span class="mono" style="color:#dbe4f0">main</span> the GitHub Flow way.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You felt that <b>merging is releasing</b>: the fix merged and <span class="mono" style="color:#dbe4f0">v1.2.1</span> was tagged <i>before</i> the feature landed — merge order as release order.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You reviewed a peer with <span class="mono" style="color:#dbe4f0">praise: / suggestion: / issue:</span>, and responded to a real review on your own PRs.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Bring to the debrief: <b>where does v1.2 live in GitHub Flow, and when do tags stop being enough</b>; one thing you'll <b>steal</b> from someone's PR; one habit you'll <b>drop</b>; and when a request-changes does more harm than good.</span></li>
+    </ul>
+    <div class="goal" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14);border-left-color:var(--peri2)">
+      <span class="badge" style="background:var(--peri2);color:var(--navy)">Next</span>
+      <p style="color:#c4cfde">Debrief &amp; wrap-up, then tomorrow, <b style="color:#fff">Lab 03</b> makes it enforceable: <span class="mono" style="color:#dbe4f0">validate.sh</span> becomes a CI gate no one can merge past.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 02 complete</span></div>
+</section>
+
+</div>
+
+<div class="hud"><div class="bar" id="bar"></div></div>
+<div class="pager" id="pager">01 / 15</div>
+<div class="hint" id="hint">↑ ↓ / scroll to navigate</div>
+
+<script>
+const deck=document.getElementById('deck');
+const slides=[...document.querySelectorAll('.slide')];
+const bar=document.getElementById('bar');
+const pager=document.getElementById('pager');
+const hint=document.getElementById('hint');
+function pad(n){return String(n).padStart(2,'0')}
+const POS_KEY='deckpos:'+location.pathname;
+function update(){
+  const i=Math.round(deck.scrollTop/window.innerHeight);
+  bar.style.width=((i)/(slides.length-1)*100)+'%';
+  pager.textContent=pad(i+1)+' / '+pad(slides.length);
+  const dark=slides[i]&&slides[i].classList.contains('dark');
+  pager.classList.toggle('on-dark',dark);
+  hint.classList.toggle('on-dark',dark);
+  try{localStorage.setItem(POS_KEY,String(i))}catch(e){}
+}
+// On a reload (Live Server save, or manual F5), jump back to the slide you were
+// on. A fresh open (new tab / typed URL) is nav type 'navigate' → starts at 1.
+(function restorePos(){
+  try{
+    const nav=performance.getEntriesByType('navigation')[0];
+    if(!nav||nav.type!=='reload')return;
+    const saved=parseInt(localStorage.getItem(POS_KEY)||'0',10);
+    if(saved>0)deck.scrollTop=saved*window.innerHeight;
+  }catch(e){}
+})();
+deck.addEventListener('scroll',()=>{requestAnimationFrame(update)});
+window.addEventListener('keydown',e=>{
+  const i=Math.round(deck.scrollTop/window.innerHeight);
+  if(e.key==='ArrowDown'||e.key==='PageDown'||e.key===' '){e.preventDefault();deck.scrollTo({top:(i+1)*window.innerHeight})}
+  if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();deck.scrollTo({top:(i-1)*window.innerHeight})}
+  if(e.key==='Home'){deck.scrollTo({top:0})}
+  if(e.key==='End'){deck.scrollTo({top:slides.length*window.innerHeight})}
+});
+update();
+setTimeout(()=>{hint.style.transition='opacity .6s';hint.style.opacity='0'},4200);
+</script>
+</body>
+</html>
