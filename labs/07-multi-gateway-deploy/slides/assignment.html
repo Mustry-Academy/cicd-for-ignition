@@ -304,9 +304,9 @@ body{
     <ul class="checks" style="max-width:1020px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We're here to get reps in.</b> Everything from the past four days, on repeat: feature branch, commits, PR, tag, deploy.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>No fork this time.</b> We send you the link to your cohort's repo, <span class="inlinecode">git@github.com:Mustry-Academy/cicd-lab-07-&lt;cohort&gt;.git</span>. Accept the <b>contributor</b> invite, clone it next to the course repo in <span class="inlinecode">~/mustry-academy/</span>, and push your branches straight to that repo.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We locked the repo down, so no funny business.</b> Nothing reaches main without a pull request, green checks and an approval. Yes, we tried pushing to main. It says no, even to us.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We locked the repo down, so no funny business.</b> Nothing reaches main without a pull request, a green <span class="inlinecode">CI OK</span> check and a squash merge. No pushing to main.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Two deploy channels, two triggers.</b> Every push to <span class="inlinecode">main</span> lands on <b>your own test gateway</b> automatically (you set that up in Part 1). Only a change to <span class="inlinecode">release.yaml</span> reaches the <b>shared production gateway</b>, and that's the one behind the lock.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Sam or Jasper approves every PR.</b> Two reviewers, five of you: there will be a queue. Small, tidy PRs jump it.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Sam or Jasper reviews every PR.</b> GitHub won't block a merge without an approval (it enforces <span class="inlinecode">CI OK</span>), so wait for one anyway. Two reviewers, five of you: there will be a queue. Small, tidy PRs jump it.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You deploy to site 7.</b> The deploy workflow runs on that site's runner: <span class="inlinecode">runs-on: [self-hosted, cicd-capstone]</span>. Already set up; you never touch the workflows.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You get admin on our real online gateway:</b> <span class="inlinecode">https://cloud.mustrysolutions.com</span>, login <span class="inlinecode">admin</span> / <span class="inlinecode">MergeIntoMain!</span>. Have a look around before you start, and please be gentle with it: everyone's work lands on this one gateway.</span></li>
     </ul>
@@ -374,7 +374,7 @@ body{
         <div class="pn">PART 3 · ±35 MIN</div>
         <h4>Five challenges on the shared oatmakers project</h4>
         <p>A module, a JAR, a database with migrations and a secret, live tags from a simulator, and a dashboard on top. Everyone ships their own challenge through review.</p>
-        <div class="gate">gate → your challenge live via oatmakers@v2.0.X</div>
+        <div class="gate">gate → your challenge live via a new oatmakers@ tag</div>
       </div>
       <div class="pcard p4">
         <div class="pn">PART 4 · REMAINING TIME</div>
@@ -400,7 +400,7 @@ body{
         <div class="step"><div class="ix t">1</div><div class="tx"><b>Tell the stack who you are:</b> <span class="inlinecode">cp .env.example .env</span>, set <span class="inlinecode">LAB_USER=&lt;yourname&gt;</span> and <span class="inlinecode">RUNNER_TOKEN</span> to the registration token we post in the Zoom chat at the start of this part. One token serves everyone: it can only enroll runners on this repo (it is not a login, which is why chat is fine), and your runner needs it once, on the first start; the registration persists in a volume. It expires after an hour, so if you miss the window, say so and we generate a fresh one in seconds. It comes from us because registering a runner is a repo-admin act, and contributors are not admins.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Start the provided test pair:</b> <span class="inlinecode">./scripts/setup.sh</span> sees <span class="inlinecode">LAB_USER</span> and brings up your test gateway (port <span class="inlinecode">8090</span>) plus your laptop runner behind the <span class="inlinecode">test</span> compose profile. The runner registers with the label <span class="inlinecode">[self-hosted, &lt;yourname&gt;-local]</span>: check Settings → Actions → Runners.</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Make the provided workflow yours:</b> copy <span class="inlinecode">test-example.yml.template</span> to <span class="inlinecode">test-&lt;yourname&gt;.yml</span> and replace <span class="inlinecode">example</span> with your name in the three <span class="inlinecode">CHANGEME</span> spots. You write no YAML: the workflow already checks out <span class="inlinecode">main</span>, runs migrations, ships projects + config + modules + JARs into the gateway container and triggers the authenticated scan: the production deploy, minus <span class="inlinecode">release.yaml</span>.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx"><b>PR it in like anything else.</b> Branch, PR, green checks, approval, merge. The only file you touched is your own workflow.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>PR it in like anything else.</b> Branch, PR, green checks, review, merge. The only file you touched is your own workflow.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># Sam or Jasper first: generate today's token, paste it in the chat</span>
@@ -481,7 +481,7 @@ git push -u origin feature/wout-project</pre></div>
         <div class="code"><pre><span class="cm"># release.yaml</span>
  gateway: oatmakers-site-7
  projects:
-   oatmakers:        v2.0.0
+   oatmakers:        v4.4.4
 <span class="grn">+  wout:             v1.0.0</span></pre></div>
         <div class="obs"><span class="ob">Observe</span><p><b>The deploy checks out your tag and copies your project's files to the gateway.</b> Nothing gets built. And that is why the tag came first: <code>release.yaml</code> can only point at versions that exist.</p></div>
         <div class="obs"><span class="ob">Observe</span><p><b>The runner label routes the deploy:</b> <code>runs-on: [self-hosted, cicd-capstone]</code>. Same repo, but only the runner carrying that label picks this job up. More sites would mean more labels, not more pipelines.</p></div>
@@ -506,9 +506,9 @@ git push -u origin feature/wout-project</pre></div>
     <div class="cols2" style="grid-template-columns:.85fr 1.15fr">
       <div class="steps">
         <div class="step"><div class="ix p">1</div><div class="tx"><b>All work lands in <span class="inlinecode">projects/oatmakers/</span></b> plus the folders you know from lab 06: <span class="inlinecode">third-party-modules/</span>, <span class="inlinecode">jar-files/jar/</span>, <span class="inlinecode">db-migration/</span>.</div></div>
-        <div class="step"><div class="ix p">2</div><div class="tx"><b>Finished means live:</b> merge your PR, cut the <b>next free</b> <span class="inlinecode">oatmakers@v2.0.X</span> tag, bump <span class="inlinecode">release.yaml</span> by PR.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx"><b>Finished means live:</b> merge your PR, cut the <b>next free</b> <span class="inlinecode">oatmakers@</span> tag after the one <span class="inlinecode">release.yaml</span> pins (<span class="inlinecode">v4.4.4</span> at the start: <span class="inlinecode">v4.4.5</span> for a fix, <span class="inlinecode">v4.5.0</span> for a feature), bump <span class="inlinecode">release.yaml</span> by PR.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx"><b>Five people, one version stream:</b> pull main often. If someone claimed your tag number while you were typing, take the next one.</div></div>
-        <div class="step"><div class="ix p">4</div><div class="tx"><b>Sam or Jasper still approves everything.</b> Small PRs get through the queue first.</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx"><b>Sam or Jasper still reviews everything.</b> Small PRs get through the queue first.</div></div>
         <div class="step"><div class="ix p">5</div><div class="tx"><b>Claim your challenge in the room</b> — one per person. Challenge 5 builds on 3 and 4, so whoever takes it starts against their work as it lands.</div></div>
       </div>
       <div>
@@ -533,7 +533,7 @@ git push -u origin feature/wout-project</pre></div>
     <div class="stage">Part 3 · challenges · module, JAR, tags</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num phase2">3</span><div><div class="title">The assignments</div><div class="lead">Each one ends the same way: merge, tag the next <span class="inlinecode">oatmakers@v2.0.X</span>, bump <span class="inlinecode">release.yaml</span>, verify on production.</div></div></div>
+    <div class="sechead"><span class="num phase2">3</span><div><div class="title">The assignments</div><div class="lead">Each one ends the same way: merge, tag the next free <span class="inlinecode">oatmakers@</span> version, bump <span class="inlinecode">release.yaml</span>, verify on production.</div></div></div>
     <div class="cols2" style="grid-template-columns:repeat(3,1fr);gap:16px">
       <div class="does">
         <div class="hd">CHALLENGE 1 · MODULE</div>
@@ -606,7 +606,7 @@ fields = list(records[0])</pre></div>
     </div>
     <div class="goal" style="margin-top:16px">
       <span class="badge">✅ Part 3 gate</span>
-      <p><b>Your challenge is live on production</b> through a reviewed PR, an <span class="inlinecode">oatmakers@v2.0.X</span> tag you cut yourself, and a <span class="inlinecode">release.yaml</span> bump that went through review.</p>
+      <p><b>Your challenge is live on production</b> through a reviewed PR, a new <span class="inlinecode">oatmakers@</span> tag you cut yourself, and a <span class="inlinecode">release.yaml</span> bump that went through review.</p>
     </div>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 3 · database · historian</span></div>
@@ -665,7 +665,7 @@ fields = list(records[0])</pre></div>
     <div class="steps" style="max-width:1020px">
       <div class="step"><div class="ix t">1</div><div class="tx"><b>Part 1:</b> your <span class="inlinecode">test-&lt;yourname&gt;.yml</span> workflow merged in, your test gateway and runner up, and a dashboard change proven to <b>land on <span class="inlinecode">localhost:8090</span> through your own workflow</b> after a merge to <span class="inlinecode">main</span>.</div></div>
       <div class="step"><div class="ix">2</div><div class="tx"><b>Part 2:</b> <span class="inlinecode">projects/&lt;yourname&gt;/</span> merged through an approved PR, the tag <span class="inlinecode">&lt;yourname&gt;@v1.0.0</span> built, your line in <span class="inlinecode">release.yaml</span>, and your view <b>live on cloud.mustrysolutions.com</b>.</div></div>
-      <div class="step"><div class="ix p">3</div><div class="tx"><b>Part 3:</b> your challenge merged and <b>live on production</b> via an <span class="inlinecode">oatmakers@v2.0.X</span> tag you cut yourself and a reviewed <span class="inlinecode">release.yaml</span> bump.</div></div>
+      <div class="step"><div class="ix p">3</div><div class="tx"><b>Part 3:</b> your challenge merged and <b>live on production</b> via a new <span class="inlinecode">oatmakers@</span> tag you cut yourself and a reviewed <span class="inlinecode">release.yaml</span> bump.</div></div>
       <div class="step"><div class="ix t">4</div><div class="tx"><b>Part 4:</b> at least one merged PR from the challenge your team gave you, one that <b>builds on someone else's work</b>, and at least one review comment or unblock you gave someone else.</div></div>
     </div>
     <div class="goal warn-g" style="margin-top:22px">

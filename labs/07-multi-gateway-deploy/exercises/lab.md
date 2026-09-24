@@ -33,7 +33,7 @@ You should leave this lab able to:
 - Explain the two deploy channels: a push to `main` auto-deploys to **your
   test gateway**, while **only `release.yaml` decides what reaches
   production** — and why one is gated and the other is not
-- Cut a **prefixed tag** (`<yourname>@v1.0.0`, `oatmakers@v2.0.X`) and explain
+- Cut a **prefixed tag** (`<yourname>@v1.0.0`, the next free `oatmakers@…`) and explain
   why the tag must exist **before** `release.yaml` may point at it
 - Read `runs-on: [self-hosted, cicd-capstone]` and explain how a runner
   label routes a deploy to one site's network
@@ -67,14 +67,16 @@ release.yaml            what runs on production, the desired state
 
 **The repo is locked down, so no funny business:**
 
-- Main is protected: nothing reaches it without a PR, green checks and an
-  approval. There is no pushing to main. We tried. It says no, even to us.
+- Main is protected: nothing reaches it without a PR, a green `CI OK`
+  check and a squash merge. There is no pushing to main.
 - **Two deploy channels, two triggers.** Every push to `main` lands on
   **your own test gateway** automatically, through a workflow you set up in
   Part 0. Only a change to `release.yaml` reaches the **shared production
   gateway**, and that is the one behind the lock on the door.
-- **Sam or Jasper approves every PR.** Two reviewers, five of you: there
-  will be a queue. Small, tidy PRs jump it.
+- **Sam or Jasper reviews every PR.** GitHub does not block a merge
+  without an approval (the gate it enforces is `CI OK`), so wait for one
+  anyway. Two reviewers, five of you: there will be a queue. Small, tidy PRs
+  jump it.
 - Deploys run on the site 7 runner: `runs-on: [self-hosted, cicd-capstone]`.
   Already configured; you only ever see it in the action logs.
 
@@ -274,7 +276,7 @@ container, ship modules + JARs (restart only when they changed), then ask
 the gateway for an authenticated scan. Same transport, same API, same
 self-heal.
 
-**4. PR it in like anything else** — branch, PR, green checks, approval,
+**4. PR it in like anything else** — branch, PR, green checks, review,
 merge. The only file you touched is your own workflow.
 
 **Verify it works:** open a small PR that changes a dashboard view. Once it
@@ -348,7 +350,7 @@ git push origin <yourname>@v1.0.0
 ```diff
  gateway: oatmakers-site-7
  projects:
-   oatmakers:        v2.0.0
+   oatmakers:        v4.4.4
 +  <yourname>:       v1.0.0
 ```
 
@@ -382,10 +384,13 @@ together.
 - All work lands in `projects/oatmakers/` plus the lab 06 folders
   (`third-party-modules/`, `jar-files/jar/`, `db-migration/`).
 - **Finished means live:** merge your PR, cut the **next free**
-  `oatmakers@v2.0.X` tag, bump `release.yaml` by PR.
+  `oatmakers@` tag, bump `release.yaml` by PR. Count up from the version
+  `release.yaml` pins: it starts the cohort at `v4.4.4`, so the first fix is
+  `v4.4.5` and the first feature `v4.5.0`. Someone may already have tagged
+  without pinning yet: `git fetch --tags && git tag -l 'oatmakers@*'`.
 - Five people, one version stream: **pull main often**. If someone claimed
   your tag number while you were typing, take the next one.
-- Sam or Jasper still approves everything. Small PRs get through the queue
+- Sam or Jasper still reviews everything. Small PRs get through the queue
   first.
 - **Claim your challenge in the breakout room** — one per person, nothing is
   pre-assigned. Challenge 5 builds on challenges 3 and 4, so whoever takes
@@ -461,7 +466,7 @@ together.
   are part of the challenge**, not an accident.
 
 **Part 2 gate:** your challenge is live on production through a reviewed PR,
-an `oatmakers@v2.0.X` tag you cut yourself, and a `release.yaml` bump that
+a new `oatmakers@` tag you cut yourself, and a `release.yaml` bump that
 went through review.
 
 ### Part 3 (extra) — use each other's work
@@ -494,7 +499,7 @@ nothing needs your laptop.
    `<yourname>@v1.0.0` built, your line in `release.yaml`, and your view
    **live on cloud.mustrysolutions.com**.
 2. **Part 2:** your challenge merged and **live on production** via an
-   `oatmakers@v2.0.X` tag you cut yourself and a reviewed `release.yaml`
+   new `oatmakers@` tag you cut yourself and a reviewed `release.yaml`
    bump.
 3. **Part 3:** at least one merged PR that **builds on someone else's
    work**, and at least one review comment or unblock you gave someone else.

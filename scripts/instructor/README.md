@@ -96,6 +96,12 @@ emergency. If you ever add a team or app as a bypass actor, its id is
 org-specific: look it up (`gh api orgs/Mustry-Academy/teams/<slug> --jq .id`)
 rather than copying an id from another org.
 
+**Reviews are a convention, not a gate.** `protect-main` requires **0**
+approvals, so GitHub lets a participant merge their own PR as soon as
+`CI OK` is green. The student docs say so: an instructor reviews every PR,
+and participants are asked to wait for it. What GitHub enforces is PR
+required, squash only, `CI OK` green.
+
 **Deliberately not copied:**
 
 - The `test` **environment** and its `IGNITION_API_KEY` environment secret:
@@ -133,8 +139,10 @@ cohort repo just needs access to its runner group.
      -f name=cicd-capstone -f visibility=selected -F allows_public_repositories=true
    ```
 
-   On the **Free** plan only the *Default* group exists, and it covers every
-   repo in the org. Then any org repo whose workflow asks for
+   On the **Free** plan (Mustry-Academy today) only the *Default* group
+   exists, and it **cannot be restricted to selected repositories**: it
+   covers every repo in the org. Skip the group, register the runner in
+   *Default* and step 4 does nothing. Then any org repo whose workflow asks for
    `runs-on: [self-hosted, cicd-capstone]` gets a root-equivalent shell on the
    production server. That includes pull requests from forks of this course
    repo, if fork PR workflows are ever approved. Treat that as a reason to
@@ -168,12 +176,21 @@ The script prints these at the end as well.
 2. **Postgres secrets**, if you skipped the prompt:
    `gh secret set POSTGRES_USERNAME --repo …` / `POSTGRES_PASSWORD`.
 3. **Runner access** (see the one-time move above).
-4. **Reset production to the cohort baseline:** the first push ran with
+4. **Production database at the template baseline.** The database is not
+   reset between cohorts. If the previous cohort merged a migration past the
+   template's highest (`000006_batch_output` today; `ls
+   labs/07-multi-gateway-deploy/db-migration/migrate/`) and nobody ran the
+   teardown rollback, this cohort's first deploy fails with
+   `no migration found for version N`. Check on the capstone box:
+   `docker exec cicd-capstone-postgres psql -U <user> -d ignition -c 'select * from schema_migrations'`
+   must show `6 | f`. If not, run the rollback from
+   [teardown](#after-the-cohort-teardown) with the previous cohort's repo.
+5. **Reset production to the cohort baseline:** the first push ran with
    Actions off, so nothing has deployed yet. When secrets and runner are in
    place: `gh workflow run deploy.yml --repo Mustry-Academy/cicd-lab-07-<cohort>`.
    Production then runs exactly this cohort's `release.yaml` (only
    `oatmakers`); the previous cohort's projects disappear from it.
-5. **Send the link** `https://github.com/Mustry-Academy/cicd-lab-07-<cohort>` to
+6. **Send the link** `https://github.com/Mustry-Academy/cicd-lab-07-<cohort>` to
    the participants and have them accept their invitation before the day.
    Late additions: `gh api -X PUT repos/Mustry-Academy/cicd-lab-07-<cohort>/collaborators/<user> -f permission=push`.
 
@@ -190,11 +207,13 @@ Keep the repo as the cohort's record; archive it rather than delete it.
 ```bash
 R=Mustry-Academy/cicd-lab-07-<cohort>
 
+# 0. first roll the production database back to the template baseline (below)
+
 # 1. deregister the participants' laptop runners (repo-level, *-local labels)
 gh api "repos/$R/actions/runners" --jq '.runners[] | "\(.id) \(.name)"'
 gh api -X DELETE "repos/$R/actions/runners/<id>"        # per runner
 
-# 2. take the repo out of the production runner group (Team plan)
+# 2. take the repo out of the production runner group (Team plan; nothing to do on Free)
 gh api -X DELETE "orgs/Mustry-Academy/actions/runner-groups/<group-id>/repositories/$(gh api repos/$R --jq .id)"
 
 # 3. archive: read-only, and scheduled workflows (deploy.yml's readiness check) stop
@@ -205,8 +224,9 @@ Collaborators keep read access to an archived repo. Remove them
 (`gh api -X DELETE repos/$R/collaborators/<user>`) if the cohort should lose
 access.
 
-**Production database: roll it back before you archive.** The next cohort's
-first deploy resets the gateway (projects and config are wiped and re-copied
+**Production database: roll it back before you archive** (step 4 of
+[Before the cohort](#before-the-cohort-the-manual-steps) checks for this).
+The next cohort's first deploy resets the gateway (projects and config are wiped and re-copied
 from its `release.yaml`), and minting its key revokes this cohort's. The
 database is not reset. If this cohort merged migrations (Part 2, challenge 3),
 production's `schema_migrations` sits at a version the template does not
@@ -222,3 +242,20 @@ docker run --rm --network <capstone network> -v "$PWD/db-migration/migrate:/m" \
 
 Tables that no migration owns (a historian provider's tables from challenge 5)
 survive that; drop them by hand if they get in the way.
+
+## `lab06/mint-embedded-secret.py` — re-mint lab 06's seeded secrets
+
+Lab 06 ships database passwords that are already encrypted ("embedded
+secrets") in its gateway config, so the warm-up works on a fresh clone.
+This script produces those encrypted values from the lab's committed key
+files. You only need it if the seeded values have to change: a different
+demo password, new key files, or an Ignition version that changes the format.
+It used to live in the lab's `instructor-notes/`, which students no longer get.
+
+```bash
+pip install jwcrypto
+scripts/instructor/lab06/mint-embedded-secret.py labs/06-secrets-db-and-modules lab06-root-key-pass 'new-password'
+```
+
+Paste the printed JSON as the `data` of the password in the resource's
+`config.json` (the script's docstring has the details).

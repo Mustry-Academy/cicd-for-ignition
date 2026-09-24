@@ -71,7 +71,7 @@ working tree, so `git status` is your export step. Tear down with
 |---|---|---|
 | 0 (±15 min) | Stand up your personal test gateway: second clone, provided runner + gateway pair, your own `test-<yourname>.yml` on your runner label | a dashboard change lands on your test gateway on its own after a merge to `main` |
 | 1 (±20 min) | Your own project through the full loop: PR → review → `<yourname>@v1.0.0` tag → `release.yaml` pin | your view live on production |
-| 2 (±35 min) | Five challenges on the shared oatmakers project — module, JAR, migration + referenced secret, simulator tags, history | your challenge live via an `oatmakers@v2.0.X` tag you cut |
+| 2 (±35 min) | Five challenges on the shared oatmakers project — module, JAR, migration + referenced secret, simulator tags, history | your challenge live via the next free `oatmakers@` tag you cut (the cohort starts at the `v4.4.4` pin) |
 | 3 (extra) | Build on each other's work; small PRs, rebases, real merge conflicts | a merged PR that uses someone else's Part 2 work |
 
 Reference reading: [`docs/multi-gateway-deployments.md`](./docs/multi-gateway-deployments.md) — the full teaching content (architectures, release files, promotion as a PR, repo layouts).

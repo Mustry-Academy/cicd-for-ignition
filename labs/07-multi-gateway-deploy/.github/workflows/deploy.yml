@@ -6,7 +6,7 @@
 #
 #   gateway: oatmakers-site-7
 #   projects:
-#     oatmakers: v2.0.0        # each pin is a git tag "<project>@<version>"
+#     oatmakers: v4.4.4        # each pin is a git tag "<project>@<version>"
 #     wout:      v1.0.0
 #
 # When a merge changes that file, this workflow makes it true:

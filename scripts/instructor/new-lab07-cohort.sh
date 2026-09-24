@@ -352,6 +352,8 @@ if [ -z "${LAB07_IGNITION_API_KEY:-}" ]; then
 fi
 cat <<EOF
     - make sure the $PROD_RUNNER_LABEL runner can serve this repo (status above)
+    - check the production database is back at the template baseline (000006)
+      before the first deploy; see "Before the cohort" in the README
     - reset production to this cohort's baseline: gh workflow run deploy.yml --repo $REPO
     - on the day: post a runner registration token for Part 0:
         gh api -X POST repos/$REPO/actions/runners/registration-token -q .token
