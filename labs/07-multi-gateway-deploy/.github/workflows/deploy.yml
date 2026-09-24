@@ -30,9 +30,10 @@
 # button for an already-merged state.
 #
 # The job runs on the self-hosted runner INSIDE the capstone stack
-# (cloud.mustrysolutions.com) — the same runner that applies the stack itself
-# (deploy-capstone.yml). It shares a Docker daemon with the gateway container,
-# so files ship via `docker cp`, exactly like labs 04–06. One runner also
+# (cloud.mustrysolutions.com; the stack itself lives in the instructors'
+# private cicd-capstone-infra repo). It shares a Docker daemon with the
+# gateway container, so files ship via `docker cp`, exactly like labs 04–06.
+# One runner also
 # means deploys serialize by construction: five students, one gateway, no
 # interleaved ships.
 #

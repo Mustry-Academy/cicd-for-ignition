@@ -28,7 +28,7 @@
 set -euo pipefail
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-REPO="${REPO:-Mustry-Academy/cicd-lab-07-multi-gateway-deploy}"
+REPO="${REPO:-Mustry-Academy/cicd-lab-07-<cohort>}"
 TOKEN_NAME="CICD-APIKEY"
 CONTAINER="${1:-cicd-capstone-gateway}"
 TOKEN_DIR=/usr/local/bin/ignition/data/config/resources/core/ignition/api-token

@@ -11,8 +11,6 @@
 #   services/, modules/,      → validate-gateway-payload (manifest, JARs,
 #   third-party-modules/,       migration pairs)
 #   db-migration/
-#   capstone/**               → capstone (compose config, shellcheck, secrets
-#                                hygiene — the server stack ships by GitOps too)
 #
 # Branch protection on main should require exactly ONE status check: "CI OK".
 # It aggregates whatever ran; skipped jobs (docs-only PRs) don't block a merge.
@@ -43,7 +41,6 @@ jobs:
       projects: ${{ steps.diff.outputs.projects }}
       release: ${{ steps.diff.outputs.release }}
       gateway_payload: ${{ steps.diff.outputs.gateway_payload }}
-      capstone: ${{ steps.diff.outputs.capstone }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,7 +66,6 @@ jobs:
             echo "projects=$projects"
             echo "release=$(flag '^release\.yaml$')"
             echo "gateway_payload=$(flag '^(services/|jar-files/|third-party-modules/|db-migration/)')"
-            echo "capstone=$(flag '^capstone/')"
           } >> "$GITHUB_OUTPUT"
 
   validate-projects:
@@ -363,48 +359,6 @@ jobs:
           [ "$fail" -eq 0 ] && echo "jar-files/jar/ holds only JARs."
           exit "$fail"
 
-  capstone:
-    name: Capstone stack
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    needs: changes
-    if: needs.changes.outputs.capstone == 'true'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: docker compose config
-        # The compose file references gitignored inputs (.env, secrets/*.txt);
-        # stub them so validation checks the file, not the server state.
-        run: |
-          set -euo pipefail
-          for ex in capstone/secrets/*.example; do
-            touch "${ex%.example}"
-          done
-          docker compose -f capstone/docker-compose.yaml config -q
-          echo "compose file validates."
-
-      - name: shellcheck
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends shellcheck
-          shellcheck capstone/scripts/*.sh
-
-      - name: No real secret files committed
-        # Only *.example files and the README are allowed under
-        # capstone/secrets/. Anything else tracked there is a leak — and a
-        # pushed secret is a burned secret: rotate it, don't just delete it.
-        run: |
-          set -euo pipefail
-          bad="$(git ls-files 'capstone/secrets/' | grep -vE '\.example$|/README\.md$' || true)"
-          if [ -n "$bad" ]; then
-            while IFS= read -r f; do
-              echo "::error file=$f::Secret file committed — rotate this credential NOW, then remove the file"
-            done <<< "$bad"
-            exit 1
-          fi
-          echo "capstone/secrets/ holds only example files."
-
   lint-workflows:
     name: Lint workflows
     runs-on: ubuntu-latest
@@ -414,12 +368,11 @@ jobs:
       - name: actionlint
         uses: raven-actions/actionlint@v2
 
-  # Students author their own test-<name>.yml workflows (Part 0). The runner
-  # inside the capstone stack is root-equivalent on the production server, so
-  # exactly two workflows may ever target it — and no pull_request workflow
-  # may use ANY self-hosted runner (PR code is unreviewed by definition; see
-  # capstone/docs/security-model.md §4). This catches honest mistakes; review
-  # catches the rest.
+  # Students author their own test-<name>.yml workflows (Part 0). The
+  # production runner is root-equivalent on the production server, so exactly
+  # one workflow in this repo may ever target it — and no pull_request
+  # workflow may use ANY self-hosted runner (PR code is unreviewed by
+  # definition). This catches honest mistakes; review catches the rest.
   workflow-hygiene:
     name: Workflow hygiene
     runs-on: ubuntu-latest
@@ -434,7 +387,7 @@ jobs:
           import glob, sys, yaml
 
           PROD_LABEL = "cicd-capstone"
-          PROD_ALLOWED = {"deploy.yml", "deploy-capstone.yml"}
+          PROD_ALLOWED = {"deploy.yml"}
           ERRORS = []
 
           def runs_on_labels(job):
@@ -485,7 +438,6 @@ jobs:
       - validate-projects
       - validate-release
       - validate-gateway-payload
-      - capstone
       - lint-workflows
       - workflow-hygiene
     if: always()

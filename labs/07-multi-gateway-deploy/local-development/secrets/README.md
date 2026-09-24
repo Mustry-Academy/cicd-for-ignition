@@ -16,4 +16,4 @@ cloud.mustrysolutions.com. A database connection that references the secret
 each against its own database.
 
 Real secrets never go in this folder. Production values live as GitHub
-Actions secrets and in the server's gitignored `capstone/secrets/`.
+Actions secrets and on the production server itself, never in git.

@@ -24,7 +24,7 @@ the point:
 - Your capstone repo gets a **self-hosted runner** (provided by the
   instructors) that can reach the gateway.
 - Deploys authenticate with an **Ignition API token**, handed to you as a
-  GitHub **environment secret** (`IGNITION_API_KEY`) — the Lab 04/06
+  GitHub **Actions secret** (`IGNITION_API_KEY`) — the Lab 04/06
   mechanism: ship files, trigger a scan, smoke-check.
 
 ## 3. Ground rules
@@ -47,7 +47,8 @@ deployed the same way you deploy projects: from a Git repo, through a
 pipeline, with secrets kept out of version control. In other words: the
 infrastructure under your capstone practices what the course preaches.
 
-Curious how the server itself is built? The whole stack is in this repo under
-[`capstone/`](../capstone/) — compose file, TLS proxy, deploy workflow,
-runbook and security model. Reading it after the course is a worked example
-of everything the labs taught, applied to the infrastructure you deployed to.
+Curious how the server itself is built? The whole stack (compose file, TLS
+proxy, deploy workflow, runbook and security model) lives in the instructors'
+private `cicd-capstone-infra` repo. Ask us for a walkthrough after the
+course: it is a worked example of everything the labs taught, applied to the
+infrastructure you deployed to.

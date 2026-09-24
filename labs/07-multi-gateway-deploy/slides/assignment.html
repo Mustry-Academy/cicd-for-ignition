@@ -303,7 +303,7 @@ body{
     <div class="sechead"><span class="num">READ FIRST</span><div><div class="title">How this works: you are contributors now, and the repo is locked down</div></div></div>
     <ul class="checks" style="max-width:1020px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We're here to get reps in.</b> Everything from the past four days, on repeat: feature branch, commits, PR, tag, deploy.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>No fork this time.</b> Accept the <b>contributor</b> invite for <span class="inlinecode">git@github.com:Mustry-Academy/cicd-lab-07-multi-gateway-deploy.git</span>, clone it, and push your branches straight to our repo.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>No fork this time.</b> We send you the link to your cohort's repo, <span class="inlinecode">git@github.com:Mustry-Academy/cicd-lab-07-&lt;cohort&gt;.git</span>. Accept the <b>contributor</b> invite, clone it next to the course repo in <span class="inlinecode">~/mustry-academy/</span>, and push your branches straight to that repo.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We locked the repo down, so no funny business.</b> Nothing reaches main without a pull request, green checks and an approval. Yes, we tried pushing to main. It says no, even to us.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Two deploy channels, two triggers.</b> Every push to <span class="inlinecode">main</span> lands on <b>your own test gateway</b> automatically (you set that up in Part 1). Only a change to <span class="inlinecode">release.yaml</span> reaches the <b>shared production gateway</b>, and that's the one behind the lock.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Sam or Jasper approves every PR.</b> Two reviewers, five of you: there will be a queue. Small, tidy PRs jump it.</span></li>
@@ -405,7 +405,7 @@ body{
       <div>
         <div class="code"><pre><span class="cm"># Sam or Jasper first: generate today's token, paste it in the chat</span>
 gh api -X POST repos/Mustry-Academy/\
-cicd-lab-07-multi-gateway-deploy/\
+cicd-lab-07-&lt;cohort&gt;/\
 actions/runners/registration-token -q .token
 
 <span class="cm"># then everyone:</span>
@@ -440,14 +440,15 @@ runs-on: [self-hosted, <span class="cmd2">&lt;yourname&gt;-local</span>]</pre></
     <div class="sechead"><span class="num">2A</span><div><div class="title">Create the project with your name and get it through review</div><div class="lead">Clone the shared repo, add a project named after yourself, and take it through the same review gate everything else goes through.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix">1</div><div class="tx"><b>Accept the invite and clone.</b> No fork: your branches go straight to the shared repo.</div></div>
+        <div class="step"><div class="ix">1</div><div class="tx"><b>Accept the invite and clone</b> next to the course repo, in <span class="inlinecode">~/mustry-academy/</span>. No fork: your branches go straight to the shared repo.</div></div>
         <div class="step"><div class="ix">2</div><div class="tx"><b>Branch and add your project:</b> <span class="inlinecode">projects/&lt;yourname&gt;/</span> with one simple Perspective view that shows your name.</div></div>
         <div class="step"><div class="ix">3</div><div class="tx"><b>Push and open the PR.</b> Watch the checks, then wait for Sam or Jasper to approve. If you get review comments, address them and push again: same PR.</div></div>
         <div class="step"><div class="ix">4</div><div class="tx"><b>Merge</b> once it's green and approved. Then open <span class="inlinecode">localhost:8090</span>: your Part 1 workflow has already put your new project on your test gateway, hands-free.</div></div>
       </div>
       <div>
-        <div class="code"><pre>git clone git@github.com:Mustry-Academy/cicd-lab-07-multi-gateway-deploy.git
-cd cicd-lab-07-multi-gateway-deploy
+        <div class="code"><pre>cd ~/mustry-academy
+git clone git@github.com:Mustry-Academy/cicd-lab-07-&lt;cohort&gt;.git
+cd cicd-lab-07-&lt;cohort&gt;
 git switch -c feature/wout-project
 <span class="cm"># add projects/wout/ with your welcome view …</span>
 git add projects/wout/

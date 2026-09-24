@@ -1,6 +1,14 @@
 # Lab 07 — Deployments in a multi-gateway architecture
 
-Day 4 (afternoon) of the [CI/CD for Ignition Masterclass](https://github.com/mustry-academy/cicd-masterclass).
+<!-- template-only:start (scripts/instructor/new-lab07-cohort.sh strips this block) -->
+> **Browsing this inside the course repo?** This folder is the **template** for lab 07,
+> not the place you work. Every cohort gets its own shared repo generated from it,
+> `Mustry-Academy/cicd-lab-07-<cohort>`, and your instructor sends you the link.
+> You work in that repo. In it, this folder is the repo root, and every
+> `cicd-lab-07-<cohort>` in these docs carries your cohort's real name.
+<!-- template-only:end -->
+
+Day 4 (afternoon) of the [CI/CD for Ignition Masterclass](https://github.com/Mustry-Academy/cicd-for-ignition).
 
 > The capstone. For once you do **not** fork: everyone works as a **contributor on this one shared, locked-down repo**. Every push to `main` auto-deploys to your **own test gateway**; only a change to `release.yaml` reaches the **real production gateway on the internet**. Feature branch → PR → review → tag → release pin → live, again and again, with four other people in the same version stream.
 
@@ -11,10 +19,10 @@ Two deploy channels, one rule: `release.yaml` is the **only** production trigger
 
 ## Prerequisites
 
-- Accept the **contributor invite** (check your GitHub notifications) — no fork
+- Your instructor sends you the link to **your cohort's lab 07 repo**, `Mustry-Academy/cicd-lab-07-<cohort>`. Accept the **contributor invite** (check your GitHub notifications) — no fork
 - Docker with the Compose V2 plugin, `git`, `curl`, `python3`
 - **≥ 4 GB free RAM for Docker** — one Ignition gateway (1 GB cap) plus TimescaleDB
-- _Background:_ labs 03–06 — the runner, tags, secrets ladder, migrations and module moves all return here, wired into one pipeline
+- _Background:_ [labs 03–06](https://github.com/Mustry-Academy/cicd-for-ignition/tree/main/labs) — the runner, tags, secrets ladder, migrations and module moves all return here, wired into one pipeline
 
 
 > **WSL2 (Windows): keep the clone in your Linux home (`~/…`), never `/mnt/c/…`.**
@@ -26,9 +34,12 @@ Two deploy channels, one rule: `release.yaml` is the **only** production trigger
 
 ## Quick start
 
+Clone it **next to** the course repo, not inside it:
+
 ```bash
-git clone git@github.com:Mustry-Academy/cicd-lab-07-multi-gateway-deploy.git
-cd cicd-lab-07-multi-gateway-deploy
+cd ~/mustry-academy    # the folder that already holds cicd-for-ignition/
+git clone git@github.com:Mustry-Academy/cicd-lab-07-<cohort>.git
+cd cicd-lab-07-<cohort>
 scripts/setup.sh       # compose up + one-time first-boot fix, idempotent
 scripts/validate.sh    # local mirror of CI — green before you PR
 ```
@@ -68,7 +79,7 @@ Reference reading: [`docs/multi-gateway-deployments.md`](./docs/multi-gateway-de
 ## Repo layout
 
 ```
-cicd-lab-07-multi-gateway-deploy/
+cicd-lab-07-<cohort>/
 ├── release.yaml               ← what runs on production, right now (the ONLY deploy trigger)
 ├── projects/                  ← oatmakers (shared) + one project per contributor
 ├── services/                  ← gateway config export + modules.json manifest
@@ -76,10 +87,9 @@ cicd-lab-07-multi-gateway-deploy/
 ├── jar-files/jar/             ← library JARs → lib/core/gateway at deploy time
 ├── db-migration/migrate/      ← golang-migrate up/down pairs, run before anything ships
 ├── local-development/         ← local-only stand-ins (secrets) for the local stack
-├── capstone/                  ← the production server stack (Caddy, gateway, runner) — GitOps'd
 ├── scripts/                   ← setup / teardown / validate / migrate / reset-trial / generate-api-key / mint-api-key
 ├── exercises/ · slides/ · docs/ · architectures/
-└── .github/workflows/         ← ci.yml (PR checks) · deploy.yml (release.yaml → production)
+└── .github/workflows/         ← ci.yml (PR checks) · deploy.yml (release.yaml → production) · test-<yourname>.yml (yours, Part 0)
 ```
 
 ## License

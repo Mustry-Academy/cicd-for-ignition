@@ -200,7 +200,7 @@ services:
     profiles: [test]
     restart: unless-stopped
     environment:
-      REPO_URL: "${REPO_URL:-https://github.com/Mustry-Academy/cicd-lab-07-multi-gateway-deploy}"
+      REPO_URL: "${REPO_URL:-https://github.com/Mustry-Academy/cicd-lab-07-<cohort>}"
       # Registering a runner needs repo-admin rights, which contributors do
       # not have, so the credential comes from Sam or Jasper.
       #   RUNNER_TOKEN       what students use: the registration token from

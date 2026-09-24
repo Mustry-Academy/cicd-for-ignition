@@ -9,8 +9,7 @@
 #   4. Migration pairs: every .up.sql has a .down.sql and vice versa.
 #   5. release.yaml: schema + every pin points at an existing tag
 #      (needs pyyaml; skipped with a warning otherwise).
-#   6. capstone/secrets/ hygiene: only *.example and README tracked.
-#   7. actionlint on .github/workflows/ (only if actionlint is installed).
+#   6. actionlint on .github/workflows/ (only if actionlint is installed).
 #
 # Exits non-zero if any check fails. No Ignition or Docker needed.
 
@@ -188,19 +187,7 @@ else
   echo -e "  ${YELLOW}skipped${NC} — pyyaml not installed (pip install pyyaml)"
 fi
 
-# 6. capstone secrets hygiene ----------------------------------------------------
-echo "→ capstone/secrets/ hygiene"
-bad="$(git ls-files 'capstone/secrets/' 2>/dev/null | grep -vE '\.example$|/README\.md$' || true)"
-if [ -n "$bad" ]; then
-  while IFS= read -r f; do
-    echo -e "  ${RED}secret file committed:${NC} $f — rotate this credential NOW, then remove the file"
-  done <<< "$bad"
-  rc=1
-else
-  echo -e "  ${GREEN}ok${NC} — only example files tracked"
-fi
-
-# 7. actionlint (optional) -------------------------------------------------------
+# 6. actionlint (optional) -------------------------------------------------------
 echo "→ actionlint (.github/workflows/)"
 if command -v actionlint > /dev/null 2>&1; then
   if actionlint -color; then

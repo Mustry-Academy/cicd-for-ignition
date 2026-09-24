@@ -48,10 +48,10 @@ You should leave this lab able to:
 
 ## What you're working with
 
-**One repo, and you are a contributor on it:**
+**One repo per cohort, and you are a contributor on it:**
 
 ```
-git@github.com:Mustry-Academy/cicd-lab-07-multi-gateway-deploy.git
+git@github.com:Mustry-Academy/cicd-lab-07-<cohort>.git
 ```
 
 ```
@@ -104,9 +104,18 @@ One repo keeps this lab small.
 
 ## Pre-flight
 
-- Accept the **contributor invite** for the repo (check your GitHub
-  notifications). No fork this time.
-- Clone it: `git clone git@github.com:Mustry-Academy/cicd-lab-07-multi-gateway-deploy.git`
+- Your instructor sends you the link to your cohort's lab 07 repo,
+  `Mustry-Academy/cicd-lab-07-<cohort>`. Accept the **contributor invite**
+  for it (check your GitHub notifications). No fork this time.
+- Clone it **next to** the course repo in `~/mustry-academy/`, not inside
+  `cicd-for-ignition/`:
+
+  ```bash
+  cd ~/mustry-academy
+  git clone git@github.com:Mustry-Academy/cicd-lab-07-<cohort>.git
+  cd cicd-lab-07-<cohort>
+  ```
+
 - Open <https://cloud.mustrysolutions.com> and log in with
   `admin` / `MergeIntoMain!`. That gateway is your deploy target all lab.
 
@@ -121,8 +130,9 @@ open http://localhost:8088     # admin / password
 ```
 
 > **Coming straight from lab 06?** Shut its stack down first
-> (`docker compose down` in that repo) — it holds ports **8088, 8090 and
-> 5432**, all three of which this lab needs.
+> (`docker compose down` in your fork's `labs/06-secrets-db-and-modules/`
+> folder) — it holds ports **8088, 8090 and 5432**, all three of which this
+> lab needs.
 
 - **The local gateway bind-mounts the repo.** `./projects`,
   `./services/config` and `./services/modules.json` ARE the gateway's file
@@ -291,11 +301,12 @@ through your own workflow after a merge to `main`.
 Everyone does this part alone. It is the full loop every deploy in this lab
 uses: PR → review → tag → release.yaml → live.
 
-**1. Clone and branch** (no fork — your branch goes to the shared repo):
+**1. Branch** in the clone from pre-flight (no fork — your branch goes to
+the shared repo):
 
 ```bash
-git clone git@github.com:Mustry-Academy/cicd-lab-07-multi-gateway-deploy.git
-cd cicd-lab-07-multi-gateway-deploy
+cd ~/mustry-academy/cicd-lab-07-<cohort>
+git switch main && git pull
 git switch -c feature/<yourname>-project
 ```
 
