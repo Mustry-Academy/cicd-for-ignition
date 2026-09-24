@@ -1,0 +1,13 @@
+{
+  "pages": {
+    "/": {
+      "title": "Lab 02",
+      "viewPath": "pages/overview"
+    },
+    "/overview": {
+      "title": "Lab 02",
+      "viewPath": "pages/overview"
+    }
+  },
+  "sharedDocks": {}
+}
