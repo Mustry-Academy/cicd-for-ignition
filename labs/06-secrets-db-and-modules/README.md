@@ -1,6 +1,6 @@
 # Lab 06 — Secrets, database migrations, modules & JARs
 
-Day 4 (morning) of the [CI/CD for Ignition Masterclass](https://github.com/mustry-academy/cicd-masterclass).
+Day 4 (morning) of the [CI/CD for Ignition Masterclass](../../README.md).
 
 > Four things every real Ignition deployment carries that the pipeline so far doesn't handle: **secrets**, the **database schema**, **third-party modules** and **JAR files**. You move the database passwords out of Git and onto the secrets ladder (env var → file-based secret → Ignition 8.3 **referenced secret**), ship a schema change as a **golang-migrate up/down pair** the pipeline applies *before* the screens that need it, and deploy a `.modl` with headless license acceptance — so a fresh gateway boots complete with no hands on it.
 
@@ -11,11 +11,11 @@ This lab reuses Lab 04's file-based deploy stack (three gateways, bundled self-h
 
 ## Prerequisites
 
-- A fork of this repo, **with Actions enabled** — the warm-up, Parts 1C–1D and 2B are pipeline work (same setup as Lab 04). Enabling is one click a fresh fork *requires*: *Actions* tab → **"I understand my workflows, go ahead and enable them"**. Skip it and every automatic trigger stays off — a PR, a merge or a `v*` tag produces no workflow run and no error message. There is no CLI or API for that button.
-- A GitHub Personal Access Token with `repo` scope — the bundled runner uses it to auto-register against your fork. **Reuse the one you made in Lab 04** (or create one at [github.com/settings/tokens](https://github.com/settings/tokens) → classic → tick `repo`) and put it in `.env` as `RUNNER_GITHUB_PAT`. It never leaves `.env`.
-- The [GitHub CLI](https://cli.github.com/) (`gh`), authenticated (`gh auth status`) — used to fork and clone the repo
+- Your fork of the course repo (`cicd-for-ignition`, set up once — see the [course hub](../../README.md)), **with Actions enabled** — the warm-up, Parts 1C–1D and 2B are pipeline work (same setup as Lab 04). Enabling is one click a fresh fork *requires*: *Actions* tab → **"I understand my workflows, go ahead and enable them"**. Skip it and every automatic trigger stays off — a PR, a merge or a `lab06-v*` tag produces no workflow run and no error message. There is no CLI or API for that button.
+- A GitHub Personal Access Token with `repo` scope — the bundled runner uses it to auto-register against your fork. **Reuse the one you made in Lab 04** (or create one at [github.com/settings/tokens](https://github.com/settings/tokens) → classic → tick `repo`) and put it in `.env` as `RUNNER_GITHUB_PAT` (the repo root's `course-setup.sh` does this for you). It never leaves `.env`.
+- The [GitHub CLI](https://cli.github.com/) (`gh`), authenticated (`gh auth status`), with `gh repo set-default <you>/cicd-for-ignition` done once
 - **≥ 8 GB free RAM for Docker** — three Ignition gateways each cap at 1 GB, plus TimescaleDB, the runner, and the usual Docker Desktop overhead
-- _Background:_ [Lab 04](https://github.com/mustry-academy/cicd-lab-04-ignition-file-based-deploy) — this lab reuses its stack and deploy mechanics; the config-scope overlays (`local-development`/`test`/`production`) it shipped silently become load-bearing here
+- _Background:_ [Lab 04](../04-ignition-file-based-deploy/) — this lab reuses its stack and deploy mechanics; the config-scope overlays (`local-development`/`test`/`production`) it shipped silently become load-bearing here
 
 
 > **WSL2 (Windows): keep the clone in your Linux home (`~/…`), never `/mnt/c/…`.**
@@ -27,10 +27,11 @@ This lab reuses Lab 04's file-based deploy stack (three gateways, bundled self-h
 
 ## Quick start
 
+One lab stack at a time: every Docker lab uses the same ports and container names, so stop the previous one first (`docker compose down` in that lab's folder, e.g. `labs/05-ignition-image-based-deploy/`).
+
 ```bash
-gh repo clone mustry-academy/cicd-lab-06-secrets-db-and-modules
-cd cicd-lab-06-secrets-db-and-modules
-cp .env.example .env
+cd ~/mustry-academy/cicd-for-ignition/labs/06-secrets-db-and-modules
+cp .env.example .env   # skip if course-setup.sh already created it
 scripts/setup.sh       # brings up the stack, waits for all three gateways, prints credentials
 scripts/validate.sh    # must be green before you start the lab
 ```
@@ -40,8 +41,8 @@ Once setup finishes you have three Ignition gateways and a TimescaleDB:
 | Service | URL | What it is |
 |---|---|---|
 | `local` | http://localhost:8088 | Your working gateway — bind-mounted from `./projects/` + `./services/config/` |
-| `test` | http://localhost:8089 | Empty until `deploy.yml` runs (push to `main`, or manual dispatch) — deployed files visible under `./gateways/test/` |
-| `production` | http://localhost:8090 | Same, populated by a `v*` release tag (`release.yml`) or a manual `deploy.yml` run with `target=production` |
+| `test` | http://localhost:8089 | Empty until `lab06-deploy.yml` runs (push to `main`, or manual dispatch) — deployed files visible under `./gateways/test/` |
+| `production` | http://localhost:8090 | Same, populated by a `lab06-v*` release tag (`lab06-release.yml`) or a manual `lab06-deploy.yml` run with `target=production` |
 | `timescaledb` | localhost:5432 | Databases `ignition_local_development` / `ignition_test` / `ignition_production`; logins `ignition` (r/w) and `reporting` (read-only) |
 
 Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_TEST/_PRODUCTION`, default `admin / password`).
@@ -58,7 +59,7 @@ The lab is a warm-up plus three parts — [`exercises/lab.md`](./exercises/lab.m
 |---|---|---|
 | Warm-up | Deploy to test and production; find both db-connections **Faulted** while the pipeline is green | the diagnosis question |
 | 1 (±30 min) | Passwords → secret files → file-type secret provider → **referenced secrets**; fix test through a full PR → pipeline deploy | both connections Valid on test, fixed by the pipeline |
-| 2 (±20 min) | A schema change as a golang-migrate `0002` up/down pair; `deploy.yml` migrates test **before** it ships | green run: migrate → ship → scan → verify |
+| 2 (±20 min) | A schema change as a golang-migrate `0002` up/down pair; `lab06-deploy.yml` migrates test **before** it ships | green run: migrate → ship → scan → verify |
 | 3 (±10 min) | A spare `.modl` deployed with headless license/cert acceptance in `services/modules.json` | module **Running** on test, hands-free |
 
 Reference reading: [`docs/secrets-management.md`](./docs/secrets-management.md) and [`db-migration/MIGRATIONS.md`](./db-migration/MIGRATIONS.md).
@@ -66,7 +67,7 @@ Reference reading: [`docs/secrets-management.md`](./docs/secrets-management.md) 
 ## Repo layout
 
 ```
-cicd-lab-06-secrets-db-and-modules/
+labs/06-secrets-db-and-modules/
 ├── README.md
 ├── docker-compose.yaml                 ← three gateways + TimescaleDB + runner. Passwords are
 │                                          still env vars — Part 1A moves them to file secrets
@@ -78,18 +79,14 @@ cicd-lab-06-secrets-db-and-modules/
 ├── db-migration/
 │   ├── MIGRATIONS.md                   ← the two rules the tool won't enforce for you
 │   └── migrate/                        ← numbered golang-migrate pairs; 0002 is yours (Part 2)
-├── .github/workflows/
-│   ├── ci.yml                          ← PR validation: linters + JSON checks + secret scan
-│   ├── deploy.yml                      ← push to main → test; manual dispatch = re-run/rollback button.
-│   │                                      You add the Materialize-secrets (1C) and Migrate (2B) steps
-│   └── release.yml                     ← v* tag → production: a thin caller that runs deploy.yml
+├── .github/actionlint.yaml             ← declares the self-hosted `lab06` runner label
+│                                          (the workflows themselves live at the repo root — see below)
 ├── exercises/lab.md                    ← the lab
 ├── docs/                               ← reference reading + troubleshooting
-├── instructor-notes/                   ← answer key (read after solo work)
 ├── scripts/
 │   ├── setup.sh / teardown.sh / lib.sh / scan.sh   ← stack management (from Lab 04)
 │   ├── migrate.sh                      ← golang-migrate in Docker (up / down / version, --database)
-│   └── validate.sh                     ← local mirror of ci.yml, incl. the secret scan
+│   └── validate.sh                     ← local mirror of lab06-ci.yml, incl. the secret scan
 ├── projects/                           ← Perspective projects (bind-mounted into `local`)
 ├── gateways/                           ← test/production gateway state (gitignored bind mounts)
 ├── services/
@@ -114,11 +111,13 @@ Both passwords are **embedded** secrets in the committed config, encrypted under
 
 ## The CI/CD workflows
 
+GitHub only runs workflows from the repo root, so this lab's three live in the course repo's [`.github/workflows/`](../../.github/workflows/), prefixed `lab06-`. Each one runs its steps inside `labs/06-secrets-db-and-modules/` and only fires on changes to this lab.
+
 | File | Trigger | Runner | Purpose |
 |---|---|---|---|
-| [`ci.yml`](./.github/workflows/ci.yml) | PR to `main` | `ubuntu-latest` (free) | Linters, JSON validity, `.deployignore` syntax, **secret scan**. |
-| [`deploy.yml`](./.github/workflows/deploy.yml) | Push to `main` (deploy paths only); manual dispatch with `target: test\|production` | `[self-hosted, lab06]` | File-based deploy via `docker cp` + hot scan. Ships secret files (once your 1C step materializes them) and the module manifest (restarting the gateway only when it changed). |
-| [`release.yml`](./.github/workflows/release.yml) | `v*` tag on `main` | `[self-hosted, lab06]` | The Lab 04 routing: the tag ships to **production**. A thin caller that runs `deploy.yml` with `target: production` — one pipeline, so your 1C/2B steps ship to both gateways. |
+| [`lab06-ci.yml`](../../.github/workflows/lab06-ci.yml) | PR to `main` | `ubuntu-latest` (free) | Linters, JSON validity, `.deployignore` syntax, **secret scan**. |
+| [`lab06-deploy.yml`](../../.github/workflows/lab06-deploy.yml) | Push to `main` (deploy paths only); manual dispatch with `target: test\|production` | `[self-hosted, lab06]` | File-based deploy via `docker cp` + hot scan. Ships secret files (once your 1C step materializes them) and the module manifest (restarting the gateway only when it changed). |
+| [`lab06-release.yml`](../../.github/workflows/lab06-release.yml) | `lab06-v*` tag on `main` | `[self-hosted, lab06]` | The Lab 04 routing: the tag ships to **production**. A thin caller that runs `lab06-deploy.yml` with `target: production` — one pipeline, so your 1C/2B steps ship to both gateways. |
 
 Both deploy targets need:
 
@@ -127,10 +126,10 @@ Both deploy targets need:
 
 | Scope | Name | Type | Purpose |
 |---|---|---|---|
-| Environment `lab-gateway-test` | `IGNITION_API_KEY` | Secret | The `IGNITION_API_KEY_TEST` value from your `.env` — `setup.sh` generates a unique key per gateway (nothing key-related is committed) |
-| Environment `lab-gateway-test` | `POSTGRES_PASSWORD`, `REPORTING_PASSWORD` | Secrets | **You add these in Part 1C** — the Materialize step turns them into secret files on the test host |
-| Environment `lab-gateway-test` | `IGNITION_URL`, `IGNITION_CONTAINER` | Variables (optional) | Default to `http://gateway-test:8088` / `lab06-gateway-test` (bundled-runner case) |
-| Environment `lab-gateway-production` | (same set) | | Defaults: `http://gateway-production:8088` / `lab06-gateway-production` |
+| Environment `lab06-gateway-test` | `IGNITION_API_KEY` | Secret | The `IGNITION_API_KEY_TEST` value from your `.env` — `setup.sh` generates a unique key per gateway (nothing key-related is committed) |
+| Environment `lab06-gateway-test` | `POSTGRES_PASSWORD`, `REPORTING_PASSWORD` | Secrets | **You add these in Part 1C** — the Materialize step turns them into secret files on the test host |
+| Environment `lab06-gateway-test` | `IGNITION_URL`, `IGNITION_CONTAINER` | Variables (optional) | Default to `http://gateway-test:8088` / `lab06-gateway-test` (bundled-runner case) |
+| Environment `lab06-gateway-production` | (same set) | | Defaults: `http://gateway-production:8088` / `lab06-gateway-production` |
 
 ## Database migrations
 

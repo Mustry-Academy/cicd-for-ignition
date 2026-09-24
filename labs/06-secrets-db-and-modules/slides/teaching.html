@@ -282,7 +282,7 @@ body{
     </ul>
     <div class="callout">
       <div class="lab" style="color:var(--blue)">Builds on</div>
-      <p>Everything today extends the <b>lab 04/05 stack</b>: the local → test → production gateways, the <code>.env.example</code> convention, and the <code>db-init/</code> folder you've already used without looking too closely at it. The deploy routing is also unchanged: <b>push to <code>main</code> → test, <code>v*</code> tag → production</b> — only here <code>release.yml</code> is a thin caller that runs the one <code>deploy.yml</code>, so the steps you add today ship to both gateways.</p>
+      <p>Everything today extends the <b>lab 04/05 stack</b>: the local → test → production gateways, the <code>.env.example</code> convention, and the <code>db-init/</code> folder you've already used without looking too closely at it. The deploy routing is also unchanged: <b>push to <code>main</code> → test, <code>lab06-v*</code> tag → production</b> — only here <code>lab06-release.yml</code> is a thin caller that runs the one <code>lab06-deploy.yml</code>, so the steps you add today ship to both gateways.</p>
     </div>
   </div>
 
@@ -627,7 +627,7 @@ services:
 
     <div class="callout">
       <div class="lab" style="color:var(--blue)">Same pattern, everywhere</div>
-      <p>You already use this model in CI: <b>one workflow file</b>, and the <code>lab-gateway-test</code> / <code>lab-gateway-production</code> GitHub <b>environments</b> each supply their own <code>IGNITION_API_KEY</code>. Referenced secrets bring the identical idea inside the gateway.</p>
+      <p>You already use this model in CI: <b>one workflow file</b>, and the <code>lab06-gateway-test</code> / <code>lab06-gateway-production</code> GitHub <b>environments</b> each supply their own <code>IGNITION_API_KEY</code>. Referenced secrets bring the identical idea inside the gateway.</p>
     </div>
   </div>
 
@@ -651,17 +651,17 @@ services:
     </div>
     <div class="cols2">
       <ul class="checks">
-        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Environment-scoped, not repo-wide.</b> <span class="mono">lab-gateway-production</span> holds the production values; a PR build against test can't even see them. Add <b>required reviewers</b> on the production environment for a human gate.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Environment-scoped, not repo-wide.</b> <span class="mono">lab06-gateway-production</span> holds the production values; a PR build against test can't even see them. Add <b>required reviewers</b> on the production environment for a human gate.</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>GitHub secrets → secret files.</b> The deploy job materializes each secret as a file on the target host, with tight permissions <b>before</b> the value lands, then <span class="mono">compose up</span> mounts them at <span class="mono">/run/secrets/</span>. One source of truth in GitHub, files on the box, references in the gateway: the whole ladder in one pipeline run.</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Masking is a seatbelt, not a licence.</b> Actions replaces known secret values with <span class="mono">***</span> in logs, but don't <span class="mono">echo</span> them, don't <span class="mono">set -x</span> around them, don't write them into artifacts.</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Forks don't get secrets.</b> <span class="mono">pull_request</span> runs from forks see empty secrets by design: one more reason deploys trigger on <span class="mono">push</span>/<span class="mono">tag</span>, never on PR.</span></li>
       </ul>
       <div>
-        <div class="code"><pre><span class="cm"># deploy.yml: write secrets to files, then deploy</span>
+        <div class="code"><pre><span class="cm"># lab06-deploy.yml: write secrets to files, then deploy</span>
 jobs:
   deploy:
     runs-on: [self-hosted, lab06]
-    environment: <span class="cmd2">lab-gateway-test</span>   <span class="cm"># ← scoping</span>
+    environment: <span class="cmd2">lab06-gateway-test</span>   <span class="cm"># ← scoping</span>
     steps:
       - name: Materialize secret files
         env:
@@ -711,7 +711,7 @@ jobs:
       <div>
         <div class="callout" style="margin-top:0">
           <div class="lab" style="color:var(--blue)">Enforcement, not vigilance</div>
-          <p>Humans forget; hooks and CI don't. This repo's <code>scripts/validate.sh</code> runs a <b>secret scan</b> (tracked files under <span class="mono">secrets/</span>, known values in the payload) and <code>ci.yml</code> repeats it on every PR: a leaked key fails the build before a reviewer ever sees it. A full <b>gitleaks</b> history scan is the assignment's stretch S3, in CI.</p>
+          <p>Humans forget; hooks and CI don't. This repo's <code>scripts/validate.sh</code> runs a <b>secret scan</b> (tracked files under <span class="mono">secrets/</span>, known values in the payload) and <code>lab06-ci.yml</code> repeats it on every PR: a leaked key fails the build before a reviewer ever sees it. A full <b>gitleaks</b> history scan is the assignment's stretch S3, in CI.</p>
         </div>
         <div class="code" style="margin-top:14px"><pre><span class="cm"># .gitignore: the relevant lines</span>
 .env
@@ -904,7 +904,7 @@ CREATE TABLE recipe_params (…);</pre>
     </div>
 
     <div class="flow">
-      <div class="fstep"><div class="fn">1</div><h5>Checkout</h5><p>Runner checks out the merged commit on <span class="mono">main</span> (or the <span class="mono">v*</span> release tag).</p></div>
+      <div class="fstep"><div class="fn">1</div><h5>Checkout</h5><p>Runner checks out the merged commit on <span class="mono">main</span> (or the <span class="mono">lab06-v*</span> release tag).</p></div>
       <div class="farr">→</div>
       <div class="fstep"><div class="fn">2</div><h5>Validate</h5><p>JSON checks, secret scan, same gate as CI.</p></div>
       <div class="farr">→</div>

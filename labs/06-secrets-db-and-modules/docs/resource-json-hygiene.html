@@ -119,7 +119,7 @@ footer{border-top:1px solid var(--line2);padding-top:18px;color:var(--txt-faint)
 <body>
 
 <div class="hero"><div class="inner">
-  <div class="kicker">cicd-lab-06 &middot; resource.json</div>
+  <div class="kicker">lab 06 &middot; resource.json</div>
   <h1>How we keep Ignition's junk out of our resource files</h1>
   <p>Ignition stamps every resource manifest with metadata that has nothing to do with your project.
   We hide that junk from diffs, and we revert it automatically before it can enter a commit.</p>
@@ -258,8 +258,9 @@ footer{border-top:1px solid var(--line2);padding-top:18px;color:var(--txt-faint)
 
     <p class="big" style="margin-top:26px">One command wires all of it</p>
 <pre>scripts/setup.sh
-<span class="cm">#   → git config diff.ignition-resource.textconv ...   (Tool 1)</span>
-<span class="cm">#   → pre-commit install                              (Tool 2)</span></pre>
+<span class="cm">#   → ../../scripts/install-git-config.sh:</span>
+<span class="cm">#       git config diff.ignition-resource.textconv ...   (Tool 1)</span>
+<span class="cm">#       git config core.hooksPath scripts/git-hooks      (Tool 2, via the repo's pre-commit dispatcher)</span></pre>
     <p class="lead" style="margin-top:14px">Tool 2 needs the <code class="i">pre-commit</code> package. If it is
     missing, setup says so and prints <code class="i">pip install pre-commit</code>. Everything else still works, but
     junk is no longer reverted for you and you have to run the script by hand:</p>
@@ -297,7 +298,7 @@ scripts/clean-ignition-resource-churn.sh <span class="hl">--apply</span>      <s
 
 
   <footer>
-    Mustry Academy &middot; CI/CD for Ignition &middot; cicd-lab-06-secrets-db-and-modules
+    Mustry Academy &middot; CI/CD for Ignition &middot; labs/06-secrets-db-and-modules
   </footer>
 
 </div>

@@ -1,10 +1,10 @@
 # Validation — runs on every pull request into main. That PR run is THE gate:
-# once a commit merges, deploy.yml ships it (and release.yml forwards tags to
-# deploy.yml) without re-validating — the same commit already passed here.
+# once a commit merges, lab06-deploy.yml ships it (and lab06-release.yml forwards
+# tags to lab06-deploy.yml) without re-validating — the same commit already passed here.
 #
 # GitHub Flow has one long-lived branch, so we validate PRs into it:
 #   main  ← feature/* branches merge here via PR. A push to main then ships to
-#           the test gateway (deploy.yml); a manual deploy.yml run with target=production ships to production.
+#           the test gateway (lab06-deploy.yml); a manual lab06-deploy.yml run with target=production ships to production.
 #
 # Purpose: catch the cheap stuff before a deploy gets near it. We DON'T spin
 # up Ignition here; that's left to the deploy workflow on its self-hosted
@@ -12,20 +12,28 @@
 # actionlint, shellcheck, ign-lint) plus this lab's own JSON / .deployignore
 # checks, and they all run free on ubuntu-latest.
 
-name: CI
+name: Lab 06 · CI
 
 on:
   pull_request:
     branches: [main]
+    paths:
+      - "labs/06-secrets-db-and-modules/**"
+      - ".github/workflows/lab06-ci.yml"
 
 # Cancel any in-flight CI run for this PR when a new commit lands.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: lab06-ci-${{ github.ref }}
   cancel-in-progress: true
 
 # Least-privilege default.
 permissions:
   contents: read
+
+# Every run step works inside the lab folder; `with:` inputs do not.
+defaults:
+  run:
+    working-directory: labs/06-secrets-db-and-modules
 
 jobs:
   # Job ids double as the status-check names branch protection matches on
@@ -47,10 +55,14 @@ jobs:
         run: pip install yamllint==1.35.1 ign-lint==0.6.1
 
       - name: yamllint
-        run: yamllint -c .yamllint.yml .
+        run: yamllint -c .yamllint.yml . ../../.github/workflows/lab06-*.yml
 
       - name: actionlint
         uses: raven-actions/actionlint@v2
+        with:
+          # Only this lab's workflows, with this lab's runner labels.
+          files: .github/workflows/lab06-*.yml
+          flags: -config-file labs/06-secrets-db-and-modules/.github/actionlint.yaml
 
       - name: shellcheck
         # -x follows the sourced lib.sh; source resolution comes from .shellcheckrc
@@ -79,7 +91,7 @@ jobs:
           fail=0
           while IFS= read -r f; do
             if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
-              echo "::error file=$f::Invalid JSON"
+              echo "::error file=labs/06-secrets-db-and-modules/$f::Invalid JSON"
               fail=1
             fi
           done < <(find projects services -type f -name '*.json' 2>/dev/null)
@@ -100,7 +112,7 @@ jobs:
             n=$((n+1))
             [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
             if [[ "$line" =~ ^/ ]]; then
-              echo "::error file=.deployignore,line=$n::Pattern must be relative, not absolute: $line"
+              echo "::error file=labs/06-secrets-db-and-modules/.deployignore,line=$n::Pattern must be relative, not absolute: $line"
               fail=1
             fi
           done < .deployignore
@@ -122,7 +134,7 @@ jobs:
           [ -f "$f" ] || { echo "No $f — nothing to validate"; exit 0; }
           bad="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(" ".join(sorted({v for k,v in d.items() if k in ("systemAuthProfile","systemIdentityProvider") and str(v).startswith("temp")})))' "$f")"
           if [ -n "$bad" ]; then
-            echo "::error file=$f::Points at a throwaway identity ($bad). Restore it (git checkout -- $f), remove services/config/resources/core/ignition/{user-source,identity-provider}/temp*, or re-run scripts/setup.sh"
+            echo "::error file=labs/06-secrets-db-and-modules/$f::Points at a throwaway identity ($bad). Restore it (git checkout -- $f), remove services/config/resources/core/ignition/{user-source,identity-provider}/temp*, or re-run scripts/setup.sh"
             exit 1
           fi
           echo "security-properties names a deployable identity."
@@ -142,7 +154,7 @@ jobs:
           bad="$(git ls-files 'secrets/' | grep -vE '\.example$|/README\.md$' || true)"
           if [ -n "$bad" ]; then
             while IFS= read -r f; do
-              echo "::error file=$f::Secret file committed — rotate this credential NOW, then remove the file"
+              echo "::error file=labs/06-secrets-db-and-modules/$f::Secret file committed — rotate this credential NOW, then remove the file"
             done <<< "$bad"
             exit 1
           fi
@@ -163,7 +175,7 @@ jobs:
             [ -n "$value" ] || continue
             if hits="$(grep -rl -F "$value" projects/ services/ 2>/dev/null)"; then
               while IFS= read -r f; do
-                echo "::error file=$f::Contains the secret value from $ex — use a referenced secret instead"
+                echo "::error file=labs/06-secrets-db-and-modules/$f::Contains the secret value from $ex — use a referenced secret instead"
               done <<< "$hits"
               fail=1
             fi

@@ -6,11 +6,11 @@ directories, bind-mounted into their containers (see `docker-compose.yaml`):
 ```
 gateways/
 ├── test/
-│   ├── projects/      ← what deploy.yml shipped (push to main)
+│   ├── projects/      ← what lab06-deploy.yml shipped (push to main)
 │   ├── config/        ← gateway config, incl. what the deploy copied
 │   └── modules.json   ← this gateway's module manifest (what it last booted with)
 └── production/
-    ├── projects/      ← what deploy.yml shipped (dispatch, target=production)
+    ├── projects/      ← what lab06-deploy.yml shipped (dispatch, target=production)
     ├── config/
     └── modules.json
 ```

@@ -319,9 +319,9 @@ services:
   #
   # The runner sits on the lab's compose network, so it reaches the gateways by
   # service name (gateway-local-development, gateway-test, gateway-production) — see the
-  # IGNITION_URL defaults in .github/workflows/deploy.yml.
+  # IGNITION_URL defaults in .github/workflows/lab06-deploy.yml (repo root).
   #
-  # Why /var/run/docker.sock is mounted: deploy.yml uses
+  # Why /var/run/docker.sock is mounted: lab06-deploy.yml uses
   # `docker cp` and `docker exec` to push project files INTO the test/production
   # gateway containers. That requires the runner to talk to the host's
   # Docker daemon. Lab convenience, NOT a production pattern.

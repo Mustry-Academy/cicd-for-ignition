@@ -34,7 +34,7 @@ config and getting committed "just to make it work".
    `set -x` around them, don't write them to artifacts.
 4. **Least scope, short life.** Per-gateway API keys instead of one master key;
    PATs with `repo` scope only; GitHub *environment* secrets
-   (`lab-gateway-test` / `lab-gateway-production`) instead of repo-wide ones.
+   (`lab06-gateway-test` / `lab06-gateway-production`) instead of repo-wide ones.
 
 ## 3. The ladder
 
@@ -149,7 +149,7 @@ https://docs.inductiveautomation.com/docs/8.3/platform/security/secrets-manageme
   secret; otherwise use referenced secrets so the question never comes up
 
 Enforcement: `scripts/validate.sh` runs a secret scan (tracked files under
-`secrets/`, known values in the gateway payload), and `ci.yml` runs the same
+`secrets/`, known values in the gateway payload), and `lab06-ci.yml` runs the same
 scan as a required PR check. Wiring a full **gitleaks** history scan into CI
 is stretch S3 of the lab.
 
@@ -160,5 +160,5 @@ is stretch S3 of the lab.
 | Your laptop | `.env` (gitignored) + `secrets/` files |
 | Compose stack | interpolation for non-secrets; Docker secrets for credentials |
 | Ignition gateways | referenced secrets from a provider fed by env/file |
-| GitHub Actions | environment-scoped secrets (`lab-gateway-test`, `lab-gateway-production`); masked in logs |
+| GitHub Actions | environment-scoped secrets (`lab06-gateway-test`, `lab06-gateway-production`); masked in logs |
 | The repo | `.env.example`, `secrets/*.example`, secret scanner in CI |

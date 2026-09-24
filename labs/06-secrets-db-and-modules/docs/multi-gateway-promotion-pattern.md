@@ -37,7 +37,7 @@ Test answers "does my change work?" Staging answers a different question: "**is 
 | feature → develop | code review + CI green | PR + branch protection (`ci.yml`) |
 | develop → test | none — automatic | `deploy.yml` on push |
 | test → staging | a human decides "freeze now" | pushing the `release/*` branch |
-| staging → production | acceptance passed **and** a human approves | tag `v*` + **required reviewers** on the `lab-gateway-production` environment |
+| staging → production | acceptance passed **and** a human approves | tag `v*` + **required reviewers** on the `lab06-gateway-production` environment |
 
 The production gate needs **zero workflow changes** — it's a property of the GitHub environment. That's the pattern to remember: workflows say *what happens*, environments say *what's allowed to happen and by whom*.
 

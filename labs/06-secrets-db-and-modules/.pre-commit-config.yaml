@@ -2,25 +2,31 @@
 # Wires the same linters CI runs into a local git hook, so bad commits are
 # blocked before they ever reach CI. Carried over from Lab 03 for consistency.
 #
+# The course repo's pre-commit dispatcher (scripts/git-hooks/pre-commit at the
+# repo root) runs this config FROM THE REPO ROOT whenever a commit touches this
+# lab, so every hook is scoped to this lab's files and every path below is
+# repo-root-relative.
+#
 # Setup:
 #   pip install pre-commit
-#   pre-commit install
+#   scripts/setup.sh   (points git at the dispatchers; no `pre-commit install`)
 #
-# Run all hooks on the full repo:
-#   pre-commit run --all-files
+# Run all hooks on the full lab (from the repo root):
+#   pre-commit run --config labs/06-secrets-db-and-modules/.pre-commit-config.yaml --all-files
 
 repos:
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.35.1
     hooks:
       - id: yamllint
-        args: ["-c", ".yamllint.yml"]
+        files: ^(labs/06-secrets-db-and-modules/|\.github/workflows/lab06-)
+        args: ["-c", "labs/06-secrets-db-and-modules/.yamllint.yml"]
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
     hooks:
       - id: shellcheck
-        files: \.sh$
+        files: ^labs/06-secrets-db-and-modules/.*\.sh$
         # -x follows the sourced lib.sh; source resolution comes from .shellcheckrc
         args: ["-x"]
 
@@ -28,6 +34,9 @@ repos:
     rev: v1.7.1
     hooks:
       - id: actionlint
+        # This lab's workflows live at the repo root, prefixed lab06-.
+        files: ^\.github/workflows/lab06-.*\.ya?ml$
+        args: ["-config-file", "labs/06-secrets-db-and-modules/.github/actionlint.yaml"]
 
   # Ignition rewrites resource.json manifests with a fresh timestamp and
   # signature whenever it touches the resource, even when nothing real changed.
@@ -38,9 +47,9 @@ repos:
     hooks:
       - id: clean-ignition-resource-churn
         name: revert junk-only resource.json rewrites
-        entry: scripts/clean-ignition-resource-churn.sh --apply
+        entry: labs/06-secrets-db-and-modules/scripts/clean-ignition-resource-churn.sh --apply
         language: script
-        files: (^|/)resource\.json$
+        files: ^labs/06-secrets-db-and-modules/.*resource\.json$
         pass_filenames: false
 
   # Ignition-native linter for Perspective views (naming, polling, scripts...).
@@ -49,4 +58,5 @@ repos:
     rev: v0.6.1
     hooks:
       - id: ign-lint
-        args: ["--config=rule_config.json"]
+        files: ^labs/06-secrets-db-and-modules/.*view\.json$
+        args: ["--config=labs/06-secrets-db-and-modules/rule_config.json"]

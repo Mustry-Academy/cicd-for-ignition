@@ -17,8 +17,7 @@ references throughout.
      warm-up, 1A-1D, 2A-2B, 3, the Part 3 negative test and a v* tag release,
      all green on 8.3.8, checked from outside the run logs (pg_stat_activity per
      gateway, schema_migrations on test AND production, module startup lines).
-     Nothing open. See instructor-notes/lab-key.md §A2 for the fork-specific
-     gotchas (the Actions enable click above all). -->
+     Nothing open. -->
 
 ## Goal
 
@@ -31,34 +30,39 @@ You should leave this lab able to:
 - Name the alternative: committed **ciphertexts with shared encryption keys**, managed with the 8.3 secrets-management key CLI tool (`ignition-secrets-tool.sh`)
 - Explain why `db-init/` is bootstrap, not deployment
 - Write a schema change as a **golang-migrate up/down pair** (`0002_name.up.sql` / `.down.sql`, like our file-based production repo), apply it with `migrate up`, and read the `schema_migrations` ledger
-- Wire a migrate step into `deploy.yml` **before** the ship step, and say why the order matters
+- Wire a migrate step into `lab06-deploy.yml` **before** the ship step, and say why the order matters
 - Deploy **third-party modules**: committed `.modl` files, external-modules folder flag, headless license/cert acceptance in `modules.json`
 - Say where the two kinds of **JAR** live: JDBC drivers as 8.3 config resources (inside the config tree), library JARs on the gateway classpath
 
 ## Pre-flight
 
 ```bash
-cp .env.example .env
+cd ~/mustry-academy/cicd-for-ignition/labs/06-secrets-db-and-modules
+cp -n .env.example .env   # -n keeps the .env course-setup.sh may have made
 scripts/setup.sh          # idempotent — safe if the stack is already up
 scripts/validate.sh       # green before you start
 ```
 
+Stop the previous lab's stack first (`docker compose down` in its folder):
+every Docker lab uses the same ports and container names.
+
 The warm-up, Parts 1C–1D and 2B need your fork with Actions enabled (same setup
 as Lab 04): the pipeline is what deploys, writes the secret files and runs the
-migrations.
+migrations. The workflows live at the course repo's root, not in this folder:
+`../../.github/workflows/lab06-{ci,deploy,release}.yml`.
 
 > **Enable Actions on your fork first — this one is not optional.** Open your
 > fork's *Actions* tab and click the green **"I understand my workflows, go
 > ahead and enable them"** button. A fresh fork ships with every automatic
 > trigger switched off, and the failure mode is silent: your PR, your merge and
-> your `v*` tag produce **no workflow run and no error message anywhere**. If a
+> your `lab06-v*` tag produce **no workflow run and no error message anywhere**. If a
 > step below says "watch the run" and the Actions tab is empty, this is why.
 > (There is no CLI or API for this button — only *Run workflow* on an
 > already-registered workflow works without it.)
 
-Also point `gh` at your fork once —
-`gh repo set-default <you>/cicd-lab-06-secrets-db-and-modules` — it's stored per
-clone, so your Lab 03/04 setting doesn't carry over. The warm-up's `gh secret set`
+Also make sure `gh` points at your fork —
+`gh repo set-default <you>/cicd-for-ignition`, the one-time course setup step
+(check with `gh repo set-default --view`). The warm-up's `gh secret set`
 commands (and any `gh pr create`) resolve against this default; without it they
 ask which repo you mean, or target the course repo.
 
@@ -96,22 +100,22 @@ Follows [`slides/assignment.html`](../slides/assignment.html) 1:1.
 
 ### Warm-up (together) — deploy to test and production, and check the db-connections
 Pre-flight first (`validate.sh` green). Then create the two **deploy
-environments** on your fork — *Settings → Environments* → `lab-gateway-test`
-and `lab-gateway-production` — each with a secret named `IGNITION_API_KEY`
+environments** on your fork — *Settings → Environments* → `lab06-gateway-test`
+and `lab06-gateway-production` — each with a secret named `IGNITION_API_KEY`
 holding that gateway's own key from your `.env` (`setup.sh` generated a
 unique `IGNITION_API_KEY_TEST` / `_PRODUCTION` per gateway — nothing
 key-related lives in the repo, and a test key won't authenticate against
-production). `deploy.yml` picks its environment from the deploy target, so
+production). `lab06-deploy.yml` picks its environment from the deploy target, so
 without them nothing deploys. From the CLI instead of the UI:
 
 ```bash
-gh api -X PUT repos/<you>/cicd-lab-06-secrets-db-and-modules/environments/lab-gateway-test
-gh api -X PUT repos/<you>/cicd-lab-06-secrets-db-and-modules/environments/lab-gateway-production
-gh secret set IGNITION_API_KEY --env lab-gateway-test  --body "$(grep '^IGNITION_API_KEY_TEST=' .env | cut -d= -f2-)"
-gh secret set IGNITION_API_KEY --env lab-gateway-production --body "$(grep '^IGNITION_API_KEY_PRODUCTION=' .env | cut -d= -f2-)"
+gh api -X PUT repos/<you>/cicd-for-ignition/environments/lab06-gateway-test
+gh api -X PUT repos/<you>/cicd-for-ignition/environments/lab06-gateway-production
+gh secret set IGNITION_API_KEY --env lab06-gateway-test  --body "$(grep '^IGNITION_API_KEY_TEST=' .env | cut -d= -f2-)"
+gh secret set IGNITION_API_KEY --env lab06-gateway-production --body "$(grep '^IGNITION_API_KEY_PRODUCTION=' .env | cut -d= -f2-)"
 ```
 
-Now trigger `deploy.yml` for test and
+Now trigger `lab06-deploy.yml` (*Lab 06 · Deploy*) for test and
 for production from the Actions tab and watch both runs go green. Now open the test
 gateway, Config → Databases → Connections: both connections (`TimescaleDB` and
 `TimescaleDB_Reports`) are **Faulted**; production shows the same. Write the diagnosis
@@ -124,9 +128,7 @@ values and the per-environment database target.)
      secrets-management keys that are committed for the local gateway
      (services/config/ignition/keys/ + IGNITION_ROOT_KEY_PASSWORD in compose)
      and excluded from the deploy payload — so local decrypts them and
-     test/production fault with "Unable to decrypt ciphertext", by design. See
-     instructor-notes/lab-key.md §A1 for the verified mechanics and the
-     mint tooling. -->
+     test/production fault with "Unable to decrypt ciphertext", by design. -->
 
 ### Part 1 — hook up a secret for the db-connection (±30 min)
 Two db-connections, same database server, different users: `TimescaleDB` logs in
@@ -160,8 +162,8 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   `ignition_production` — production inherits the same core flaw; copy the pattern from
   `TimescaleDB`, which has all three modes), and add
   `POSTGRES_PASSWORD` + `REPORTING_PASSWORD` as secrets on **both** the
-  `lab-gateway-test` and `lab-gateway-production` environments plus the
-  **Materialize secret files** step in `deploy.yml`
+  `lab06-gateway-test` and `lab06-gateway-production` environments plus the
+  **Materialize secret files** step in `lab06-deploy.yml`
   (umask 177 + `printf`, at the marked `# Part 1C` comment — i.e. before the
   pre-wired "Ship secret files" step that hands them to the gateway). Nothing is
   deployed yet.
@@ -170,16 +172,16 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   secret value — `scripts/validate.sh`'s secret scan is the check. Grepping the
   diff for the password does hit, on the `-` lines: you are *deleting* the dummy
   defaults that were already committed in `docker-compose.yaml`) → **open the
-  PR** → **watch the PR validate** (`ci.yml` green) →
+  PR** → **watch the PR validate** (`lab06-ci.yml` green) →
   **merge** → **watch the pipeline deploy** (materialize secrets → up → scan →
   verify) → **verify test** (both connections Valid, `TimescaleDB_Reports`
-  on `ignition_test`) → **release to production with a tag** (`git tag v1.0.0
-  && git push origin v1.0.0` — the Lab 04 routing: the tag, not the merge, is
-  what ships to production. `release.yml` fires on the tag and runs the same
-  `deploy.yml` with `target: production`: same commit, same pipeline steps —
+  on `ignition_test`) → **release to production with a tag** (`git tag lab06-v1.0.0
+  && git push origin lab06-v1.0.0` — the Lab 04 routing: the tag, not the merge, is
+  what ships to production. `lab06-release.yml` fires on the tag and runs the same
+  `lab06-deploy.yml` with `target: production`: same commit, same pipeline steps —
   including the ones you added — different environment) → **verify production**
   (both Valid, `TimescaleDB_Reports` on `ignition_production`). Fork carried a
-  stale `v1.0.0` over? `git tag -l`, take the next free number.
+  stale `lab06-v1.0.0` over? `git tag -l 'lab06-*'`, take the next free number.
 - **Gate:** both connections Valid on test AND production, fixed by the pipeline
   and not by hand, and you can narrate: GitHub secret → file → provider →
   reference.
@@ -194,7 +196,7 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   Note: golang-migrate will NOT stop you editing an applied migration — that
   discipline is a written rule (the production repo's `docs/MIGRATIONS.md`), not
   a tool feature.
-- **2B.** Add the migrate step to `deploy.yml` exactly at the marked
+- **2B.** Add the migrate step to `lab06-deploy.yml` exactly at the marked
   `# Part 2B: add your "Migrate database" step HERE` comment — **above**
   the `Prune working tree per .deployignore` step, which deletes `scripts/`
   and `db-migration/` from the checkout, so a migrate step placed below it
@@ -254,7 +256,7 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   `TimescaleDB` connection — so the same screen reads `ignition_test` on test
   and `ignition_production` on production, and it needs its table to already be
   there. That is the whole argument for migrate-before-ship.
-- **Gate:** a green deploy run whose log shows migrate → ship → scan → verify, and test's ledger at version 2 (a later `v*` release migrates `ignition_production` the same way).
+- **Gate:** a green deploy run whose log shows migrate → ship → scan → verify, and test's ledger at version 2 (a later `lab06-v*` release migrates `ignition_production` the same way).
 
 ### Part 3 — deploy three third-party modules (±10 min)
 - Install the three spare `.modl` files by adding **minimal** `services/modules.json` entries, let the gateway derive the acceptance fields, commit them, ship them through the pipeline, and verify they come up **Running** with no hands on the gateway.
@@ -353,7 +355,7 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 ### Stretch (optional)
 - **S1.** The internal secret provider, and where it breaks: create an **internal secret provider** on the local gateway, store `REPORTING_PASSWORD` in it (the gateway encrypts it and keeps the ciphertext in its own config) and point `TimescaleDB_Reports` at it. Locally it stays Valid; ship it and test faults — the ciphertext only decrypts on the gateway that created it. Explore `ignition-secrets-tool.sh` (shared root key + KEK under `data/config/ignition/keys/`) as the escape hatch, then revert to the referenced secret. What is "the secret" now, and who owns it?
 - **S2.** Expand-contract rename: `0003` add + backfill, screen switch, `0004` drop.
-- **S3.** Add a `gitleaks` job to `ci.yml` (`fetch-depth: 0` — the scanner must see history); test with a fake-key PR.
+- **S3.** Add a `gitleaks` job to `lab06-ci.yml` (`fetch-depth: 0` — the scanner must see history); test with a fake-key PR.
 - **S4.** Ship a **library JAR** through the pipeline and use it on a screen.
   The teaching's second kind of JAR, done for real: `jar-files/jar/` carries
   `commons-csv-1.14.1.jar` (pinned, checksummed in its README), and your job
@@ -395,7 +397,7 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
      (`pump,3,ok` → `pump | 3 | ok`).
   3. **Make it deployable state.** Test and production have no working tree
      to mount from — the pipeline ships the bytes. The step below is ready
-     to copy: paste it into `deploy.yml` at the marked
+     to copy: paste it into `lab06-deploy.yml` at the marked
      `# Stretch S4: paste the ready-made "Ship library JARs" step HERE`
      comment, right after the module-manifest step (it is the same pattern:
      copy, compare, restart only when changed):
@@ -431,8 +433,8 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
          exit 1
      ```
 
-     Also add `"jar-files/**"` to the `push.paths` list at the top of
-     `deploy.yml` — without it, a PR that only changes a JAR never triggers a
+     Also add `"labs/06-secrets-db-and-modules/jar-files/**"` to the `push.paths` list at the top of
+     `lab06-deploy.yml` — without it, a PR that only changes a JAR never triggers a
      deploy.
   4. **Ship it.** PR with the view, the compose volume **and** the workflow
      change → merge → watch the run ship the JAR and restart test → open the

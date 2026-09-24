@@ -127,12 +127,21 @@ pf_on_drvfs() {
   return 1
 }
 
+# The lab is labs/<lab>/ inside the course clone, and it is the whole clone
+# that has to move. git may refuse to name it (dubious ownership on DrvFs), so
+# fall back to two levels up from the lab root setup.sh runs in.
+pf_clone_root() {
+  git rev-parse --show-toplevel 2>/dev/null || (cd ../.. && pwd)
+}
+
 pf_check_filesystem() {
   [ "${LAB_SKIP_PREFLIGHT:-}" = "1" ] && return 0
   pf_is_wsl || return 0
   pf_on_drvfs || return 0
 
-  local suggested="$HOME/${PWD##*/}"
+  local clone suggested
+  clone="$(pf_clone_root)"
+  suggested="$HOME/mustry-academy/${clone##*/}"
   echo "" >&2
   echo "${RED}This repo is on the Windows filesystem ($PWD).${NC}" >&2
   echo "" >&2
@@ -145,11 +154,12 @@ pf_check_filesystem() {
   echo "" >&2
   echo "${GREEN}Move the clone into the WSL filesystem and re-run:${NC}" >&2
   echo "" >&2
-  echo "    mv \"$PWD\" \"$suggested\"" >&2
-  echo "    cd \"$suggested\"" >&2
+  echo "    mkdir -p \"${suggested%/*}\"" >&2
+  echo "    mv \"$clone\" \"$suggested\"" >&2
+  echo "    cd \"$suggested${PWD#"$clone"}\"" >&2
   echo "    scripts/setup.sh" >&2
   echo "" >&2
-  echo "Then reopen it in VS Code with:  code \"$suggested\"" >&2
+  echo "Then reopen it in VS Code with:  code \"$suggested${PWD#"$clone"}\"" >&2
   echo "(Docker Desktop must have WSL2 integration enabled for this distro.)" >&2
   echo "" >&2
 
@@ -437,7 +447,7 @@ pf_configure_git() {
   # reclaim above this is normally moot, but a repo cloned from Windows can
   # still trip it.
   git status >/dev/null 2>&1 || {
-    git config --global --add safe.directory "$PWD" 2>/dev/null || true
+    git config --global --add safe.directory "$(pf_clone_root)" 2>/dev/null || true
   }
 }
 

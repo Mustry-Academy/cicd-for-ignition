@@ -180,7 +180,7 @@ body{
     <div class="sub">One warm-up together, then three parts solo.</div>
     <ul class="sub sub-list">
       <li><b>Warm-up:</b> deploy to test and production, and find the broken database connections.</li>
-      <li><b>Part 1:</b> hook up a secret for the db-connection: two connections get file-based secrets, and a feature-branch PR ships the fix that makes test's connections Valid — then a <span class="inlinecode">v1.0.0</span> tag releases it to production.</li>
+      <li><b>Part 1:</b> hook up a secret for the db-connection: two connections get file-based secrets, and a feature-branch PR ships the fix that makes test's connections Valid — then a <span class="inlinecode">lab06-v1.0.0</span> tag releases it to production.</li>
       <li><b>Part 2:</b> a schema change ships as a golang-migrate up/down pair that the pipeline applies before the screens land.</li>
       <li><b>Part 3:</b> three third-party modules ride the same pipeline, and a fresh gateway boots complete.</li>
     </ul>
@@ -235,7 +235,7 @@ body{
       <div class="pcard p2">
         <div class="pn">PART 2 · SOLO · ±20 MIN</div>
         <h4>Ship a schema change as a migration</h4>
-        <p>Write the <span class="inlinecode">0002</span> up/down pair, apply it locally with <span class="inlinecode">migrate up</span>, then let <span class="inlinecode">deploy.yml</span> migrate test before it ships your screen.</p>
+        <p>Write the <span class="inlinecode">0002</span> up/down pair, apply it locally with <span class="inlinecode">migrate up</span>, then let <span class="inlinecode">lab06-deploy.yml</span> migrate test before it ships your screen.</p>
         <div class="gate">gate → green deploy run: migrate → ship → scan → verify</div>
       </div>
       <div class="pcard">
@@ -260,41 +260,38 @@ body{
     <div class="stage">Before you start · setup</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num warm">SETUP</span><div><div class="title">First: fork this lab, clone it, turn Actions on</div></div></div>
+    <div class="sechead"><span class="num warm">SETUP</span><div><div class="title">First: open this lab in your course fork, check Actions is on</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx">Go to your lab parent folder <span class="inlinecode">~/mustry-academy/</span> — all the lab repos live side by side, one folder per lab. <b>On WSL2, clone into your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the lab to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. Grab your <b>Lab 04 <span class="inlinecode">repo</span>-scope PAT</b> — the runner needs it again here (make one at <span class="inlinecode">github.com/settings/tokens</span> if you skipped Lab 04).</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Enable Actions.</b> Open your fork's <b>Actions</b> tab and click "<i>I understand my workflows, enable them</i>". Skip this and nothing will ever deploy — not the warm-up, not your Part 1 fix.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and change <b>two lines</b>: point <span class="inlinecode">RUNNER_REPO_URL</span> at <b>your fork</b>, and paste your Lab 04 token into <span class="inlinecode">RUNNER_GITHUB_PAT</span>. Leave everything else as shipped — the logins, the API keys, <i>and the database passwords</i>: they match the committed <span class="inlinecode">secrets/*.example</span> values that Part 1 builds on.</div></div>
-        <div class="step"><div class="ix t">5</div><div class="tx"><b>Check the remotes and set the default:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b> — then <span class="inlinecode">gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-lab-06-…</span> so <span class="inlinecode">gh</span> targets <b>your fork</b> (per clone, same as Labs 03/04 — the warm-up's <span class="inlinecode">gh secret set</span> needs it). Then <span class="inlinecode">code .</span> to open VS Code, and <span class="inlinecode">./scripts/setup.sh</span> brings up the stack (three gateways + TimescaleDB + the runner).</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx">Go to this lab's folder in your course fork: <span class="inlinecode">~/mustry-academy/cicd-for-ignition/labs/06-secrets-db-and-modules</span> — every lab lives in that one repo, which you forked and cloned once (<span class="inlinecode">gh repo fork Mustry-Academy/cicd-for-ignition --clone</span>). <b>On WSL2 that clone lives in your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>One lab stack at a time.</b> Every Docker lab uses the same ports and container names, so stop the previous one first: <span class="inlinecode">docker compose down</span> in its folder. Grab your <b>Lab 04 <span class="inlinecode">repo</span>-scope PAT</b> — the runner needs it again here (make one at <span class="inlinecode">github.com/settings/tokens</span> if you skipped Lab 04).</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Enable Actions</b> (once per fork — skip if you did it for Lab 04). Open your fork's <b>Actions</b> tab and click "<i>I understand my workflows, enable them</i>". Skip this and nothing will ever deploy — not the warm-up, not your Part 1 fix.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp -n .env.example .env</span> and change <b>two lines</b>: point <span class="inlinecode">RUNNER_REPO_URL</span> at <b>your fork</b>, and paste your Lab 04 token into <span class="inlinecode">RUNNER_GITHUB_PAT</span> (the repo root's <span class="inlinecode">course-setup.sh</span> already did both if you ran it). Leave everything else as shipped — the logins, the API keys, <i>and the database passwords</i>: they match the committed <span class="inlinecode">secrets/*.example</span> values that Part 1 builds on.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx"><b>Check the remotes and set the default:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b> — and <span class="inlinecode">gh repo set-default --view</span> must print <span class="inlinecode"><span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition</span> so <span class="inlinecode">gh</span> targets <b>your fork</b> (set once per clone — the warm-up's <span class="inlinecode">gh secret set</span> needs it). Then <span class="inlinecode">code .</span> to open VS Code, and <span class="inlinecode">./scripts/setup.sh</span> brings up the stack (three gateways + TimescaleDB + the runner).</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># 1: the parent folder, all labs side by side</span>
-cd ~/mustry-academy
+        <div class="code"><pre><span class="cm"># 1: this lab's folder in your course fork</span>
+cd ~/mustry-academy/cicd-for-ignition/labs/06-secrets-db-and-modules
 
-<span class="cm"># 2: fork to your account + clone your fork</span>
-gh repo fork mustry-academy/cicd-lab-06-secrets-db-and-modules --clone
-<span class="cm">#    …or press "Fork" on github.com, then clone YOUR fork:</span>
-git clone git@github.com:&lt;your-username&gt;/cicd-lab-06-secrets-db-and-modules.git
-cd cicd-lab-06-secrets-db-and-modules
+<span class="cm"># 2: stop the previous lab's stack</span>
+(cd ../05-ignition-image-based-deploy &amp;&amp; docker compose down)
 
-<span class="cm"># 3: enable Actions on github.com — your fork's Actions tab</span>
+<span class="cm"># 3: Actions enabled on your fork? (github.com, once)</span>
 
 <span class="cm"># 4: copy the env file, change TWO lines only</span>
-cp .env.example .env
-<span class="cm">#    RUNNER_REPO_URL=https://github.com/<span class="cmd2">&lt;you&gt;</span>/cicd-lab-06-…</span>
+cp -n .env.example .env
+<span class="cm">#    RUNNER_REPO_URL=https://github.com/<span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition</span>
 <span class="cm">#    RUNNER_GITHUB_PAT=<span class="cmd2">ghp_your_lab04_token</span></span>
 
-<span class="cm"># 5: origin → YOUR username? good. Then make gh target YOUR fork</span>
+<span class="cm"># 5: origin → YOUR username? gh targets YOUR fork?</span>
 git remote -v
-gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-lab-06-secrets-db-and-modules
+gh repo set-default --view    <span class="cm"># → <span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition</span>
 code .
 ./scripts/setup.sh          <span class="cm"># three gateways + TimescaleDB + runner</span></pre></div>
       </div>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Setup · fork &amp; clone → enable Actions → .env → setup.sh</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Setup · lab folder → stop the last lab → Actions on → .env → setup.sh</span></div>
 </section>
 
 <!-- 5 · WARM-UP · DEPLOY TO TEST AND PRODUCTION -->
@@ -307,9 +304,9 @@ code .
     <div class="sechead"><span class="num warm">WARM-UP</span><div><div class="title">Deploy to test and production, and check the database connections</div><div class="lead">Before you change anything, run the pipeline end to end. It comes back green, and yet the test gateway's database connections are broken. That gap is exactly what Part 1 fixes.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx"><b>Pre-flight:</b> <span class="inlinecode">./scripts/validate.sh</span> must be <b>green</b> before you start — it's the same battery <span class="inlinecode">ci.yml</span> runs on every PR (JSON checks, <span class="inlinecode">.deployignore</span>, the secret scan), so a clean checkout that fails here means a setup problem, not a you problem.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx"><b>Create the two deploy environments</b> (in Github) <i>Settings → Environments</i> → <span class="inlinecode">lab-gateway-test</span> and <span class="inlinecode">lab-gateway-production</span> — and give <b>each</b> a secret named <span class="inlinecode">IGNITION_API_KEY</span>: that gateway's own key from your <span class="inlinecode">.env</span> — <span class="inlinecode">setup.sh</span> generated <span class="inlinecode">IGNITION_API_KEY_TEST</span> / <span class="inlinecode">_PRODUCTION</span>, unique per gateway; no key lives in the repo. <span class="inlinecode">deploy.yml</span> picks its environment from the target.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Deploy to test:</b> in your fork, Actions → <span class="inlinecode">deploy.yml</span> → <b>Run workflow</b>. Watch every step go green. Then do the same for production.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx"><b>Pre-flight:</b> <span class="inlinecode">./scripts/validate.sh</span> must be <b>green</b> before you start — it's the same battery <span class="inlinecode">lab06-ci.yml</span> runs on every PR (JSON checks, <span class="inlinecode">.deployignore</span>, the secret scan), so a clean checkout that fails here means a setup problem, not a you problem.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Create the two deploy environments</b> (in Github) <i>Settings → Environments</i> → <span class="inlinecode">lab06-gateway-test</span> and <span class="inlinecode">lab06-gateway-production</span> — and give <b>each</b> a secret named <span class="inlinecode">IGNITION_API_KEY</span>: that gateway's own key from your <span class="inlinecode">.env</span> — <span class="inlinecode">setup.sh</span> generated <span class="inlinecode">IGNITION_API_KEY_TEST</span> / <span class="inlinecode">_PRODUCTION</span>, unique per gateway; no key lives in the repo. <span class="inlinecode">lab06-deploy.yml</span> picks its environment from the target.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Deploy to test:</b> in your fork, Actions → <span class="inlinecode">Lab 06 · Deploy</span> (<span class="inlinecode">lab06-deploy.yml</span>) → <b>Run workflow</b>. Watch every step go green. Then do the same for production.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx"><b>Check the test gateway</b> at <span class="inlinecode">http://localhost:8089</span>. It was empty before the run: open the <i>project</i> and watch that the deploy filled it in. Then <i>Connections → Databases → Connections</i> — both connections are <b>Faulted</b>: <span class="inlinecode">TimescaleDB</span> and <span class="inlinecode">TimescaleDB_Reports</span>.</div></div>
         <div class="step"><div class="ix t">5</div><div class="tx"><b>Check production</b> at <span class="inlinecode">http://localhost:8090</span>: same picture — the project got filled in, the two database connections are Faulted. Your local gateway meanwhile is fine.</div></div>
         <div class="step"><div class="ix t">6</div><div class="tx">Write the diagnosis question in <span class="inlinecode">NOTES.local.md</span>: the pipeline is green and the gateway is broken. <b>What can a config-only deploy never carry?</b></div></div>
@@ -323,10 +320,10 @@ code .
 
 <span class="cm"># 2: environments + key, from the CLI (or click it
 #    together in Settings → Environments)</span>
-gh api -X PUT repos/<span class="cmd2">&lt;you&gt;</span>/cicd-lab-06-…/environments/lab-gateway-test
-gh api -X PUT repos/<span class="cmd2">&lt;you&gt;</span>/cicd-lab-06-…/environments/lab-gateway-production
-gh secret set IGNITION_API_KEY --env lab-gateway-test  --body <span class="cmd2">"$(grep '^IGNITION_API_KEY_TEST=' .env | cut -d= -f2-)"</span>
-gh secret set IGNITION_API_KEY --env lab-gateway-production --body <span class="cmd2">"$(grep '^IGNITION_API_KEY_PRODUCTION=' .env | cut -d= -f2-)"</span>
+gh api -X PUT repos/<span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition/environments/lab06-gateway-test
+gh api -X PUT repos/<span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition/environments/lab06-gateway-production
+gh secret set IGNITION_API_KEY --env lab06-gateway-test  --body <span class="cmd2">"$(grep '^IGNITION_API_KEY_TEST=' .env | cut -d= -f2-)"</span>
+gh secret set IGNITION_API_KEY --env lab06-gateway-production --body <span class="cmd2">"$(grep '^IGNITION_API_KEY_PRODUCTION=' .env | cut -d= -f2-)"</span>
 
 <span class="cm"># the test gateway says:</span>
 <span class="cm"># Connections → Databases → Connections</span>
@@ -462,8 +459,8 @@ mv services/config/resources/<span class="cmd2">{local-development,core}</span>/
       <div class="steps">
         <div class="step"><div class="ix">1</div><div class="tx"><b>Diagnose:</b> <span class="inlinecode">TimescaleDB_Reports</span> only exists in <span class="inlinecode">core</span>, so test targets <span class="inlinecode">ignition_local_development</span>. And neither secret file exists on the test host yet.</div></div>
         <div class="step"><div class="ix">2</div><div class="tx"><b>Fix the target (Ignition Gateway):</b> open <span class="inlinecode">TimescaleDB_Reports</span> and use <b>Create Override</b> to add the settings for a new deployment mode: don't edit the <span class="inlinecode">core</span> values. Create a <b>test</b> override pointing <span class="inlinecode">connectURL</span> at <span class="inlinecode">ignition_test</span>, then a <b>production</b> one at <span class="inlinecode">ignition_production</span> (production inherits the same core flaw). <span class="inlinecode">TimescaleDB</span> already has all three modes: use it as the example.</div></div>
-        <div class="step"><div class="ix">3</div><div class="tx"><b>Fix the values (Github):</b> in your fork, add <span class="inlinecode">POSTGRES_PASSWORD</span> and <span class="inlinecode">REPORTING_PASSWORD</span> as secrets on <b>both</b> environments: <span class="inlinecode">lab-gateway-test</span> and <span class="inlinecode">lab-gateway-production</span> — 1D promotes the same fix to production.</div></div>
-        <div class="step"><div class="ix">4</div><div class="tx">Add the <b>Materialize secret files</b> step to <span class="inlinecode">deploy.yml</span>, directly <b>above</b> the existing <span class="inlinecode">Ship secret files into gateway container</span> step: <span class="inlinecode">umask 177</span> + <span class="inlinecode">printf</span>, one file per secret. That ship step is a no-op until yours writes the files.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Fix the values (Github):</b> in your fork, add <span class="inlinecode">POSTGRES_PASSWORD</span> and <span class="inlinecode">REPORTING_PASSWORD</span> as secrets on <b>both</b> environments: <span class="inlinecode">lab06-gateway-test</span> and <span class="inlinecode">lab06-gateway-production</span> — 1D promotes the same fix to production.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx">Add the <b>Materialize secret files</b> step to <span class="inlinecode">lab06-deploy.yml</span>, directly <b>above</b> the existing <span class="inlinecode">Ship secret files into gateway container</span> step: <span class="inlinecode">umask 177</span> + <span class="inlinecode">printf</span>, one file per secret. That ship step is a no-op until yours writes the files.</div></div>
         <div class="step"><div class="ix">5</div><div class="tx">Sanity check locally: <span class="inlinecode">./scripts/validate.sh</span> green, secret scan zero findings, <span class="inlinecode">git status</span> shows no <span class="inlinecode">secrets/*.txt</span>.</div></div>
       </div>
       <div>
@@ -473,7 +470,7 @@ TimescaleDB_Reports   <span class="cm">← core only → ignition_local_developm
                       <span class="cm">  everywhere, test included</span>
 <span class="cm">…and no secret files exist on the test host yet.</span>
 
-<span class="cm"># 4: deploy.yml — the step you add, directly</span>
+<span class="cm"># 4: lab06-deploy.yml — the step you add, directly</span>
 <span class="cm">#    ABOVE "Ship secret files into gateway container"</span>
 - name: Materialize secret files
   env:
@@ -507,13 +504,13 @@ TimescaleDB_Reports   <span class="cm">← core only → ignition_local_developm
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix">1</div><div class="tx"><b>Branch:</b> <span class="inlinecode">git switch -c feature/fix-test-db-connections</span>.</div></div>
-        <div class="step"><div class="ix">2</div><div class="tx"><b>Commit and push:</b> the test override, the referenced-secret config and the <span class="inlinecode">deploy.yml</span> step. Check the diff: it <b>adds</b> no secret value — <span class="inlinecode">validate.sh</span>'s secret scan is the check. Grepping for the password still hits, on the <span class="inlinecode">-</span> lines: those are the dummy compose defaults you just deleted.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><b>Commit and push:</b> the test override, the referenced-secret config and the <span class="inlinecode">lab06-deploy.yml</span> step. Check the diff: it <b>adds</b> no secret value — <span class="inlinecode">validate.sh</span>'s secret scan is the check. Grepping for the password still hits, on the <span class="inlinecode">-</span> lines: those are the dummy compose defaults you just deleted.</div></div>
         <div class="step"><div class="ix">3</div><div class="tx"><b>Open the PR</b> against <span class="inlinecode">main</span> and read your own diff, top to bottom.</div></div>
-        <div class="step"><div class="ix">4</div><div class="tx"><b>Watch the PR validate:</b> <span class="inlinecode">ci.yml</span> runs on the PR: validate + secret scan green before anyone may merge.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx"><b>Watch the PR validate:</b> <span class="inlinecode">lab06-ci.yml</span> runs on the PR: validate + secret scan green before anyone may merge.</div></div>
         <div class="step"><div class="ix">5</div><div class="tx"><b>Merge</b> the PR into <span class="inlinecode">main</span>.</div></div>
-        <div class="step"><div class="ix">6</div><div class="tx"><b>Watch the pipeline deploy:</b> <span class="inlinecode">deploy.yml</span> runs: materialize secret files → ship them into the gateway → ship projects and config → scan → verify. Open the Materialize step's log: <b>no value printed anywhere</b>.</div></div>
+        <div class="step"><div class="ix">6</div><div class="tx"><b>Watch the pipeline deploy:</b> <span class="inlinecode">lab06-deploy.yml</span> runs: materialize secret files → ship them into the gateway → ship projects and config → scan → verify. Open the Materialize step's log: <b>no value printed anywhere</b>.</div></div>
         <div class="step"><div class="ix">7</div><div class="tx"><b>Verify test:</b> <i>Connections → Databases → Connections</i>: both connections <b>Valid</b>, and <span class="inlinecode">TimescaleDB_Reports</span> now targets <span class="inlinecode">ignition_test</span>.</div></div>
-        <div class="step"><div class="ix">8</div><div class="tx"><b>Release to production with a tag:</b> <span class="inlinecode">git tag v1.0.0 &amp;&amp; git push origin v1.0.0</span> — the Lab 04 routing: the <b>tag</b>, not the merge, ships to production. <span class="inlinecode">release.yml</span> fires and runs the <b>same</b> <span class="inlinecode">deploy.yml</span> with <span class="inlinecode">target: production</span> — including the steps you added. Verify production: both connections <b>Valid</b>, <span class="inlinecode">TimescaleDB_Reports</span> → <span class="inlinecode">ignition_production</span>.</div></div>
+        <div class="step"><div class="ix">8</div><div class="tx"><b>Release to production with a tag:</b> <span class="inlinecode">git tag lab06-v1.0.0 &amp;&amp; git push origin lab06-v1.0.0</span> — the Lab 04 routing: the <b>tag</b>, not the merge, ships to production. <span class="inlinecode">lab06-release.yml</span> fires and runs the <b>same</b> <span class="inlinecode">lab06-deploy.yml</span> with <span class="inlinecode">target: production</span> — including the steps you added. Verify production: both connections <b>Valid</b>, <span class="inlinecode">TimescaleDB_Reports</span> → <span class="inlinecode">ignition_production</span>.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 1-2: branch, commit, push</span>
@@ -523,14 +520,14 @@ git push -u origin feature/fix-test-db-connections
     ▼
 <span class="cm"># 3: open the PR (or the github.com button)</span>
 gh pr create --fill
-    ▼  <span class="cmd2">ci.yml</span>: validate <span class="grn">✅</span> · secret scan <span class="grn">✅</span>
+    ▼  <span class="cmd2">lab06-ci.yml</span>: validate <span class="grn">✅</span> · secret scan <span class="grn">✅</span>
 <span class="cm"># 5: merge on github.com once the checks are green</span>
-    ▼  <span class="cmd2">deploy.yml</span>: secrets → ship → scan → verify <span class="grn">✅</span>
+    ▼  <span class="cmd2">lab06-deploy.yml</span>: secrets → ship → scan → verify <span class="grn">✅</span>
 <span class="cm"># 7: test gateway — both <span class="grn">Valid</span>, Reports → ignition_test</span>
 
 <span class="cm"># 8: release to production — the tag ships, not the merge</span>
-git tag v1.0.0 &amp;&amp; git push origin v1.0.0
-    ▼  <span class="cmd2">release.yml</span> → same deploy.yml, target: production
+git tag lab06-v1.0.0 &amp;&amp; git push origin lab06-v1.0.0
+    ▼  <span class="cmd2">lab06-release.yml</span> → same lab06-deploy.yml, target: production
 <span class="cm"># production gateway — both <span class="grn">Valid</span>, Reports → ignition_production</span></pre></div>
         <div class="goal good-g" style="margin-top:18px">
           <span class="badge">✅ Part 1 gate</span>
@@ -551,10 +548,10 @@ git tag v1.0.0 &amp;&amp; git push origin v1.0.0
   <div class="body">
     <div class="eyebrow">Part 2 · solo · ±20 min · exercises/lab.md</div>
     <div class="title" style="color:#fff;max-width:26ch">Ship a schema change as a migration the pipeline applies</div>
-    <p class="lead"><span class="mono" style="color:#dbe4f0">db-init/</span> is bootstrap: it never touches an existing database. A schema change ships as a numbered golang-migrate pair, applied by <span class="mono" style="color:#dbe4f0">deploy.yml</span> <b style="color:#fff">before</b> the screens that need it.</p>
+    <p class="lead"><span class="mono" style="color:#dbe4f0">db-init/</span> is bootstrap: it never touches an existing database. A schema change ships as a numbered golang-migrate pair, applied by <span class="mono" style="color:#dbe4f0">lab06-deploy.yml</span> <b style="color:#fff">before</b> the screens that need it.</p>
     <ul class="checks" style="margin-top:22px;max-width:920px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>2A:</b> write <span class="mono" style="color:#dbe4f0">0002_add_downtime_log</span> as an up/down pair, apply it locally, read <span class="mono" style="color:#dbe4f0">schema_migrations</span>.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>2B:</b> add the migrate step to <span class="mono" style="color:#dbe4f0">deploy.yml</span> before the ship step, and watch the pipeline migrate test.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>2B:</b> add the migrate step to <span class="mono" style="color:#dbe4f0">lab06-deploy.yml</span> before the ship step, and watch the pipeline migrate test.</span></li>
     </ul>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2 · A → B</span></div>
@@ -608,16 +605,16 @@ docker exec lab06-timescaledb psql -U ignition \
     <div class="stage">Part 2 · B</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num phase2">2B</span><div><div class="title">Add the migrate step to deploy.yml, before the ship step</div><div class="lead">Old screens tolerate a new table; new screens don't tolerate a missing one. So: migrate first, and a migrate failure stops the whole run.</div></div></div>
+    <div class="sechead"><span class="num phase2">2B</span><div><div class="title">Add the migrate step to lab06-deploy.yml, before the ship step</div><div class="lead">Old screens tolerate a new table; new screens don't tolerate a missing one. So: migrate first, and a migrate failure stops the whole run.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix p">1</div><div class="tx">Add the <b>Migrate database</b> step to <span class="inlinecode">.github/workflows/deploy.yml</span> exactly at the marked <span class="inlinecode"># Part 2B: add your "Migrate database" step HERE</span> comment: <b>above</b> <span class="inlinecode">Prune working tree per .deployignore</span>, which deletes <span class="inlinecode">scripts/</span> and <span class="inlinecode">db-migration/</span> from the checkout (a migrate step below it fails with "No such file or directory"), and <b>before</b> <span class="inlinecode">Ship projects and config into gateway container</span>, so no screen lands ahead of its table. <b>Derive the database from the deploy target</b> (<span class="inlinecode">$DEPLOY_TARGET</span> is already in the job's env): a production deploy must migrate <span class="inlinecode">ignition_production</span>, not test.</div></div>
+        <div class="step"><div class="ix p">1</div><div class="tx">Add the <b>Migrate database</b> step to <span class="inlinecode">.github/workflows/lab06-deploy.yml</span> (repo root) exactly at the marked <span class="inlinecode"># Part 2B: add your "Migrate database" step HERE</span> comment: <b>above</b> <span class="inlinecode">Prune working tree per .deployignore</span>, which deletes <span class="inlinecode">scripts/</span> and <span class="inlinecode">db-migration/</span> from the checkout (a migrate step below it fails with "No such file or directory"), and <b>before</b> <span class="inlinecode">Ship projects and config into gateway container</span>, so no screen lands ahead of its table. <b>Derive the database from the deploy target</b> (<span class="inlinecode">$DEPLOY_TARGET</span> is already in the job's env): a production deploy must migrate <span class="inlinecode">ignition_production</span>, not test.</div></div>
         <div class="step"><div class="ix p">2</div><div class="tx">Branch, add the screen that reads <span class="inlinecode">downtime_log</span> — a <b>Table</b> on the <span class="inlinecode">packaging</span> view with <span class="inlinecode">props.data</span> bound to a <b>Query</b> binding on <span class="inlinecode">TimescaleDB</span> (<span class="inlinecode">SELECT line, started_at, ended_at, reason FROM downtime_log …</span>; the ready-made component JSON is in <span class="inlinecode">exercises/lab.md</span> if you prefer the file to the Designer) — and open a PR with <b>both</b> the migration and the screen: schema and screens travel in the same PR. The binding runs on the gateway, against that gateway's own database, which is why the table has to exist first.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx">Merge and watch the run: secret files → <b>migrate test DB</b> → ship projects and config → scan → verify.</div></div>
         <div class="step"><div class="ix p">4</div><div class="tx">Prove it was the pipeline, not you: query test's <span class="inlinecode">schema_migrations</span>: version 2, applied during the run.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># deploy.yml: the step you add</span>
+        <div class="code"><pre><span class="cm"># lab06-deploy.yml: the step you add</span>
 - name: Migrate database
   run: |
     case "$DEPLOY_TARGET" in
@@ -717,7 +714,7 @@ docker exec lab06-timescaledb psql -U ignition \
   <div class="body">
     <div class="sechead"><span class="num">GATE</span><div><div class="title">Definition of done for all three parts</div><div class="lead">Walk these three gates before you call it. If one fails, that part isn't done, however green your last run was.</div></div></div>
     <div class="steps" style="max-width:1000px">
-      <div class="step"><div class="ix">1</div><div class="tx"><b>Part 1:</b> both db-connections <b>Valid on test and production</b>, fixed by a full deploy (feature branch → PR validation → merge → pipeline → release with a <span class="inlinecode">v*</span> tag), <span class="inlinecode">validate.sh</span> green with zero plaintext secrets, and you can narrate <b>GitHub secret → file on the host → /run/secrets → provider → reference in config</b>.</div></div>
+      <div class="step"><div class="ix">1</div><div class="tx"><b>Part 1:</b> both db-connections <b>Valid on test and production</b>, fixed by a full deploy (feature branch → PR validation → merge → pipeline → release with a <span class="inlinecode">lab06-v*</span> tag), <span class="inlinecode">validate.sh</span> green with zero plaintext secrets, and you can narrate <b>GitHub secret → file on the host → /run/secrets → provider → reference in config</b>.</div></div>
       <div class="step"><div class="ix p">2</div><div class="tx"><b>Part 2:</b> a green deploy run whose log shows <b>migrate before ship</b>, test's <span class="inlinecode">schema_migrations</span> ledger at version 2, and the up/down pair committed.</div></div>
       <div class="step"><div class="ix">3</div><div class="tx"><b>Part 3:</b> all three modules show <b>Running</b> on test with license acceptance in config, and you've seen what the negative test does on a fresh boot.</div></div>
     </div>
@@ -741,11 +738,11 @@ docker exec lab06-timescaledb psql -U ignition \
       <div class="steps">
         <div class="step"><div class="ix t">1</div><div class="tx"><b>The internal secret provider, and where it breaks.</b> On your local gateway, create an <b>internal secret provider</b> and store <span class="inlinecode">REPORTING_PASSWORD</span> in it: the gateway encrypts the value and keeps the <b>ciphertext in its own config</b>. Point <span class="inlinecode">TimescaleDB_Reports</span> at it: locally it stays Valid. Now ship that config through the pipeline and check test: <b>Faulted</b>, because the ciphertext only decrypts on the gateway that created it. Explore <span class="inlinecode">ignition-secrets-tool.sh</span> (shared root key + KEK under <span class="inlinecode">data/config/ignition/keys/</span>) as the escape hatch, then revert to the referenced secret and write down which trade-off you'd pick.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Expand-contract rename.</b> Rename a column with two migrations (<span class="inlinecode">0003</span> add + backfill, <span class="inlinecode">0004</span> drop) and a screen change in between, so no deploy ever breaks a live query.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Secret scanner in CI.</b> Add a <span class="inlinecode">gitleaks</span> job to <span class="inlinecode">ci.yml</span> (with <span class="inlinecode">fetch-depth: 0</span>: the scanner must see history, not the tip). Test it with a fake-key PR → red ❌ → close without merging.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx"><b>Ship a library JAR through the pipeline and use it on a screen.</b> The second kind of JAR from the teaching, done for real: get <span class="inlinecode">jar-files/jar/commons-csv-1.14.1.jar</span> onto the gateway classpath via <span class="inlinecode">deploy.yml</span>, and prove it with a text field whose label shows the typed CSV line split into fields. Full steps on the next slide.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Secret scanner in CI.</b> Add a <span class="inlinecode">gitleaks</span> job to <span class="inlinecode">lab06-ci.yml</span> (with <span class="inlinecode">fetch-depth: 0</span>: the scanner must see history, not the tip). Test it with a fake-key PR → red ❌ → close without merging.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Ship a library JAR through the pipeline and use it on a screen.</b> The second kind of JAR from the teaching, done for real: get <span class="inlinecode">jar-files/jar/commons-csv-1.14.1.jar</span> onto the gateway classpath via <span class="inlinecode">lab06-deploy.yml</span>, and prove it with a text field whose label shows the typed CSV line split into fields. Full steps on the next slide.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># stretch 3: ci.yml secret-scan job</span>
+        <div class="code"><pre><span class="cm"># stretch 3: lab06-ci.yml secret-scan job</span>
 secret-scan:
   runs-on: ubuntu-latest
   steps:
@@ -775,7 +772,7 @@ secret-scan:
       <div class="steps">
         <div class="step"><div class="ix t">1</div><div class="tx"><b>Prove the gap first.</b> In any lab project, add a view with a <b>Text Field</b> and a <b>Label</b> next to it. Bind the label's <span class="inlinecode">props.text</span> to the text field's <span class="inlinecode">props.text</span> and add the <b>script transform</b> on the right. The binding errors: the class isn't on the gateway classpath yet (Perspective bindings run <b>on the gateway</b>, so the gateway's classpath is the one that counts).</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Fix local with a file volume.</b> The local gateway gets the JAR the way it gets everything else: a bind mount. Add the volume on the right to the <span class="inlinecode">gateway-local-development</span> service in <span class="inlinecode">docker-compose.yaml</span>, then <span class="inlinecode">docker compose up -d</span> — library JARs load at <b>boot</b>, like modules. Type <span class="inlinecode">pump,3,ok</span> in the field: the label shows <span class="inlinecode">pump | 3 | ok</span>.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Make it deployable state.</b> Test and production have no working tree to mount from — the pipeline ships the bytes. The <b>Ship library JARs</b> step is written for you in <span class="inlinecode">exercises/lab.md</span> (same pattern as the module step: copy, compare, restart only when changed) — paste it at the marked <span class="inlinecode"># Stretch S4 … HERE</span> comment in <span class="inlinecode">deploy.yml</span>, right after the module step. Add <span class="inlinecode">"jar-files/**"</span> to the <span class="inlinecode">push.paths</span> list too, or a JAR-only change never deploys.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Make it deployable state.</b> Test and production have no working tree to mount from — the pipeline ships the bytes. The <b>Ship library JARs</b> step is written for you in <span class="inlinecode">exercises/lab.md</span> (same pattern as the module step: copy, compare, restart only when changed) — paste it at the marked <span class="inlinecode"># Stretch S4 … HERE</span> comment in <span class="inlinecode">lab06-deploy.yml</span>, right after the module step. Add <span class="inlinecode">"labs/06-secrets-db-and-modules/jar-files/**"</span> to the <span class="inlinecode">push.paths</span> list too, or a JAR-only change never deploys.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx"><b>Ship it.</b> PR with the view, the compose volume and the workflow change → merge → the run ships the JAR and restarts test → the CSV parses at <span class="inlinecode">http://localhost:8089</span>, on a gateway you never touched.</div></div>
       </div>
       <div>
@@ -792,7 +789,7 @@ def transform(self, value, quality, timestamp):
 
 docker compose up -d   <span class="cm"># recreate → the JAR loads at boot</span>
 
-<span class="cm"># step 3: deploy.yml — the marked spot you paste into:</span>
+<span class="cm"># step 3: lab06-deploy.yml — the marked spot you paste into:</span>
 <span class="cm"># Stretch S4: paste the ready-made "Ship library JARs"
 #             step HERE — it is in exercises/lab.md</span></pre></div>
         <div class="goal" style="margin-top:18px">

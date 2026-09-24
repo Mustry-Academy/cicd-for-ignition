@@ -1,11 +1,11 @@
 # Deploy to a lab gateway — test on every push to main, test OR production on manual
-# dispatch (Actions → Deploy → Run workflow → pick the target).
+# dispatch (Actions → Lab 06 · Deploy → Run workflow → pick the target).
 #
 # GitHub Flow: `main` is the single long-lived branch. Feature branches merge
-# into it via PR (validated by ci.yml), and every push here ships the working
-# tree to the TEST gateway. Production ships via the Lab 04 routing: a `v*` TAG
-# on main fires release.yml, which calls this same workflow (workflow_call)
-# with `target: production` — one pipeline, so the steps you add in Parts 1C
+# into it via PR (validated by lab06-ci.yml), and every push here ships the
+# working tree to the TEST gateway. Production ships via the Lab 04 routing: a
+# `lab06-v*` TAG on main fires lab06-release.yml, which calls this same
+# workflow (workflow_call) with `target: production` — one pipeline, so the steps you add in Parts 1C
 # and 2B ship to both gateways without being copied into a second file.
 # Manual dispatch with `target: production` is the rollback / re-run button
 # (pick the tag under "Use workflow from" to re-deploy a released version).
@@ -26,8 +26,8 @@
 #     step you add in Part 1C writes them from GitHub environment secrets;
 #     the pre-wired "Ship secret files" step below hands them to the gateway.
 #
-# Required setup on GitHub (Settings → Environments → "lab-gateway-test" and
-# "lab-gateway-production"):
+# Required setup on GitHub (Settings → Environments → "lab06-gateway-test" and
+# "lab06-gateway-production"):
 #   Secret:    IGNITION_API_KEY    The IGNITION_API_KEY_TEST / _PRODUCTION
 #                                  value from your .env (scripts/setup.sh
 #                                  generated it, unique to your clone).
@@ -44,21 +44,21 @@
 #   Variable:  IGNITION_CONTAINER  Optional. Defaults to
 #                                  lab06-gateway-<target>.
 
-name: Deploy
+name: Lab 06 · Deploy
 
 on:
   push:
     branches: [main]
     paths:
-      - "projects/**"
-      - "services/config/**"
-      - "services/modules.json"
-      - "third-party-modules/**"
-      - "db-migration/**"
-      - ".deployignore"
-      - "scripts/scan.sh"
-      - "scripts/lib.sh"
-      - ".github/workflows/deploy.yml"
+      - "labs/06-secrets-db-and-modules/projects/**"
+      - "labs/06-secrets-db-and-modules/services/config/**"
+      - "labs/06-secrets-db-and-modules/services/modules.json"
+      - "labs/06-secrets-db-and-modules/third-party-modules/**"
+      - "labs/06-secrets-db-and-modules/db-migration/**"
+      - "labs/06-secrets-db-and-modules/.deployignore"
+      - "labs/06-secrets-db-and-modules/scripts/scan.sh"
+      - "labs/06-secrets-db-and-modules/scripts/lib.sh"
+      - ".github/workflows/lab06-deploy.yml"
   workflow_dispatch:
     inputs:
       target:
@@ -66,7 +66,7 @@ on:
         type: choice
         options: [test, production]
         default: test
-  # release.yml calls this workflow on a v* tag — the tag is what ships to
+  # lab06-release.yml calls this workflow on a lab06-v* tag — the tag is what ships to
   # production, exactly like Lab 04's release.yml, but as a thin caller so the
   # deploy steps (including the ones YOU add in 1C/2B) exist only once.
   workflow_call:
@@ -77,22 +77,27 @@ on:
         default: test
 
 concurrency:
-  group: deploy-lab-gateway-${{ inputs.target || 'test' }}
+  group: deploy-lab06-gateway-${{ inputs.target || 'test' }}
   cancel-in-progress: false
 
 permissions:
   contents: read
 
+# Every run step works inside the lab folder; `with:` inputs do not.
+defaults:
+  run:
+    working-directory: labs/06-secrets-db-and-modules
+
 jobs:
-  # No validation job here: ci.yml already ran on the PR that put this commit
+  # No validation job here: lab06-ci.yml already ran on the PR that put this commit
   # on main — that PR run is the gate, so re-running it before every deploy
-  # (or on the tag that release.yml forwards here) would validate the same
+  # (or on the tag that lab06-release.yml forwards here) would validate the same
   # commit twice. The trade-off: a direct push to main skips validation,
   # which is why main only moves via PRs.
   deploy:
     name: Deploy to ${{ inputs.target || 'test' }} gateway
     runs-on: [self-hosted, lab06]
-    environment: lab-gateway-${{ inputs.target || 'test' }}
+    environment: lab06-gateway-${{ inputs.target || 'test' }}
     env:
       DEPLOY_TARGET: ${{ inputs.target || 'test' }}
       IGNITION_URL: ${{ vars.IGNITION_URL || format('http://gateway-{0}:8088', inputs.target || 'test') }}
@@ -194,8 +199,8 @@ jobs:
       # Stretch S4: paste the ready-made "Ship library JARs" step HERE — it
       # is in exercises/lab.md, ready to copy. Same pattern as the module
       # step above: copy, compare, restart only when changed. Also add
-      # "jar-files/**" to the push.paths list at the top of this file, or a
-      # JAR-only change never triggers a deploy.
+      # "labs/06-secrets-db-and-modules/jar-files/**" to the push.paths list
+      # at the top of this file, or a JAR-only change never triggers a deploy.
 
       # Part 2B: add your "Migrate database" step HERE — after the secret
       # files are on the gateway (the migration needs the DB password) and

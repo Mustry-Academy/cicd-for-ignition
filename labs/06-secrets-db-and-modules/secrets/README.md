@@ -25,7 +25,7 @@ the file verbatim.
 
 The test/production hosts never get these files from Git. The deploy workflow
 materializes them from GitHub environment secrets (`umask 177` + `printf`)
-right before shipping — see `.github/workflows/deploy.yml`.
+right before shipping — see `.github/workflows/lab06-deploy.yml` at the repo root.
 
 ## Rules
 

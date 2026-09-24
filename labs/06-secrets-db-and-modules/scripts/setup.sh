@@ -1,10 +1,10 @@
 #!/bin/bash
 # One-shot setup for the lab 04 stack:
 #   - sanity-checks the host (docker compose v2, curl, WSL quirks)
-#   - installs the repo's git hooks (skip-worktree for the machine-local
+#   - installs the course repo's git hooks (skip-worktree for the machine-local
 #     Ignition config file) and a diff driver that hides volatile resource.json
-#     metadata; volatile-only churn is undone with
-#     scripts/clean-ignition-resource-churn.sh
+#     metadata (scripts/install-git-config.sh at the repo root); volatile-only
+#     churn is undone with scripts/clean-ignition-resource-churn.sh
 #   - ensures .env is in place
 #   - generates a unique API key per gateway into .env and writes the
 #     hash-only token resource into each gateway's config tree
@@ -75,65 +75,41 @@ echo "  - one TimescaleDB on localhost:5432 hosting ignition_local_development /
 echo ""
 
 
-# ---- Git hooks ------------------------------------------------------------
+# ---- Git hooks + diff driver -----------------------------------------------
+# One shared config for the whole course repo: core.hooksPath points at the
+# root dispatchers (they run this lab's scripts/git-hooks/post-checkout from
+# inside this folder, and the pre-commit framework against this lab's
+# .pre-commit-config.yaml), and the textconv normalizer that .gitattributes
+# routes resource.json through, so volatile Designer metadata (timestamps,
+# signatures) never shows up in diffs.
 install_git_hooks() {
-    local repo_hooks_dir
-    repo_hooks_dir="$(git rev-parse --git-path hooks 2>/dev/null)" || return 0
-    local source_dir="$PROJECT_ROOT/scripts/git-hooks"
-    [ -d "$source_dir" ] || return 0
-    mkdir -p "$repo_hooks_dir"
-    # Clones set up before post-merge/post-rewrite were dropped still have
-    # symlinks to the deleted files; git errors on every merge/rebase until
-    # they are removed.
-    for stale in post-merge post-rewrite; do
-        local link="$repo_hooks_dir/$stale"
-        if [ -L "$link" ] && [ ! -e "$link" ]; then
-            rm -f "$link"
-        fi
-    done
-    # post-checkout only. Git keeps the skip-worktree bit across merge, rebase,
-    # amend, reset --hard and stash, so hooks on those events had nothing to do.
-    # The bit is only lost when the file leaves the index and comes back, which
-    # is a checkout.
-    ln -sf "$source_dir/post-checkout" "$repo_hooks_dir/post-checkout"
-    if [ -x "$source_dir/skip-worktree-ignition-resources" ]; then
-        "$source_dir/skip-worktree-ignition-resources" || true
+    local top
+    top="$(git -C "$PROJECT_ROOT" rev-parse --show-toplevel 2>/dev/null)" || return 0
+    "$top/scripts/install-git-config.sh"
+    # A fresh clone has no skip-worktree bits, and post-checkout cannot fire on
+    # clone, so apply them once here.
+    if [ -x "$PROJECT_ROOT/scripts/git-hooks/skip-worktree-ignition-resources" ]; then
+        "$PROJECT_ROOT/scripts/git-hooks/skip-worktree-ignition-resources" || true
     fi
 }
 
 install_git_hooks
 
 # ---- pre-commit framework ---------------------------------------------------
-# Installs .git/hooks/pre-commit from .pre-commit-config.yaml. That config holds
-# the linters CI runs AND the hook that reverts junk-only resource.json
-# rewrites, so without this the churn cleaner never runs on its own and Ignition
-# metadata can still reach a commit.
-install_pre_commit_hooks() {
+# The root pre-commit dispatcher runs .pre-commit-config.yaml for this lab. That
+# config holds the linters CI runs AND the hook that reverts junk-only
+# resource.json rewrites, so without the pre-commit package the churn cleaner
+# never runs on its own and Ignition metadata can still reach a commit.
+check_pre_commit() {
     if ! command -v pre-commit >/dev/null 2>&1; then
         echo -e "${YELLOW}pre-commit is not installed, so resource.json churn will NOT be${NC}"
         echo -e "${YELLOW}reverted automatically and the linters CI runs stay local-only:${NC}"
-        echo "  pip install pre-commit && pre-commit install"
+        echo "  pip install pre-commit"
         echo ""
-        return 0
     fi
-    if pre-commit install >/dev/null 2>&1; then
-        echo -e "${GREEN}pre-commit hooks installed (linters + resource.json churn cleaner).${NC}"
-    else
-        echo -e "${YELLOW}pre-commit is installed but 'pre-commit install' failed; run it by hand.${NC}"
-    fi
-    echo ""
 }
 
-install_pre_commit_hooks
-
-# ---- Git diff driver --------------------------------------------------------
-# .gitattributes routes resource.json through this textconv normalizer so
-# volatile Designer metadata (timestamps, signatures) never shows up in diffs.
-configure_git_diff_drivers() {
-    git config diff.ignition-resource.textconv "$PROJECT_ROOT/scripts/git-diff/normalize-ignition-resource-json.py"
-}
-
-configure_git_diff_drivers
+check_pre_commit
 
 # ---- .env -----------------------------------------------------------------
 ensure_env_file() {
@@ -530,7 +506,7 @@ echo "  IGNITION_API_KEY_LOCAL / _TEST / _PRODUCTION — one per gateway;"
 echo "  scripts/scan.sh picks the right one from its argument"
 echo "  (local | test | production). For CI, copy the"
 echo "  _TEST and _PRODUCTION values from .env into the IGNITION_API_KEY"
-echo "  secret on the lab-gateway-test / lab-gateway-production GitHub"
+echo "  secret on the lab06-gateway-test / lab06-gateway-production GitHub"
 echo "  environments."
 echo ""
 echo "Useful commands:"

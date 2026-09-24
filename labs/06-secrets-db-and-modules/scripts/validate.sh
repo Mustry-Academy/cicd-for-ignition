@@ -1,5 +1,5 @@
 #!/bin/bash
-# validate.sh — local mirror of .github/workflows/ci.yml.
+# validate.sh — local mirror of .github/workflows/lab06-ci.yml (repo root).
 #
 # Run this before opening a PR to catch the cheap stuff the CI workflow checks,
 # without waiting for a runner:
@@ -9,7 +9,8 @@
 #      the gateway payload (projects/ + services/). A full gitleaks history
 #      scan is the lab's stretch S3 — it runs in CI, not here.
 #   4. security-properties doesn't name a throwaway temp_N identity.
-#   5. actionlint passes on .github/workflows/ (only if actionlint is installed).
+#   5. actionlint passes on this lab's workflows (.github/workflows/lab06-*.yml
+#      at the repo root; only if actionlint is installed).
 #
 # Exits non-zero if any check fails. No Ignition or Docker needed.
 
@@ -136,9 +137,10 @@ else
 fi
 
 # 5. actionlint (optional) -----------------------------------------------------
-echo "→ actionlint (.github/workflows/)"
+echo "→ actionlint (.github/workflows/lab06-*.yml)"
 if command -v actionlint > /dev/null 2>&1; then
-  if actionlint -color; then
+  repo_root="$(git rev-parse --show-toplevel)"
+  if actionlint -color -config-file .github/actionlint.yaml "$repo_root"/.github/workflows/lab06-*.yml; then
     echo -e "  ${GREEN}ok${NC}"
   else
     rc=1

@@ -13,10 +13,12 @@ else
     exit 2
 fi
 
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-cd "$REPO_ROOT"
+# Work from the lab folder (the course repo holds every lab): pathspecs match
+# only this lab's files, and --relative keeps the paths git prints lab-relative.
+LAB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$LAB_ROOT"
 
-NORMALIZER="$REPO_ROOT/scripts/git-diff/normalize-ignition-resource-json.py"
+NORMALIZER="$LAB_ROOT/scripts/git-diff/normalize-ignition-resource-json.py"
 
 volatile_only_count=0
 skipped_count=0
@@ -34,8 +36,8 @@ PATHSPECS=(
 # never newlines.
 candidates="$(
     {
-        git diff --name-only --diff-filter=M -- "${PATHSPECS[@]}"
-        git diff --cached --name-only --diff-filter=M -- "${PATHSPECS[@]}"
+        git diff --relative --name-only --diff-filter=M -- "${PATHSPECS[@]}"
+        git diff --cached --relative --name-only --diff-filter=M -- "${PATHSPECS[@]}"
     } | sort -u
 )"
 
@@ -43,7 +45,7 @@ while IFS= read -r path; do
     [ -n "$path" ] || continue
 
     # Newly added manifests have no HEAD version to compare against.
-    git cat-file -e "HEAD:$path" 2>/dev/null || continue
+    git cat-file -e "HEAD:./$path" 2>/dev/null || continue
 
     # --no-textconv is essential here. Without it the normalizer runs first,
     # a junk-only staged change compares equal, and git reports the file as
@@ -58,7 +60,7 @@ while IFS= read -r path; do
     # a real change that is staged is present here, so the file is left alone.
     if cmp -s \
         <("$NORMALIZER" "$path") \
-        <(git show "HEAD:$path" | "$NORMALIZER" -); then
+        <(git show "HEAD:./$path" | "$NORMALIZER" -); then
         volatile_only_count=$((volatile_only_count + 1))
         if [ "$APPLY" -eq 1 ]; then
             if [ "$staged" -eq 1 ]; then
