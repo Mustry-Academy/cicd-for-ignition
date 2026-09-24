@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Repo-wide post-checkout dispatcher: runs each lab's own post-checkout hook
+# from inside that lab's folder, passing git's arguments through.
+#
+# Installed by scripts/install-git-config.sh (core.hooksPath=scripts/git-hooks).
+set -uo pipefail
+
+top="$(git rev-parse --show-toplevel)"
+for lab_dir in "$top"/labs/*/; do
+    [ "$(basename "$lab_dir")" = "07-multi-gateway-deploy" ] && continue
+    hook="$lab_dir/scripts/git-hooks/post-checkout"
+    [ -x "$hook" ] || continue
+    (cd "$lab_dir" && ./scripts/git-hooks/post-checkout "$@") || true
+done
+exit 0
