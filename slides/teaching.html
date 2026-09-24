@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 01: Teaching: Introductions to git</title>
+<link rel="icon" type="image/png" href="logos/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0e1b2e;
+  --navy2:#15233a;
+  --blue:#2563eb;
+  --blue-d:#1d4ed8;
+  --peri:#93a9f0;
+  --peri2:#a8bef7;
+  --peri-soft:#e8eefc;
+  --bg:#eef1f6;
+  --panel:#ffffff;
+  --panel2:#f5f8fc;
+  --line:#e3e9f1;
+  --line2:#d3dcea;
+  --txt:#15233a;
+  --txt-dim:#5a6a7e;
+  --txt-faint:#94a2b4;
+  --good:#16a34a; --good-soft:#e3f6ea;
+  --warn:#d97706; --warn-soft:#fbf0db;
+  --teal:#3bbdb4;            /* node outline on dark, like the reference images */
+  --teal-l:#5fd6cd;
+  --shadow:0 1px 2px rgba(14,27,46,.05),0 10px 30px -16px rgba(14,27,46,.28);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--navy);
+  color:var(--txt);
+  font-family:'Libre Franklin',sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+
+/* ---- deck mechanics ---- */
+.deck{height:100vh;width:100vw;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth}
+.deck::-webkit-scrollbar{display:none}
+.slide{
+  height:100vh;width:100vw;scroll-snap-align:start;scroll-snap-stop:always;
+  display:flex;flex-direction:column;position:relative;
+  padding:64px 64px 40px;background:var(--bg);
+}
+.slide.dark{background:radial-gradient(120% 120% at 80% -10%,#1c3358 0%,#0e1b2e 55%)}
+
+/* progress + nav */
+.hud{position:fixed;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.08);z-index:50}
+.hud .bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--peri));width:0;transition:width .3s}
+.pager{position:fixed;right:22px;bottom:18px;z-index:50;font-size:11px;color:var(--txt-faint);font-family:'IBM Plex Mono'}
+.pager.on-dark{color:rgba(255,255,255,.55)}
+.hint{position:fixed;left:22px;bottom:16px;z-index:50;font-size:10.5px;color:var(--txt-faint);letter-spacing:.3px}
+.hint.on-dark{color:rgba(255,255,255,.4)}
+
+/* ---- logo ---- */
+.brandrow{display:flex;align-items:center;gap:13px}
+.logo-img{height:30px;width:auto;display:block}
+.logo-img.logo-lg{height:44px}
+
+/* slide chrome */
+.eyebrow{font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:14px}
+.dark .eyebrow{color:var(--peri2)}
+.title{font-weight:800;font-size:40px;line-height:1.04;letter-spacing:-1px;color:var(--navy)}
+.dark .title{color:#fff}
+.lead{font-size:16px;color:var(--txt-dim);line-height:1.5;max-width:760px;margin-top:14px}
+.dark .lead{color:#c4cfde}
+.sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:26px}
+.sechead .num{font-family:'IBM Plex Mono';font-size:13px;font-weight:600;color:#fff;background:var(--blue);padding:5px 11px;border-radius:8px;letter-spacing:.5px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:48px}
+.topbar .stage{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt-faint);font-weight:600}
+.topbar .stage.on-dark{color:rgba(255,255,255,.5)}
+
+/* ---- cover ---- */
+.cover{flex:1;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.cover .big{font-weight:800;font-size:58px;line-height:1.02;letter-spacing:-1.6px;color:#fff;max-width:17ch}
+.cover .big em{font-style:normal;color:var(--peri2)}
+.cover .sub{font-size:17px;color:#aebbcd;max-width:64ch;line-height:1.55;margin-top:18px}
+
+/* ---- generic layout ---- */
+.body{flex:1;display:flex;flex-direction:column;justify-content:center}
+.cols{display:grid;gap:22px}
+
+/* bullets */
+.checks{display:flex;flex-direction:column;gap:13px;margin-top:6px}
+.checks li{list-style:none;display:flex;gap:13px;align-items:flex-start;font-size:14.5px;color:var(--txt-dim);line-height:1.5}
+.checks li b{color:var(--txt);font-weight:700}
+.ck{flex:none;width:22px;height:22px;border-radius:7px;background:var(--peri-soft);display:grid;place-items:center;margin-top:1px}
+.ck svg{width:12px;height:12px;color:var(--blue)}
+.dark .checks li{color:#c4cfde}
+.dark .checks li b{color:#fff}
+.dark .ck{background:rgba(147,169,240,.18)}
+.dark .ck svg{color:var(--peri2)}
+
+/* command vocabulary table */
+.cmds{display:grid;grid-template-columns:1fr 1fr;gap:10px 34px;margin-top:8px}
+.cmd{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line2)}
+.cmd code{font-family:'IBM Plex Mono';font-size:13.5px;font-weight:600;color:var(--blue);white-space:nowrap}
+.cmd span{font-size:13px;color:var(--txt-dim);line-height:1.4}
+.cmd span b{color:var(--txt);font-weight:600}
+
+/* vocabulary summary: side list (dark) */
+.vside{flex:1;align-self:center;max-width:460px;border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:26px 30px 20px;background:rgba(255,255,255,.03)}
+.vside .vt{font-weight:800;font-size:19px;letter-spacing:-.4px;color:#fff;margin-bottom:16px}
+.vside .vh{font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;color:#9fb6cf;font-weight:700;margin-bottom:4px}
+.vside .vrow{display:grid;grid-template-columns:auto 1fr;gap:13px;align-items:baseline;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.09)}
+.vside .vrow code{font-family:'IBM Plex Mono';font-size:13px;font-weight:600;color:var(--teal-l);white-space:nowrap}
+.vside .vrow span{font-size:12.5px;color:#c4cfde;line-height:1.35}
+
+.callout{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow);margin-top:22px}
+.callout .lab{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--warn);font-weight:700;margin-bottom:9px}
+.callout p{font-size:14.5px;color:var(--txt-dim);line-height:1.55}
+.callout p b{color:var(--txt);font-weight:700}
+.callout code{font-family:'IBM Plex Mono';font-size:13px;color:var(--blue-d)}
+
+/* what is / what does git */
+.split{display:grid;grid-template-columns:1.15fr 1fr;gap:28px;align-items:start}
+.quote{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--blue);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);margin-top:14px}
+.quote p{font-size:14px;color:var(--txt);line-height:1.55;font-style:italic}
+.quote .src{font-family:'IBM Plex Mono';font-size:11px;color:var(--txt-faint);margin-top:8px;font-style:normal}
+.stat{display:flex;align-items:baseline;gap:10px;margin-top:4px}
+.stat .big{font-weight:800;font-size:40px;letter-spacing:-1.5px;color:var(--blue)}
+.stat .lbl{font-size:14px;color:var(--txt-dim);font-weight:600}
+.does{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.does .hd{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:12px}
+.does ul{display:flex;flex-direction:column;gap:9px}
+.does li{list-style:none;display:flex;gap:11px;align-items:flex-start;font-size:14px;color:var(--txt);line-height:1.4}
+.does li .d{flex:none;width:7px;height:7px;border-radius:50%;background:var(--blue);margin-top:7px}
+
+/* inspect / undo cards */
+.iu{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:stretch;margin-top:4px}
+.iucard{display:flex;flex-direction:column;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px 20px 20px}
+.iucard.danger{background:var(--warn-soft);border-color:#f0d9a8}
+.iucard .cardh{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:13px;margin-bottom:13px;border-bottom:1px solid var(--line2)}
+.iucard .cmd-name{font-family:'IBM Plex Mono';font-size:16px;font-weight:600;color:var(--blue)}
+.iucard.danger .cmd-name{color:var(--warn)}
+.iucard .pill{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.iucard .pill.safe{color:var(--good);background:var(--good-soft)}
+.iucard .pill.danger{color:var(--warn);background:#f6e2c2}
+.iucard .sub{font-size:12.5px;color:var(--txt-dim);font-weight:600;margin-bottom:15px;line-height:1.4}
+.iucard ul{display:flex;flex-direction:column;gap:11px}
+.iucard li{list-style:none;display:flex;gap:11px;align-items:flex-start;font-size:14px;color:var(--txt);line-height:1.45}
+.iucard li b{font-weight:700}
+.iucard li .d{flex:none;width:7px;height:7px;border-radius:50%;background:var(--blue);margin-top:7px}
+.iucard.danger li .d{background:var(--warn)}
+.iucard .iunote{margin-top:auto;display:flex;gap:10px;align-items:flex-start;border-radius:10px;padding:12px 14px;font-size:12.5px;line-height:1.45;color:var(--txt)}
+.iucard ul{margin-bottom:18px}
+.iucard .iunote .ic{flex:none;font-size:14px;line-height:1.3}
+.iucard .iunote.safe{background:var(--good-soft)}
+.iucard .iunote.warn{background:#f6e2c2}
+.iucard .iunote b{font-weight:700}
+.iucard .iunote code{font-family:'IBM Plex Mono';font-size:11.5px;font-weight:600;color:var(--warn)}
+
+.refs{margin-top:auto;display:flex;gap:10px;flex-wrap:wrap;padding-top:18px}
+.refs .ref{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--txt-dim);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 11px}
+.refs .ref b{color:var(--blue);font-weight:600}
+
+.foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--txt-faint);padding-top:24px}
+.dark .foot{color:rgba(255,255,255,.45)}
+
+/* ====== UNDER-THE-HOOD VISUALS ====== */
+
+/* section divider */
+.divider{flex:1;display:flex;flex-direction:column;justify-content:center}
+.divider .q{font-weight:800;font-size:52px;line-height:1.05;letter-spacing:-1.4px;color:#fff;max-width:20ch}
+.divider .q em{font-style:normal;color:var(--peri2)}
+.divider .sub2{font-size:18px;color:#aebbcd;margin-top:18px;max-width:60ch;line-height:1.5}
+
+/* generic reveal: elements fade/rise in when .show is added */
+.reveal{opacity:0;transform:translateY(10px);transition:opacity .5s ease,transform .5s ease}
+.reveal.show{opacity:1;transform:none}
+
+/* key-value object store (blobs) */
+.kv{display:grid;grid-template-columns:1fr auto 1.4fr;gap:30px;align-items:center;margin-top:20px}
+.kv .filecard{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.kv .filecard .fh{padding:10px 16px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono';font-size:12px;font-weight:600;color:var(--blue);display:flex;align-items:center;gap:8px}
+.kv .filecard pre{padding:14px 16px;font-family:'IBM Plex Mono';font-size:12.5px;color:var(--txt);line-height:1.6;white-space:pre-wrap}
+.kv .pipe{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--txt-faint)}
+.kv .pipe .hashbadge{font-family:'IBM Plex Mono';font-size:12px;font-weight:600;color:#fff;background:var(--navy);padding:6px 11px;border-radius:8px;white-space:nowrap}
+.kv .pipe .arr{font-size:26px;font-family:'IBM Plex Mono';color:var(--blue)}
+.kv .pipe .cap{font-size:11px;letter-spacing:.5px;text-transform:uppercase;font-weight:600}
+.store{background:var(--panel2);border:1px dashed var(--line2);border-radius:14px;padding:16px}
+.store .sh{font-family:'IBM Plex Mono';font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--txt-faint);font-weight:600;margin-bottom:12px}
+.entry{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px;box-shadow:var(--shadow)}
+.entry:last-child{margin-bottom:0}
+.entry .key{font-family:'IBM Plex Mono';font-size:12px;font-weight:700;color:#fff;background:var(--blue);padding:5px 9px;border-radius:7px}
+.entry .val{font-size:12.5px;color:var(--txt-dim);line-height:1.4}
+.entry .val b{color:var(--txt);font-weight:700}
+.entry .blobtag{font-family:'IBM Plex Mono';font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--blue);background:var(--peri-soft);padding:2px 7px;border-radius:5px;margin-left:6px}
+
+/* ---- graph canvas, reference-image look ---- */
+.stage-wrap{flex:1;display:flex;flex-direction:column}
+.viz{position:relative;flex:1;min-height:0}
+.viz svg{position:absolute;inset:0;width:100%;height:100%}
+.gnode{fill:transparent;stroke:var(--teal);stroke-width:2.5}
+.gnode.dim{opacity:.25}
+.gedge{stroke:#fff;stroke-width:2.4;fill:none}
+.gedge.branchline{stroke:var(--teal)}
+.glabel{fill:#fff;font-family:'Libre Franklin';font-weight:700;font-size:30px;text-anchor:middle;dominant-baseline:central}
+.gsha{fill:#9fb6cf;font-family:'IBM Plex Mono';font-size:13px;text-anchor:middle;dominant-baseline:central}
+.gbranch{fill:var(--teal-l);font-family:'Libre Franklin';font-weight:600;font-size:22px;text-anchor:middle}
+.gtype{fill:#cdd9e8;font-family:'Libre Franklin';font-weight:600;font-size:22px;text-anchor:middle}
+.gfolder{fill:#f2c14e;font-family:'Libre Franklin';font-weight:600;font-size:20px}
+.gfile{fill:#dbe6f5;font-family:'Libre Franklin';font-weight:500;font-size:19px}
+.note-red{fill:#ef6f6f;font-family:'Libre Franklin';font-weight:700;font-size:20px;text-anchor:middle}
+.linesbox rect{fill:#1a2c46;stroke:rgba(255,255,255,.08)}
+.linesbox text{fill:#cdd9e8;font-family:'IBM Plex Mono';font-size:17px}
+.linesbox .lhead{fill:#fff;font-weight:700;font-size:19px;text-anchor:middle}
+
+/* svg fade-in helper */
+.vshow{opacity:0;transition:opacity .55s ease}
+.vshow.on{opacity:1}
+.vpop{opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.5);transition:opacity .45s ease,transform .45s cubic-bezier(.2,1.3,.4,1)}
+.vpop.on{opacity:1;transform:scale(1)}
+.vdraw{opacity:0;transition:opacity .5s ease}
+.vdraw.on{opacity:1}
+
+/* control bar for interactive slides */
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:14px;margin-top:auto;border-top:1px solid rgba(255,255,255,.08)}
+.controls .lead-step{font-size:13.5px;color:#c4cfde;margin-right:auto;max-width:60ch;line-height:1.45}
+.controls .lead-step b{color:#fff}
+.btn{font-family:'IBM Plex Mono';font-size:13px;font-weight:600;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.04);color:#dbe4f0;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.15s}
+.btn:hover:not(:disabled){background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.4)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.primary:hover:not(:disabled){background:var(--blue-d)}
+.btn.warn{background:transparent;border-color:var(--warn);color:#f0b765}
+.btn.warn:hover:not(:disabled){background:rgba(217,119,6,.15)}
+.btn:disabled{opacity:.32;cursor:default}
+.btn .kbd{opacity:.6;font-size:11px;margin-left:5px}
+
+.vtitle{position:absolute;top:18px;left:0;right:0;text-align:center;font-weight:800;font-size:34px;letter-spacing:-.5px;color:#fff}
+
+@media print{
+  body{overflow:visible}
+  .deck{height:auto;overflow:visible}
+  .slide{height:100vh;page-break-after:always;break-after:page}
+  .hud,.pager,.hint,.controls{display:none}
+  .reveal,.vshow,.vpop,.vdraw{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- 1 · COVER -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img logo-lg" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">Lab 01 · 09:30-10:15</div>
+  </div>
+
+  <div class="cover">
+    <div class="eyebrow">Teaching · 45 min</div>
+    <div class="big">Introductions to <em>git</em>.</div>
+    <div class="sub">The conceptual half. We lay down what Git is, how it actually stores your project under the hood, and the workflows (merge, rebase, cherry-pick), then we <em style="color:#fff;font-style:normal">do</em> the moves in the We-do that follows.</div>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 01 · Git Fundamentals</span></div>
+</section>
+
+<!-- 2 · WHAT IS GIT -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Teaching</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">01</span>
+      <div>
+        <div class="title">What is Git?</div>
+        <div class="lead">Git is a <b>Version Control System</b> (VCS): software that tracks and manages changes to files over time.</div>
+      </div>
+    </div>
+    <div class="split">
+      <div>
+        <div class="stat"><span class="big">+95%</span><span class="lbl">market share, the world's most popular VCS</span></div>
+        <div class="quote">
+          <p>"Git is a free and open source distributed version control system designed to handle everything from small to very large projects with speed and efficiency."</p>
+          <p style="margin-top:10px">"Lightning fast, with a huge ecosystem of GUIs, hosting services, and command-line tools."</p>
+          <div class="src">git-scm.com</div>
+        </div>
+      </div>
+      <div class="does">
+        <div class="hd">What does Git do?</div>
+        <ul>
+          <li><span class="d"></span>Track changes across multiple files</li>
+          <li><span class="d"></span>Compare versions of a project</li>
+          <li><span class="d"></span>Time-travel back to old versions</li>
+          <li><span class="d"></span>Revert to a previous version</li>
+          <li><span class="d"></span>Collaborate and share changes</li>
+          <li><span class="d"></span>Combine changes</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>The world's most popular VCS</span></div>
+</section>
+
+<!-- 3 · DIVIDER · HOW DOES GIT DO IT -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Under the hood</div>
+  </div>
+  <div class="divider">
+    <div class="eyebrow">Under the hood</div>
+    <div class="q">How does Git <em>do</em> it?</div>
+    <div class="sub2">What is actually happening inside <span class="mono" style="color:#dbe4f0">.git/</span> when you commit? Let's open the box.</div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>blobs → trees → commits → branches</span></div>
+</section>
+
+<!-- 4 · BLOBS · KEY/VALUE OBJECT STORE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Under the hood · objects</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">02</span>
+      <div>
+        <div class="title">Blobs: Git is a key-value store</div>
+        <div class="lead"><span class="mono">.git/</span> stores your file <b>contents</b> as objects. The <b>key</b> is a hash of the content; the <b>value</b> is the content itself.</div>
+      </div>
+    </div>
+
+    <div class="kv">
+      <div class="filecard reveal" data-step="1">
+        <div class="fh">📄 main.cpp</div>
+        <pre>int main() {
+  greet("world");
+}</pre>
+      </div>
+      <div class="pipe">
+        <div class="cap reveal" data-step="2" style="color:var(--blue)">hash the content</div>
+        <div class="arr reveal" data-step="2">→</div>
+        <div class="hashbadge reveal" data-step="2">716aef…</div>
+      </div>
+      <div class="store reveal" data-step="3">
+        <div class="sh">.git/objects: the key-value store</div>
+        <div class="entry">
+          <span class="key">716aef</span>
+          <span class="val"><b>main.cpp's contents</b> <span class="blobtag">blob</span></span>
+        </div>
+        <div class="entry">
+          <span class="key">ca6e99</span>
+          <span class="val"><b>secret.cpp's contents</b> <span class="blobtag">blob</span></span>
+        </div>
+        <div class="entry">
+          <span class="key">8c5c75</span>
+          <span class="val"><b>test_1.cpp's contents</b> <span class="blobtag">blob</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout reveal" data-step="4" style="border-left:5px solid var(--navy)">
+      <div class="lab" style="color:var(--blue)">The catch</div>
+      <p>A <b>blob is just content</b>, with no filename. Identical content hashes to the same key, so it's stored <b>once</b>. So how does Git know that <code>716aef</code> is "main.cpp"?</p>
+    </div>
+  </div>
+
+  <div class="controls" style="border-top-color:var(--line)">
+    <span class="lead-step" id="blob-step" style="color:var(--txt-dim)">Step through how a file becomes a blob.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Next ▶</button>
+  </div>
+</section>
+
+<!-- 5 · TREE -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Under the hood · objects</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="vtitle">Tree</div>
+    <p class="lead" style="text-align:center;margin:6px auto 0;color:#c4cfde">A <b style="color:#fff">tree</b> gives blobs their filenames. It's a directory listing that points to blobs and other trees by hash.</p>
+    <div class="viz" id="viz-tree"></div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="tree-step">A tree maps <b>names → hashes</b>. Reveal the structure step by step.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Reveal ▶</button>
+  </div>
+</section>
+
+<!-- 6 · COMMITS -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Under the hood · objects</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="vtitle">Commits</div>
+    <p class="lead" style="text-align:center;margin:6px auto 0;color:#c4cfde">Every commit creates a <b style="color:#fff">new tree</b> (a complete snapshot), and points to its <b style="color:#fff">parent</b>. Unchanged sub-trees are reused.</p>
+    <div class="viz" id="viz-commit"></div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="commit-step">A commit is the <b>full state</b> of the project at a point in time, linked to the one before it.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Commit ▶</button>
+  </div>
+</section>
+
+<!-- 7 · BRANCHES -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Under the hood · refs</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="vtitle">Branches</div>
+    <p class="lead" style="text-align:center;margin:6px auto 0;color:#c4cfde">Commit hashes aren't friendly. A <b style="color:#fff">branch</b> is just a movable pointer to a commit: a name you can read, that moves as you commit.</p>
+    <div class="viz" id="viz-branch"></div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="branch-step"><b>Commits are immutable. Branches are mutable.</b> Each commit moves the current branch forward.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Commit ▶</button>
+  </div>
+</section>
+
+<!-- 8 · HEAD -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Under the hood · refs</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="vtitle">HEAD</div>
+    <p class="lead" style="text-align:center;margin:6px auto 0;color:#c4cfde">If a branch is a pointer to a commit, <b style="color:#fff">HEAD</b> is the pointer to <b style="color:#fff">where you are</b>, usually the branch you're currently on.</p>
+    <div class="viz" id="viz-head"></div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="head-step"><b>HEAD</b> = your current position. <span class="mono">git switch</span> moves it; a new commit moves HEAD <i>and</i> its branch together.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Next step ▶</button>
+  </div>
+</section>
+
+<!-- 9 · MERGE (interactive) -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Workflows</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="vtitle">Merge</div>
+    <div class="viz" id="viz-merge"></div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="merge-step">Production lives on <b>main</b>. We want a new button without breaking production.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Next step ▶</button>
+  </div>
+</section>
+
+<!-- 9 · REBASE (interactive) -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Workflows</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="vtitle">Rebase</div>
+    <div class="viz" id="viz-rebase"></div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="rebase-step">Merge clutters history with merge commits. <b>Rebase</b> keeps history linear.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Next step ▶</button>
+  </div>
+</section>
+
+<!-- 10 · CHERRY-PICK (interactive) -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Workflows</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="vtitle">Cherry-pick</div>
+    <div class="viz" id="viz-cherry"></div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="cherry-step"><b>Cherry-pick</b> copies a single commit's change onto another branch.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Next step ▶</button>
+  </div>
+</section>
+
+<!-- 11 · REMOTE -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Distributed · remotes</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="vtitle">Remotes</div>
+    <p class="lead" style="text-align:center;margin:6px auto 0;color:#c4cfde">Git is <b style="color:#fff">distributed</b>: <b style="color:#fff">every clone is a full copy</b> of the history. A <b style="color:#fff">remote</b> (usually <span class="mono">origin</span>) is just another repo you sync with.</p>
+    <div class="viz" id="viz-remote"></div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="remote-step"><span class="mono">clone</span> copies it down · <span class="mono">push</span> sends your commits up · <span class="mono">pull</span> brings theirs down. We use these for real in later labs.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Next step ▶</button>
+  </div>
+</section>
+
+<!-- 11b · TAGS -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Under the hood · refs</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">02</span>
+      <div>
+        <div class="title">Tags: a ref that <em style="font-style:italic">doesn't</em> move</div>
+        <div class="lead">A branch moves forward as you commit. A <b>tag</b> is a name pinned to <b>one specific commit, forever</b>: a permanent bookmark. That's how you mark a <b>release</b>.</div>
+      </div>
+    </div>
+    <div class="split">
+      <div class="does">
+        <div class="hd">Lightweight tag</div>
+        <p style="font-size:14px;color:var(--txt);line-height:1.5;margin-bottom:12px">Just a name pointing at a commit, nothing more. Like a branch that never moves.</p>
+        <div class="cmd" style="border:none;padding:6px 0"><code>git tag v1.2</code><span>pin <span class="mono">v1.2</span> to the current commit.</span></div>
+      </div>
+      <div class="does">
+        <div class="hd">Annotated tag <span style="color:var(--txt-faint);font-weight:400;text-transform:none;letter-spacing:0">(use this for releases)</span></div>
+        <p style="font-size:14px;color:var(--txt);line-height:1.5;margin-bottom:12px">A <b>full Git object</b>: stores who tagged it, when, a message, and can be GPG-signed.</p>
+        <div class="cmd" style="border:none;padding:6px 0"><code>git tag -a v1.2 -m "Release 1.2"</code><span>a real object with author + message.</span></div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:18px">
+      <div class="lab" style="color:var(--blue)">Why it matters for CI/CD</div>
+      <p><b>Tags name the exact commit you shipped.</b> "Which code is running on Line 3?" → <span class="mono">v1.2</span>. Tags are <b>immutable pointers</b>, so a release you can always return to. Push them explicitly: <span class="mono">git push origin v1.2</span> (a plain <span class="mono">git push</span> won't send tags). We'll use these to drive real deploys in later labs.</p>
+    </div>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>A branch moves · a tag stays</span></div>
+</section>
+
+<!-- 14 · INSPECTING & UNDOING · git blame / git reset -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Teaching</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">03</span>
+      <div>
+        <div class="title">Inspecting &amp; undoing</div>
+        <div class="lead">Two more commands you'll reach for often: one to find out <b>who</b> wrote a line, one to <b>throw work away</b>. Handle the second with care.</div>
+      </div>
+    </div>
+
+    <div class="iu">
+      <div class="iucard">
+        <div class="cardh">
+          <span class="cmd-name">git blame</span>
+          <span class="pill safe">Read-only · safe</span>
+        </div>
+        <div class="sub">Who wrote this line, and when?</div>
+        <ul>
+          <li><span class="d"></span>Annotates <b>every line</b> of a file with the commit, author and date that last touched it.</li>
+          <li><span class="d"></span>Answers "<b>who do I ask about this?</b>" and "when did this line appear?"</li>
+          <li><span class="d"></span>Changes nothing: a pure inspection command.</li>
+        </ul>
+        <div class="iunote safe"><span class="ic">⚙️</span><span><b>VS Code doesn't show blame out of the box.</b> Turn on <b>Settings → Git › Blame: Editor Decoration: Enabled</b> to get inline blame in the editor.</span></div>
+      </div>
+      <div class="iucard danger">
+        <div class="cardh">
+          <span class="cmd-name">git reset --hard</span>
+          <span class="pill danger">Destructive</span>
+        </div>
+        <div class="sub">Rewind the branch, and discard everything.</div>
+        <ul>
+          <li><span class="d"></span>Moves the current <b>branch pointer</b> to a chosen commit…</li>
+          <li><span class="d"></span>…<b>and</b> overwrites your working tree to match it.</li>
+          <li><span class="d"></span>Uncommitted changes are <b>gone, there is no undo</b>.</li>
+          <li><span class="d"></span>Plain <span class="mono">git reset</span> (<span class="mono">--mixed</span>) keeps your edits; <span class="mono">--hard</span> does not.</li>
+        </ul>
+        <div class="iunote warn"><span class="ic">⚠️</span><span>Want to keep your edits? Use <code>--soft</code> / <code>--mixed</code>. Unsure? <b>Use <code>git stash</code> first, this is your safety net.</b></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Inspect with blame · undo with reset</span></div>
+</section>
+
+<!-- 15 · GITIGNORE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Teaching</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">04</span>
+      <div>
+        <div class="title"><span class="mono" style="font-size:34px">.gitignore</span>: what <em style="font-style:italic">not</em> to track</div>
+        <div class="lead">Git tracks <b>everything</b> by default. <span class="mono">.gitignore</span> is how you tell it what to leave alone.</div>
+      </div>
+    </div>
+    <ul class="checks" style="max-width:900px">
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Build output, virtualenvs (<span class="mono">.venv</span>), <span class="mono">__pycache__</span>, <span class="mono">.pytest_cache/</span>, OS/editor junk, local notes like <span class="mono">NOTES.local.md</span>.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>This repo already ignores <span class="mono">.pytest_cache/</span></b>, so running <span class="mono">pytest</span> in the You-do won't pollute your focused commit.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><span class="mono">git status</span> shows <b>untracked</b> files (Git sees them, you haven't added them) separately from <b>ignored</b> files (Git pretends they aren't there).</span></li>
+    </ul>
+    <div class="callout">
+      <div class="lab">Saves you from</div>
+      <p>The classic <b>"why did my commit include <code>.venv/</code> or <code>.env</code>?"</b> mistake.</p>
+    </div>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Open this repo's own .gitignore</span></div>
+</section>
+
+<!-- 16 · GIT VOCABULARY · SUMMARY (visual) -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Teaching · recap</div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="vtitle">Your Git vocabulary</div>
+    <p class="lead" style="text-align:center;margin:6px auto 0;color:#c4cfde">The whole morning on one slide. Top: how your <b style="color:#fff">files</b> become a commit. Bottom: where <b style="color:#fff">commits</b> live and travel. The rest of the vocabulary on the right.</p>
+    <div style="flex:1;display:flex;gap:44px;min-height:0;margin-top:8px;align-items:stretch">
+      <div class="viz" id="viz-vocab" style="flex:1.5"></div>
+      <div class="vside reveal">
+        <div class="vt">The rest of the vocabulary</div>
+        <div class="vh">Start</div>
+        <div class="vrow"><code>git init</code><span>turn a plain folder into a repo (creates <span class="mono" style="color:var(--peri2)">.git/</span>)</span></div>
+        <div class="vh" style="margin-top:22px">Inspect — always safe</div>
+        <div class="vrow"><code>git status</code><span>what's changed &amp; what's staged</span></div>
+        <div class="vrow"><code>git blame</code><span>who last touched each line, and when</span></div>
+        <div class="vh" style="margin-top:22px">Move the pointers</div>
+        <div class="vrow"><code>git branch</code><span>list / create branches</span></div>
+        <div class="vrow"><code>git checkout / switch</code><span>move HEAD to another branch</span></div>
+        <div class="vrow"><code>git merge</code><span>combine another branch's work into yours</span></div>
+        <div class="vrow"><code>git rebase</code><span>replay your commits onto a new base</span></div>
+        <div class="vrow"><code>git cherry-pick</code><span>copy a single commit onto your branch</span></div>
+        <div class="vrow"><code>git tag</code><span>pin a permanent name to a commit</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span class="lead-step" id="vocab-step">Everything from this morning, one piece at a time.</span>
+    <button class="btn" data-act="back">◀ Back</button>
+    <button class="btn primary" data-act="next">Next ▶</button>
+  </div>
+</section>
+
+<!-- 17 · IN THE LAB (closing) -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Teaching → We-do → You-do</div>
+  </div>
+
+  <div class="body">
+    <div class="eyebrow">Now we make it real</div>
+    <div class="title" style="max-width:22ch;color:#fff">In the lab, you'll <em style="font-style:normal;color:var(--peri2)">see</em> these objects with your own eyes.</div>
+    <ul class="checks" style="max-width:900px;margin-top:22px">
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We-do.</b> We crack open <span class="mono">.git/</span> live, running <span class="mono">git cat-file -p</span> on a commit, its tree, its blobs, and watch a commit produce a new tree + blob.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do (breakout rooms).</b> You spelunk the object graph yourself, then practise <span class="mono">add&nbsp;-p</span>, branch, <b>merge</b>, and <b>rebase</b> on a real repo.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The payoff.</b> Everything you just saw on these slides (blobs, trees, commits, branches, three-way merge) you'll trigger by hand and verify in <span class="mono">git log --graph</span>.</span></li>
+    </ul>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Next → We-do (10:15)</span></div>
+</section>
+
+</div>
+
+<div class="hud"><div class="bar" id="bar"></div></div>
+<div class="pager" id="pager">01 / 17</div>
+<div class="hint" id="hint">↑ ↓ slides · ← → step the animation</div>
+
+<script>
+/* ============ deck navigation ============ */
+const deck=document.getElementById('deck');
+const slides=[...document.querySelectorAll('.slide')];
+const bar=document.getElementById('bar');
+const pager=document.getElementById('pager');
+const hint=document.getElementById('hint');
+function pad(n){return String(n).padStart(2,'0')}
+const POS_KEY='deckpos:'+location.pathname;
+function curIndex(){return Math.round(deck.scrollTop/window.innerHeight)}
+function update(){
+  const i=curIndex();
+  bar.style.width=((i)/(slides.length-1)*100)+'%';
+  pager.textContent=pad(i+1)+' / '+pad(slides.length);
+  const dark=slides[i]&&slides[i].classList.contains('dark');
+  pager.classList.toggle('on-dark',dark);
+  hint.classList.toggle('on-dark',dark);
+  try{localStorage.setItem(POS_KEY,String(i))}catch(e){}
+}
+// On a reload (Live Server save, or manual F5), jump back to the slide you were
+// on. A fresh open (new tab / typed URL) is nav type 'navigate' → starts at 1.
+(function restorePos(){
+  try{
+    const nav=performance.getEntriesByType('navigation')[0];
+    if(!nav||nav.type!=='reload')return;
+    const saved=parseInt(localStorage.getItem(POS_KEY)||'0',10);
+    if(saved>0)deck.scrollTop=saved*window.innerHeight;
+  }catch(e){}
+})();
+deck.addEventListener('scroll',()=>{requestAnimationFrame(update)});
+window.addEventListener('keydown',e=>{
+  if(e.target.tagName==='BUTTON')return;
+  const i=curIndex();
+  // Up/Down (and PageUp/Down) always move between slides
+  if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();deck.scrollTo({top:(i+1)*window.innerHeight})}
+  if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();deck.scrollTo({top:(i-1)*window.innerHeight})}
+  if(e.key==='Home'){deck.scrollTo({top:0})}
+  if(e.key==='End'){deck.scrollTo({top:slides.length*window.innerHeight})}
+  // Left/Right ONLY step the current slide's animation; they never change slides.
+  if(e.key==='ArrowRight'){e.preventDefault(); if(bound[i])bound[i].go(1);}
+  if(e.key==='ArrowLeft'){e.preventDefault(); if(bound[i])bound[i].go(-1);}
+});
+update();
+setTimeout(()=>{hint.style.transition='opacity .6s';hint.style.opacity='0'},5000);
+
+/* ============ tiny SVG helpers ============ */
+const NS='http://www.w3.org/2000/svg';
+function el(tag,attrs={},parent){const n=document.createElementNS(NS,tag);for(const k in attrs)n.setAttribute(k,attrs[k]);if(parent)parent.appendChild(n);return n;}
+function commitNode(svg,x,y,label,sha,opts={}){
+  const g=el('g',{class:'vpop '+(opts.cls||'')},svg);
+  el('circle',{class:'gnode',cx:x,cy:y,r:opts.r||40},g);
+  el('text',{class:'glabel',x,y},g).textContent=label;
+  if(sha)el('text',{class:'gsha',x,y:y+58},g).textContent=sha;
+  return g;
+}
+function edge(svg,x1,y1,x2,y2,opts={}){
+  // shorten to circle edges
+  const r=opts.r||40,dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy),ux=dx/len,uy=dy/len;
+  const sx=x1+ux*r,sy=y1+uy*r,ex=x2-ux*(r+(opts.arrow?10:0)),ey=y2-uy*(r+(opts.arrow?10:0));
+  const g=el('g',{class:'vdraw '+(opts.cls||'')},svg);
+  el('line',{class:'gedge'+(opts.branch?' branchline':''),x1:sx,y1:sy,x2:ex,y2:ey,'marker-end':opts.arrow?'url(#arrow)':''},g);
+  return g;
+}
+function defsArrow(svg){
+  const d=el('defs',{},svg);
+  const m=el('marker',{id:'arrow',viewBox:'0 0 10 10',refX:'8',refY:'5',markerWidth:'7',markerHeight:'7',orient:'auto-start-reverse'},d);
+  el('path',{d:'M0,0 L10,5 L0,10 z',fill:'#fff'},m);
+}
+function branchLabel(svg,x,y,name,below){
+  const g=el('g',{class:'vshow'},svg);
+  el('text',{class:'gbranch',x,y:below?y+78:y-62},g).textContent=name;
+  return g;
+}
+/* a labelled branch pointer that glides between commits.
+   nodeY = the y of the commit line; below=true puts the label under the line. */
+function movingPtr(svg,name,nodeY,below,color){
+  color=color||'var(--teal)';
+  const r=40,boxW=Math.max(120,name.length*15+44),boxH=44,gap=74;
+  const g=el('g',{class:'vshow branchptr'},svg);
+  const boxY=below? nodeY+r+gap : nodeY-r-gap-boxH;
+  el('rect',{x:-boxW/2,y:boxY,width:boxW,height:boxH,rx:11,fill:'rgba(59,189,180,.13)',stroke:color,'stroke-width':2},g);
+  el('text',{x:0,y:boxY+boxH/2+1,'text-anchor':'middle','dominant-baseline':'central',fill:'var(--teal-l)','font-family':'Libre Franklin','font-weight':700,'font-size':22},g).textContent=name;
+  // arrow points from the box toward the commit circle edge
+  const ay1=below? boxY : boxY+boxH, ay2=below? nodeY+r+8 : nodeY-r-8;
+  el('line',{x1:0,y1:ay1,x2:0,y2:ay2,stroke:color,'stroke-width':2.4,'marker-end':'url(#arrow)'},g);
+  g.style.transition='transform .55s cubic-bezier(.4,1.1,.4,1)';
+  return {g,move(x){g.setAttribute('transform','translate('+x+',0)');}};
+}
+function reveal(elm,on){if(!elm)return;elm.classList.toggle('on',on!==false);}
+
+/* ============ per-slide step controllers ============ */
+/* Each controller: {max, render(step)}. Buttons call go(±1). */
+const controllers={};
+function bindControls(slideEl,ctrl){
+  let step=0;
+  const next=slideEl.querySelector('[data-act="next"]');
+  const back=slideEl.querySelector('[data-act="back"]');
+  const extra=[...slideEl.querySelectorAll('[data-act]')].filter(b=>!['next','back'].includes(b.dataset.act));
+  function sync(){ if(back)back.disabled=step<=0; if(next)next.disabled=step>=ctrl.max; ctrl.render(step,{next,back,extra}); }
+  // returns true if the step actually changed (false at a boundary, so callers can fall through)
+  function go(d){ const prev=step; step=Math.max(0,Math.min(ctrl.max,step+d)); if(step!==prev){sync();return true;} return false; }
+  if(next)next.addEventListener('click',()=>go(1));
+  if(back)back.addEventListener('click',()=>go(-1));
+  extra.forEach(b=>b.addEventListener('click',()=>{ if(ctrl.onAct)ctrl.onAct(b.dataset.act,()=>{step=Math.min(ctrl.max,step+1);sync();},{next,back,extra}); }));
+  ctrl.reset=()=>{step=0;sync();};
+  sync();
+  return {go,reset:ctrl.reset};
+}
+
+/* ---------- slide 4: blobs (HTML reveal) ---------- */
+(function(){
+  const slide=slides[3];
+  const items=[...slide.querySelectorAll('.reveal')];
+  const lead=slide.querySelector('#blob-step');
+  const texts=['Step through how a file becomes a blob.',
+    'Here is a file in your working tree: <b>main.cpp</b>.',
+    'Git <b>hashes its contents</b> → that hash is the key.',
+    'Key → value is saved in <b>.git/objects</b>. Same content ⇒ same key ⇒ stored once.',
+    'But a blob has <b>no filename</b>. So how does Git remember it is "main.cpp"?'];
+  controllers.blob={max:4,render(s){ items.forEach(it=>it.classList.toggle('show',+it.dataset.step<=s)); lead.innerHTML=texts[s]; }};
+})();
+
+/* ---------- slide 5: tree ---------- */
+(function(){
+  const svg=el('svg',{viewBox:'0 0 1500 760',preserveAspectRatio:'xMidYMid meet'},document.getElementById('viz-tree'));
+  // file listing (left)
+  const listing=el('g',{class:'vshow'},svg);
+  const L=[['📁 app',60,90,'gfolder'],['📁 src',110,140,'gfolder'],['📄 secret.cpp',160,188,'gfile'],['📄 main.cpp',160,232,'gfile'],
+           ['📁 test',110,282,'gfolder'],['📄 test_1.cpp',160,330,'gfile'],['📄 test_2.cpp',160,374,'gfile'],['📄 run.sh',110,424,'gfile']];
+  L.forEach(([t,x,y,c])=>{el('text',{class:c,x,y},listing).textContent=t;});
+  // tree graph (right): nodes
+  const N={
+    app:[1060,150],src:[760,360],test:[1120,360],run:[1400,360],
+    secret:[640,580],main:[880,580],t1:[1040,580],t2:[1220,580]
+  };
+  function tnode(key,type,name,sha){const[x,y]=N[key];const g=el('g',{class:'vpop',id:'tn-'+key},svg);
+    el('text',{class:'gtype',x,y:y-58},g).textContent=type;
+    el('circle',{class:'gnode',cx:x,cy:y,r:46},g);
+    el('text',{class:'gsha',x,y:y-6},g).textContent=name;
+    el('text',{class:'gsha',x,y:y+16},g).textContent=sha;return g;}
+  const nodes={
+    app:tnode('app','tree','app','338fb1'),
+    src:tnode('src','tree','src','3146f6'),
+    test:tnode('test','tree','test','d7e1a2'),
+    run:tnode('run','blob','run.sh','7fffd9'),
+    secret:tnode('secret','blob','secret.cpp','ca6e99'),
+    main:tnode('main','blob','main.cpp','716aef'),
+    t1:tnode('t1','blob','test_1.cpp','8c5c75'),
+    t2:tnode('t2','blob','test_2.cpp','25bd75')
+  };
+  function tedge(a,b){const[x1,y1]=N[a],[x2,y2]=N[b];const r=46,dx=x2-x1,dy=y2-y1,l=Math.hypot(dx,dy);
+    const g=el('g',{class:'vdraw'},svg);
+    el('line',{class:'gedge branchline',x1:x1+dx/l*r,y1:y1+dy/l*r,x2:x2-dx/l*r,y2:y2-dy/l*r},g);return g;}
+  const edges={
+    asrc:tedge('app','src'),atest:tedge('app','test'),arun:tedge('app','run'),
+    ssec:tedge('src','secret'),smain:tedge('src','main'),tt1:tedge('test','t1'),tt2:tedge('test','t2')
+  };
+  const all=[listing,...Object.values(nodes),...Object.values(edges)];
+  all.forEach(g=>g.classList.remove('on'));
+  const lead=slides[4].querySelector('#tree-step');
+  const steps=[
+    {on:[listing],t:'Here is the project as folders &amp; files.'},
+    {on:[nodes.app,nodes.run,edges.arun],t:'The top <b>tree</b> "app" lists its entries by name → hash. <b>run.sh</b> points to a blob.'},
+    {on:[nodes.src,edges.asrc,nodes.secret,nodes.main,edges.ssec,edges.smain],t:'<b>src</b> is a sub-tree; it points to the <b>secret.cpp</b> and <b>main.cpp</b> blobs.'},
+    {on:[nodes.test,edges.atest,nodes.t1,nodes.t2,edges.tt1,edges.tt2],t:'<b>test</b> is another sub-tree → its two blobs. The filename lives in the <b>tree entry</b>, never in the blob.'}
+  ];
+  controllers.tree={max:steps.length-1,render(s){
+    const onset=new Set(); for(let i=0;i<=s;i++)steps[i].on.forEach(g=>onset.add(g));
+    all.forEach(g=>g.classList.toggle('on',onset.has(g)));
+    lead.innerHTML=s===0?'A tree maps <b>names → hashes</b>. Reveal the structure step by step.':steps[s].t;
+  }};
+})();
+
+/* ---------- slide 6: commits (snapshot chain) ---------- */
+(function(){
+  const svg=el('svg',{viewBox:'0 0 1500 620',preserveAspectRatio:'xMidYMid meet'},document.getElementById('viz-commit'));
+  defsArrow(svg);
+  const y=240, xs=[230,560,890], shas=['a17c…','c93f…','f0b2…'];
+  const commits=[],trees=[],links=[],plinks=[];
+  xs.forEach((x,i)=>{
+    commits[i]=commitNode(svg,x,y,'C'+(i+1),shas[i],{cls:''});
+    // tree below each commit
+    const tg=el('g',{class:'vpop'},svg);
+    el('text',{class:'gtype',x,y:y+120},tg).textContent='tree';
+    el('rect',{class:'',x:x-30,y:y+135,width:60,height:46,rx:10,fill:'transparent',stroke:'var(--teal)','stroke-width':2},tg);
+    el('text',{class:'gsha',x,y:y+158},tg).textContent='snap';
+    trees[i]=tg;
+    links[i]=edge(svg,x,y+40,x,y+135,{r:0,cls:''}); // commit->tree (vertical, no arrowhead trim)
+    if(i>0)plinks[i]=edge(svg,xs[i],y,xs[i-1],y,{arrow:true}); // parent pointer points back
+  });
+  const lead=slides[5].querySelector('#commit-step');
+  const steps=[
+    {t:'Start: commit <b>C1</b> is a snapshot of the whole project (its tree).'},
+    {t:'<b>C2</b> makes a new commit + a new tree, and points back to <b>C1</b> (its parent).'},
+    {t:'<b>C3</b> again: new snapshot, parent = C2. A commit is the <b>full state</b>, chained to history.'}
+  ];
+  function showUpTo(s){
+    commits.forEach((g,i)=>reveal(g,i<=s));
+    trees.forEach((g,i)=>reveal(g,i<=s));
+    links.forEach((g,i)=>g&&reveal(g,i<=s));
+    plinks.forEach((g,i)=>g&&reveal(g,i<=s));
+  }
+  controllers.commit={max:2,render(s){showUpTo(s);lead.innerHTML=steps[s].t;}};
+})();
+
+/* ---------- slide 7: branches ---------- */
+(function(){
+  const svg=el('svg',{viewBox:'0 0 1500 520',preserveAspectRatio:'xMidYMid meet'},document.getElementById('viz-branch'));
+  defsArrow(svg);
+  const y=260, r=40, xs=[260,600,940,1280];
+  const commits=[],links=[];
+  xs.forEach((x,i)=>{commits[i]=commitNode(svg,x,y,String.fromCharCode(65+i),null,{}); if(i>0)links[i]=edge(svg,xs[i-1],y,xs[i],y,{arrow:true});});
+  // moving branch pointer: a labelled box with a downward arrow into the commit.
+  // The whole group translates in x, so it glides to the new commit on each step.
+  const ptr=el('g',{class:'vshow branchptr'},svg);
+  const boxW=150,boxH=46,boxY=y-r-118;     // label box sits above the commit
+  el('rect',{x:-boxW/2,y:boxY,width:boxW,height:boxH,rx:11,fill:'rgba(59,189,180,.14)',stroke:'var(--teal)','stroke-width':2},ptr);
+  el('text',{x:0,y:boxY+boxH/2+1,'text-anchor':'middle','dominant-baseline':'central',fill:'var(--teal-l)','font-family':'Libre Franklin','font-weight':700,'font-size':24},ptr).textContent='main';
+  // arrow from box down to top of commit circle
+  el('line',{x1:0,y1:boxY+boxH,x2:0,y2:y-r-8,stroke:'var(--teal)','stroke-width':2.4,'marker-end':'url(#arrow)'},ptr);
+  ptr.style.transition='transform .55s cubic-bezier(.4,1.1,.4,1)';
+  function movePtr(i){ptr.setAttribute('transform','translate('+xs[i]+',0)');}
+  movePtr(0);
+  const lead=slides[6].querySelector('#branch-step');
+  const steps=[
+    {bx:0,t:'One commit <b>A</b>. The branch <b>main</b> is just a pointer to it.'},
+    {bx:1,t:'Commit <b>B</b>. <b>main moves forward</b> to point at B, and the commit A is unchanged.'},
+    {bx:2,t:'Commit <b>C</b>. Again main advances. Commits are <b>immutable</b>; the branch is <b>mutable</b>.'},
+    {bx:3,t:'Commit <b>D</b>. The branch is the cheap, readable name; the commits stay frozen behind it.'}
+  ];
+  controllers.branch={max:steps.length-1,render(s){
+    const st=steps[s];
+    commits.forEach((g,i)=>reveal(g,i<=st.bx));
+    links.forEach((g,i)=>g&&reveal(g,i<=st.bx));
+    reveal(ptr,true);
+    movePtr(st.bx);
+    lead.innerHTML=st.t;
+  }};
+})();
+
+/* ---------- slide 8: MERGE (the new-button / hotfix story) ---------- */
+(function(){
+  const svg=el('svg',{viewBox:'0 0 1700 760',preserveAspectRatio:'xMidYMid meet'},document.getElementById('viz-merge'));
+  defsArrow(svg);
+  const topY=240, botY=520;
+  const X={A:170,B:430,C:690};            // shared trunk
+  const Xtop={D:950,E:1210};              // new-button line (top)
+  const Xbot={F:950,G:1210};              // hotfix line (bottom)
+  const Xmerge=1480;
+  // build nodes (hidden initially)
+  const node={};
+  node.A=commitNode(svg,X.A,topY,'A');
+  node.B=commitNode(svg,X.B,topY,'B');
+  node.C=commitNode(svg,X.C,topY,'C');
+  node.D=commitNode(svg,Xtop.D,topY,'D');
+  node.E=commitNode(svg,Xtop.E,topY,'E');
+  node.F=commitNode(svg,Xbot.F,botY,'F');
+  node.G=commitNode(svg,Xbot.G,botY,'G');
+  node.M=commitNode(svg,Xmerge,topY,'M',null,{}); // merge commit
+  const e={};
+  e.AB=edge(svg,X.A,topY,X.B,topY,{arrow:true});
+  e.BC=edge(svg,X.B,topY,X.C,topY,{arrow:true});
+  e.CD=edge(svg,X.C,topY,Xtop.D,topY,{arrow:true});
+  e.DE=edge(svg,Xtop.D,topY,Xtop.E,topY,{arrow:true});
+  e.CF=edge(svg,X.C,topY,Xbot.F,botY,{arrow:true});
+  e.FG=edge(svg,Xbot.F,botY,Xbot.G,botY,{arrow:true});
+  e.EM=edge(svg,Xtop.E,topY,Xmerge,topY,{arrow:true});
+  e.GM=edge(svg,Xbot.G,botY,Xmerge,topY,{arrow:true});
+  // moving branch pointers: main above the top line, new-button below the top line, hotfix below the bottom line
+  const pMain=movingPtr(svg,'main',topY,false);
+  const pNB=movingPtr(svg,'new-button',topY,true);
+  const pHot=movingPtr(svg,'hotfix',botY,true);
+  pMain.move(X.C); pNB.move(X.C); pHot.move(Xbot.F);
+  const lead=slides[8].querySelector('#merge-step');
+
+  // step definitions: cumulative visibility + pointer positions
+  const steps=[
+    {show:['A','B','C','AB','BC'],main:X.C,t:'Production lives on <b>main</b> (A→B→C). We want a new button, without breaking production.'},
+    {show:['D','CD'],main:X.C,nb:X.C,t:'We branch <b>new-button</b> off C, so its pointer sits on C. main is untouched.'},
+    {show:[],main:X.C,nb:Xtop.D,t:'Commit <b>D</b> on new-button → its pointer <b>moves to D</b>. main stays on C.'},
+    {show:['E','DE'],main:X.C,nb:Xtop.E,t:'Commit <b>E</b> → new-button moves again to E. main is still safely on C.'},
+    {show:[],main:Xtop.E,nb:Xtop.E,t:'Feature ready → <b>git merge</b>. main had not moved, so this is a <b>fast-forward</b>: main slides up to E. ✅'},
+    {show:['F','CF'],main:Xtop.E,nb:Xtop.E,hot:Xbot.F,t:'⚠ Critical bug! We branch <b>hotfix</b> from production (C) and commit <b>F</b>.'},
+    {show:['G','FG'],main:Xtop.E,nb:Xtop.E,hot:Xbot.G,t:'Commit <b>G</b> → hotfix pointer moves to G. The bug is fixed.'},
+    {show:['M','EM','GM'],main:Xmerge,nb:Xtop.E,hot:Xbot.G,t:'Now main &amp; hotfix have <b>diverged</b>. <b>git merge</b> does a <b>three-way merge</b> (base C + both tips) → a new <b>merge commit M with two parents</b>. main moves to M.'},
+    {show:[],main:Xmerge,nb:Xtop.E,hot:Xbot.G,t:'If the changes on <b>main</b> and <b>hotfix</b> touch <b>different lines</b> → auto-merged. <b>Same line</b> → a <b>merge conflict</b> you resolve by hand.'}
+  ];
+  function apply(s){
+    const onset=new Set();
+    for(let i=0;i<=s;i++)steps[i].show.forEach(k=>onset.add(k));
+    Object.keys(node).forEach(k=>reveal(node[k],onset.has(k)));
+    Object.keys(e).forEach(k=>reveal(e[k],onset.has(k)));
+    const st=steps[s];
+    reveal(pMain.g,true); pMain.move(st.main);
+    reveal(pNB.g,st.nb!=null); if(st.nb!=null)pNB.move(st.nb);
+    reveal(pHot.g,st.hot!=null); if(st.hot!=null)pHot.move(st.hot);
+    lead.innerHTML=st.t;
+  }
+  controllers.merge={max:steps.length-1,render:apply};
+})();
+
+/* ---------- slide 9: REBASE ---------- */
+(function(){
+  const svg=el('svg',{viewBox:'0 0 1700 640',preserveAspectRatio:'xMidYMid meet'},document.getElementById('viz-rebase'));
+  defsArrow(svg);
+  const topY=230, botY=470;
+  const X={A:150,B:400,C:650};
+  const Xd={D:900,E2:1150,F2:1400};  // main + rebased E',F'
+  const Xf={E:900,F:1150};           // original feature
+  const node={};
+  node.A=commitNode(svg,X.A,topY,'A'); node.B=commitNode(svg,X.B,topY,'B'); node.C=commitNode(svg,X.C,topY,'C');
+  node.D=commitNode(svg,Xd.D,topY,'D');
+  node.E=commitNode(svg,Xf.E,botY,'E'); node.F=commitNode(svg,Xf.F,botY,'F');
+  node.E2=commitNode(svg,Xd.E2,topY,"E'"); node.F2=commitNode(svg,Xd.F2,topY,"F'");
+  const e={};
+  e.AB=edge(svg,X.A,topY,X.B,topY,{arrow:true}); e.BC=edge(svg,X.B,topY,X.C,topY,{arrow:true});
+  e.CD=edge(svg,X.C,topY,Xd.D,topY,{arrow:true});
+  e.CE=edge(svg,X.C,topY,Xf.E,botY,{arrow:true}); e.EF=edge(svg,Xf.E,botY,Xf.F,botY,{arrow:true});
+  e.DE2=edge(svg,Xd.D,topY,Xd.E2,topY,{arrow:true}); e.E2F2=edge(svg,Xd.E2,topY,Xd.F2,topY,{arrow:true});
+  const lblMain=branchLabel(svg,Xd.D,topY,'main');
+  const lblFeat=branchLabel(svg,Xf.F,botY,'feature',true);
+  const lblFeat2=branchLabel(svg,Xd.F2,topY,'feature');
+  const mainText=lblMain.querySelector('text');
+  // raise "main" higher above the line so it never collides with the rebased "feature" label when both land on F'
+  mainText.setAttribute('y',topY-104);
+  const lead=slides[9].querySelector('#rebase-step');
+  const steps=[
+    {show:['A','B','C','AB','BC','D','CD'],main:Xd.D,feat:false,feat2:false,t:'<b>main</b> is at D. We branched <b>feature</b> earlier at C…'},
+    {show:['E','F','CE','EF'],main:Xd.D,feat:true,feat2:false,t:'…and made commits <b>E</b> and <b>F</b> on it. History has diverged.'},
+    {show:['E2','DE2'],main:Xd.D,feat:true,feat2:false,t:'<b>git rebase main</b>: take the feature commits after C and re-apply them onto D. E → <b>E\'</b> (a brand-new commit).'},
+    {show:['F2','E2F2'],main:Xd.D,feat:false,feat2:true,t:'F → <b>F\'</b>. Same changes, new commits. <b>No merge commit</b>, and history is now <b>linear</b>.'},
+    {show:[],main:Xd.F2,feat:false,feat2:true,t:'<b>git merge feature</b> now fast-forwards main to F\'. Clean, linear history, what many teams prefer.'}
+  ];
+  function apply(s){
+    const onset=new Set(); for(let i=0;i<=s;i++)steps[i].show.forEach(k=>onset.add(k));
+    Object.keys(node).forEach(k=>reveal(node[k],onset.has(k)));
+    Object.keys(e).forEach(k=>reveal(e[k],onset.has(k)));
+    const st=steps[s];
+    reveal(lblFeat,!!st.feat); reveal(lblFeat2,!!st.feat2); reveal(lblMain,true);
+    mainText.setAttribute('x',st.main);
+    lead.innerHTML=st.t;
+  }
+  controllers.rebase={max:steps.length-1,render:apply};
+})();
+
+/* ---------- slide 10: CHERRY-PICK (simple happy flow) ---------- */
+(function(){
+  const svg=el('svg',{viewBox:'0 0 1700 700',preserveAspectRatio:'xMidYMid meet'},document.getElementById('viz-cherry'));
+  defsArrow(svg);
+  const topY=220, botY=470;
+  const X={A:150,B:400,C:650};
+  const Xtop={D:900,Fp:1180};      // main: D, then cherry-picked F'
+  const Xbot={E:900,F:1180};       // feature: E, F
+  const node={};
+  node.A=commitNode(svg,X.A,topY,'A'); node.B=commitNode(svg,X.B,topY,'B'); node.C=commitNode(svg,X.C,topY,'C');
+  node.D=commitNode(svg,Xtop.D,topY,'D');
+  node.E=commitNode(svg,Xbot.E,botY,'E'); node.F=commitNode(svg,Xbot.F,botY,'F');
+  node.Fp=commitNode(svg,Xtop.Fp,topY,"F'");
+  const e={};
+  e.AB=edge(svg,X.A,topY,X.B,topY,{arrow:true}); e.BC=edge(svg,X.B,topY,X.C,topY,{arrow:true});
+  e.CD=edge(svg,X.C,topY,Xtop.D,topY,{arrow:true});
+  e.CE=edge(svg,X.C,topY,Xbot.E,botY,{arrow:true}); e.EF=edge(svg,Xbot.E,botY,Xbot.F,botY,{arrow:true});
+  e.DFp=edge(svg,Xtop.D,topY,Xtop.Fp,topY,{arrow:true});
+  // the "copy" arrow from F up to F'
+  const copyArrow=edge(svg,Xbot.F,botY,Xtop.Fp,topY,{arrow:true,branch:true});
+  const lblMain=branchLabel(svg,Xtop.D,topY,'main');
+  const lblFeat=branchLabel(svg,Xbot.F,botY,'feature',true);
+  const mainText=lblMain.querySelector('text');
+
+  // little tag describing what's inside F (the one change we want)
+  const tagY=botY+118;
+  const tag=el('g',{class:'vshow'},svg);
+  el('rect',{x:Xbot.F-150,y:tagY,width:300,height:46,rx:11,fill:'rgba(59,189,180,.12)',stroke:'var(--teal)','stroke-width':2},tag);
+  el('text',{x:Xbot.F,y:tagY+24,'text-anchor':'middle','dominant-baseline':'central',fill:'#dbe6f5','font-family':'Libre Franklin','font-weight':600,'font-size':19},tag).textContent='F = "fix typo in footer"';
+
+  const lead=slides[10].querySelector('#cherry-step');
+  const steps=[
+    {show:['A','B','C','D','AB','BC','CD'],main:Xtop.D,feat:false,tag:false,t:'<b>main</b>: A→B→C→D is our production line.'},
+    {show:['E','F','CE','EF'],main:Xtop.D,feat:true,tag:false,t:'A <b>feature</b> branch off C has commits E and F. The feature isn\'t finished…'},
+    {show:[],main:Xtop.D,feat:true,tag:true,t:'…but commit <b>F</b> alone is a self-contained fix we want on main <b>now</b>, without bringing E along.'},
+    {show:['Fp','DFp'],copy:true,main:Xtop.Fp,feat:true,tag:true,t:'<b>git cherry-pick F</b> copies just F\'s change onto the tip of main → a new commit <b>F\'</b>.'},
+    {show:['Fp','DFp'],copy:true,main:Xtop.Fp,feat:true,tag:true,t:'Done. main has the fix; <b>feature is untouched</b> and keeps its own history. One commit, copied cleanly. ✅'}
+  ];
+  function apply(s){
+    const onset=new Set(); for(let i=0;i<=s;i++)steps[i].show.forEach(k=>onset.add(k));
+    Object.keys(node).forEach(k=>reveal(node[k],onset.has(k)));
+    Object.keys(e).forEach(k=>reveal(e[k],onset.has(k)));
+    const st=steps[s];
+    reveal(copyArrow,!!st.copy);
+    reveal(lblMain,true); mainText.setAttribute('x',st.main);
+    reveal(lblFeat,!!st.feat);
+    reveal(tag,!!st.tag);
+    lead.innerHTML=st.t;
+  }
+  controllers.cherry={max:steps.length-1,render:apply};
+})();
+
+/* ---------- slide 8: HEAD ---------- */
+(function(){
+  const svg=el('svg',{viewBox:'0 0 1500 720',preserveAspectRatio:'xMidYMid meet'},document.getElementById('viz-head'));
+  defsArrow(svg);
+  const r=40;
+  // a short trunk A->B->C (main), and a feature branch off B: D (lower)
+  const topY=250, botY=460;
+  const X={A:230,B:560,C:890};
+  const Xf={D:890};
+  const node={};
+  node.A=commitNode(svg,X.A,topY,'A'); node.B=commitNode(svg,X.B,topY,'B'); node.C=commitNode(svg,X.C,topY,'C');
+  node.D=commitNode(svg,Xf.D,botY,'D');
+  const e={};
+  e.AB=edge(svg,X.A,topY,X.B,topY,{arrow:true}); e.BC=edge(svg,X.B,topY,X.C,topY,{arrow:true});
+  e.BD=edge(svg,X.B,topY,Xf.D,botY,{arrow:true});
+  // branch pointers
+  const pMain=movingPtr(svg,'main',topY,false);
+  const pFeat=movingPtr(svg,'feature',botY,true);
+  pMain.move(X.C); pFeat.move(Xf.D);
+  // HEAD pointer (amber) can jump to either line, so it gets its own builder.
+  const head=(function(){
+    const amber='#f0a85a',boxW=120,boxH=42;
+    const g=el('g',{class:'vshow'},svg);
+    g.style.transition='transform .55s cubic-bezier(.4,1.1,.4,1)';
+    const rect=el('rect',{x:-boxW/2,width:boxW,height:boxH,rx:11,fill:'rgba(240,168,90,.16)',stroke:amber,'stroke-width':2},g);
+    const txt=el('text',{x:0,'text-anchor':'middle','dominant-baseline':'central',fill:amber,'font-family':'Libre Franklin','font-weight':800,'font-size':21},g);txt.textContent='HEAD';
+    const line=el('line',{x1:0,x2:0,stroke:amber,'stroke-width':2.4,'marker-end':'url(#arrow)'},g);
+    // HEAD sits one level further from the line than the branch label (gap 158 vs 74)
+    function moveY(x,nodeY){
+      const below = nodeY===botY;
+      const boxY = below ? nodeY+r+158 : nodeY-r-158-boxH;
+      rect.setAttribute('y',boxY); txt.setAttribute('y',boxY+boxH/2+1);
+      line.setAttribute('y1', below?boxY:boxY+boxH);
+      line.setAttribute('y2', below?nodeY+r+8:nodeY-r-8);
+      g.setAttribute('transform','translate('+x+',0)');
+    }
+    return {g,moveY};
+  })();
+  const lead=slides[7].querySelector('#head-step');
+  const steps=[
+    {show:['A','B','C','AB','BC'],main:X.C,feat:false,headAt:X.C,headY:topY,t:'<b>main</b> points at C. <b>HEAD</b> points at <b>main</b>, that\'s "where you are". A commit here moves <i>both</i> forward together.'},
+    {show:['D','BD'],main:X.C,feat:true,headAt:X.C,headY:topY,t:'We branch <b>feature</b> at B and commit <b>D</b>. But HEAD is still on main, so your working tree still shows C.'},
+    {show:[],main:X.C,feat:true,headAt:Xf.D,headY:botY,t:'<b>git switch feature</b> → HEAD detaches from main and re-attaches to <b>feature</b>. Now you\'re on D.'},
+    {show:[],main:X.C,feat:true,headAt:Xf.D,headY:botY,t:'HEAD is the answer to "what does the next commit attach to?". It follows you as you <span class="mono">switch</span> between branches.'}
+  ];
+  function apply(s){
+    const onset=new Set(); for(let i=0;i<=s;i++)steps[i].show.forEach(k=>onset.add(k));
+    Object.keys(node).forEach(k=>reveal(node[k],onset.has(k)));
+    Object.keys(e).forEach(k=>reveal(e[k],onset.has(k)));
+    const st=steps[s];
+    reveal(pMain.g,true); pMain.move(st.main);
+    reveal(pFeat.g,!!st.feat); if(st.feat)pFeat.move(Xf.D);
+    reveal(head.g,true); head.moveY(st.headAt,st.headY);
+    lead.innerHTML=st.t;
+  }
+  controllers.head={max:steps.length-1,render:apply};
+})();
+
+/* ---------- slide 11: REMOTE ---------- */
+(function(){
+  const svg=el('svg',{viewBox:'0 0 1500 640',preserveAspectRatio:'xMidYMid meet'},document.getElementById('viz-remote'));
+  defsArrow(svg);
+  // two repo boxes: your machine (left) and origin (right)
+  function repo(x,title,sub,cls){
+    const g=el('g',{class:'vpop'},svg);
+    el('rect',{x:x-220,y:150,width:440,height:230,rx:18,fill:'rgba(255,255,255,.04)',stroke:cls==='remote'?'var(--peri2)':'var(--teal)','stroke-width':2.5},g);
+    el('text',{x,y:120,'text-anchor':'middle',fill:'#fff','font-family':'Libre Franklin','font-weight':800,'font-size':26},g).textContent=title;
+    el('text',{x,y:348,'text-anchor':'middle',fill:'#9fb6cf','font-family':'IBM Plex Mono','font-size':15},g).textContent=sub;
+    // three little commits inside
+    [-110,0,110].forEach((dx,i)=>{const cx=x+dx;el('circle',{cx,cy:255,r:28,fill:'transparent',stroke:cls==='remote'?'var(--peri2)':'var(--teal)','stroke-width':2.4},g);el('text',{x:cx,y:255,'text-anchor':'middle','dominant-baseline':'central',fill:'#fff','font-family':'Libre Franklin','font-weight':700,'font-size':18},g).textContent=String.fromCharCode(65+i);if(i>0)el('line',{x1:cx-110+28,y1:255,x2:cx-28,y2:255,stroke:'#fff','stroke-width':2,'marker-end':'url(#arrow)'},g);});
+    return g;
+  }
+  const Lx=440, Rx=1060;
+  const local=repo(Lx,'your machine','full clone','');
+  const remote=repo(Rx,'origin','the shared server','remote');
+  // arrows between them
+  function flow(y,dir,label,cls){
+    const g=el('g',{class:'vdraw'},svg);
+    const x1=dir>0?Lx+225:Rx-225, x2=dir>0?Rx-225:Lx+225;
+    el('line',{x1,y1:y,x2,y2:y,stroke:cls==='peri'?'var(--peri2)':'var(--teal-l)','stroke-width':3,'marker-end':'url(#arrow)'},g);
+    el('text',{x:(Lx+Rx)/2,y:y-14,'text-anchor':'middle',fill:cls==='peri'?'var(--peri2)':'var(--teal-l)','font-family':'IBM Plex Mono','font-weight':600,'font-size':17},g).textContent=label;
+    return g;
+  }
+  const fClone=flow(440,-1,'git clone  ←  copy everything down','peri');
+  const fPush=flow(510,1,'git push  →  send your commits up','teal');
+  const fPull=flow(580,-1,'git pull  ←  bring their commits down','peri');
+  const lead=slides[11].querySelector('#remote-step');
+  const steps=[
+    {show:[local],t:'Your repo on <b>your machine</b> is a complete copy of the history. You can commit, branch, and work fully <b>offline</b>.'},
+    {show:[remote],t:'A <b>remote</b> (usually called <span class="mono">origin</span>) is just another copy of the same repo, on a shared server (GitHub, GitLab…).'},
+    {show:[fClone],t:'<span class="mono">git clone</span> made your copy in the first place: it pulls down the <b>entire history</b>, not just the latest files.'},
+    {show:[fPush],t:'<span class="mono">git push</span> sends <i>your</i> new commits up to origin so teammates can get them.'},
+    {show:[fPull],t:'<span class="mono">git pull</span> brings <i>their</i> new commits down to you. We use push/pull for real in later labs.'}
+  ];
+  function apply(s){
+    const onset=new Set(); for(let i=0;i<=s;i++)steps[i].show.forEach(k=>onset.add(k));
+    [local,remote,fClone,fPush,fPull].forEach(g=>reveal(g,onset.has(g)));
+    lead.innerHTML=steps[s].t;
+  }
+  controllers.remote={max:steps.length-1,render:apply};
+})();
+
+/* ---------- slide 16: vocabulary summary (step-through) ---------- */
+(function(){
+  const svg=el('svg',{viewBox:'0 0 950 760',preserveAspectRatio:'xMidYMid meet'},document.getElementById('viz-vocab'));
+  defsArrow(svg);
+  const MONO="'IBM Plex Mono'",SANS="'Libre Franklin'";
+  // reveal layers, in step order
+  const gWT=el('g',{class:'vshow'},svg), gStage=el('g',{class:'vshow'},svg),
+        gCommit=el('g',{class:'vshow'},svg), gReset=el('g',{class:'vshow'},svg),
+        gRemote=el('g',{class:'vshow'},svg);
+  function T(p,x,y,s,fill,size,opts={}){
+    const a={x,y,'text-anchor':opts.anchor||'middle',fill,'font-family':opts.sans?SANS:MONO,'font-weight':opts.w||600,'font-size':size};
+    if(opts.ls)a['letter-spacing']=opts.ls;
+    const t=el('text',a,p);t.textContent=s;return t;
+  }
+  function box(p,cx,w,y,h,remote){
+    el('rect',{x:cx-w/2,y,width:w,height:h,rx:18,fill:'rgba(255,255,255,.04)',stroke:remote?'var(--peri2)':'var(--teal)','stroke-width':2.5},p);
+  }
+  /* ===== part 1: the files ===== */
+  el('rect',{x:32,y:24,width:886,height:296,rx:20,fill:'none',stroke:'rgba(255,255,255,.16)','stroke-width':1.5,'stroke-dasharray':'7 7'},gWT);
+  T(gWT,52,54,'FILES','#9fb6cf',11.5,{anchor:'start',ls:2});
+  box(gWT,225,310,88,200);
+  T(gWT,225,72,'working tree','#fff',22,{sans:1,w:800});
+  [['📄 main.py  ●',150],['📄 test_app.py  ●',184],['📄 README.md',218]]
+    .forEach(([s,y])=>T(gWT,105,y,s,'#dbe6f5',14.5,{anchor:'start',w:500}));
+  T(gWT,225,262,'your files on disk','#9fb6cf',12);
+  box(gStage,715,310,88,200);
+  T(gStage,715,72,'staging area','#fff',22,{sans:1,w:800});
+  [['+ main.py',158],['+ test_app.py',192]].forEach(([s,y])=>T(gStage,600,y,s,'var(--teal-l)',14.5,{anchor:'start'}));
+  T(gStage,715,262,'what the next commit will contain','#9fb6cf',12);
+  el('line',{x1:380,y1:188,x2:550,y2:188,stroke:'var(--teal-l)','stroke-width':3,'marker-end':'url(#arrow)'},gStage);
+  T(gStage,470,165,'git add','var(--teal-l)',16);
+  /* ===== part 2: the commits (repo + the commit bridge) ===== */
+  el('rect',{x:32,y:388,width:886,height:330,rx:20,fill:'none',stroke:'rgba(255,255,255,.16)','stroke-width':1.5,'stroke-dasharray':'7 7'},gCommit);
+  T(gCommit,52,418,'COMMITS','#9fb6cf',11.5,{anchor:'start',ls:2});
+  box(gCommit,285,430,430,260);
+  T(gCommit,92,464,'local repo','#fff',22,{sans:1,w:800,anchor:'start'});
+  T(gCommit,92,662,'.git/ — the full history','#9fb6cf',11.5,{anchor:'start'});
+  function chain(p,cx,color,cy,dx,r){
+    [-dx,0,dx].forEach((d,i)=>{
+      const x=cx+d;
+      el('circle',{cx:x,cy,r,fill:'transparent',stroke:color,'stroke-width':2.4},p);
+      T(p,x,cy+1,String.fromCharCode(65+i),'#fff',r>=19?15:13,{sans:1,w:700});
+      if(i>0)el('line',{x1:x-dx+r,y1:cy,x2:x-r-10,y2:cy,stroke:'#fff','stroke-width':2.4,'marker-end':'url(#arrow)'},p);
+    });
+  }
+  chain(gCommit,195,'var(--teal)',508,78,19);
+  T(gCommit,302,512,'main','var(--teal-l)',13,{sans:1,anchor:'start'});
+  // commit bridge: staged files → commit C
+  el('path',{d:'M715,294 L715,354 L273,354 L273,479',fill:'none',stroke:'var(--teal-l)','stroke-width':3,'stroke-linejoin':'round','marker-end':'url(#arrow)'},gCommit);
+  T(gCommit,500,340,'git commit','var(--teal-l)',16);
+  // what C contains: one clean snapshot card, linked from C
+  el('line',{x1:287,y1:521,x2:322,y2:556,stroke:'var(--teal)','stroke-width':2},gCommit);
+  el('rect',{x:316,y:552,width:160,height:96,rx:10,fill:'#1a2c46',stroke:'rgba(255,255,255,.12)','stroke-width':1.2},gCommit);
+  T(gCommit,330,574,'C = A FULL SNAPSHOT','#9fb6cf',9.5,{anchor:'start',ls:1.2});
+  el('line',{x1:330,y1:584,x2:462,y2:584,stroke:'rgba(255,255,255,.12)','stroke-width':1},gCommit);
+  [['main.py',604],['test_app.py',622],['README.md',640]].forEach(([s,y])=>{
+    el('circle',{cx:336,cy:y-3.5,r:2.5,fill:'var(--teal)'},gCommit);
+    T(gCommit,346,y,s,'#dbe6f5',10.5,{anchor:'start'});
+  });
+  /* reset --hard: main glides back down the chain */
+  el('path',{d:'M273,532 Q195,584 117,532',fill:'none',stroke:'#f0b765','stroke-width':2.6,'marker-end':'url(#arrow)'},gReset);
+  T(gReset,195,614,'git reset --hard','#f0b765',13);
+  T(gReset,195,634,'move main back · discard changes','#f0b765',10.5);
+  /* ===== remotes: origin + push / pull / clone ===== */
+  box(gRemote,790,200,430,260,true);
+  T(gRemote,702,464,'origin','#fff',22,{sans:1,w:800,anchor:'start'});
+  chain(gRemote,790,'var(--peri2)',530,65,15);
+  T(gRemote,855,570,'main','var(--teal-l)',12,{sans:1});
+  T(gRemote,790,650,'the shared copy (GitHub)','#9fb6cf',11);
+  function flow(y,rtl,label,sub,color){
+    const x1=rtl?690:500,x2=rtl?510:680;
+    el('line',{x1,y1:y,x2,y2:y,stroke:color,'stroke-width':3,'marker-end':'url(#arrow)'},gRemote);
+    T(gRemote,595,y-20,label,color,14);
+    T(gRemote,595,y+22,sub,'#9fb6cf',10);
+  }
+  flow(488,false,'git push','send your new commits up','var(--teal-l)');
+  flow(562,true,'git pull','update a repo you already have','var(--peri2)');
+  flow(636,true,'git clone','day one — copy the whole repo','var(--peri2)');
+  /* ===== step controller ===== */
+  const side=slides[15].querySelector('.vside');
+  const lead=slides[15].querySelector('#vocab-step');
+  const layers=[gWT,gStage,gCommit,gReset,gRemote];
+  const steps=[
+    'Start in the <b>working tree</b>: the files on your disk. Two files have edits (●).',
+    '<span class="mono">git add</span> stages exactly the changes you pick — the <b>staging area</b> is the draft of your next commit.',
+    '<span class="mono">git commit</span> turns what\'s staged into <b>commit C</b>: it points to a <b>tree</b> — a full snapshot of <b>all</b> your files. <b>main</b> moves to C.',
+    'Regret it? <span class="mono">git reset --hard</span> moves <b>main</b> back to an earlier commit — and throws your changes away.',
+    '<b>origin</b> is just another copy of the repo: <span class="mono">clone</span> it once, then <span class="mono">push</span> yours up and <span class="mono">pull</span> theirs down.',
+    'The rest of the vocabulary: safe <b>inspection</b> and the <b>pointer verbs</b>. And <span class="mono">git init</span> creates all of this in the first place.'
+  ];
+  controllers.vocab={max:5,render(s){
+    layers.forEach((g,i)=>reveal(g,i<=s));
+    side.classList.toggle('show',s>=5);
+    lead.innerHTML=steps[s];
+  }};
+})();
+
+/* ============ wire controllers to their slides + reset on entry ============ */
+const ctrlBySlide={3:'blob',4:'tree',5:'commit',6:'branch',7:'head',8:'merge',9:'rebase',10:'cherry',11:'remote',15:'vocab'};
+const bound={};
+for(const idx in ctrlBySlide){const name=ctrlBySlide[idx];bound[idx]=bindControls(slides[idx],controllers[name]);}
+// reset a slide's animation when you scroll onto it
+let lastIdx=-1;
+function onView(){const i=curIndex();if(i!==lastIdx){lastIdx=i;if(bound[i])bound[i].reset();}}
+deck.addEventListener('scroll',()=>requestAnimationFrame(onView));
+onView();
+</script>
+</body>
+</html>

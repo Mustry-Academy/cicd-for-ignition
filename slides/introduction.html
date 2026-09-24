@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 01 · Introduction · CI/CD for Ignition</title>
+<link rel="icon" type="image/png" href="logos/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0e1b2e;
+  --navy2:#15233a;
+  --blue:#2563eb;
+  --blue-d:#1d4ed8;
+  --peri:#93a9f0;
+  --peri2:#a8bef7;
+  --peri-soft:#e8eefc;
+  --bg:#eef1f6;
+  --panel:#ffffff;
+  --panel2:#f5f8fc;
+  --line:#e3e9f1;
+  --line2:#d3dcea;
+  --txt:#15233a;
+  --txt-dim:#5a6a7e;
+  --txt-faint:#94a2b4;
+  --good:#16a34a; --good-soft:#e3f6ea;
+  --warn:#d97706; --warn-soft:#fbf0db;
+  --shadow:0 1px 2px rgba(14,27,46,.05),0 10px 30px -16px rgba(14,27,46,.28);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--navy);
+  color:var(--txt);
+  font-family:'Libre Franklin',sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+
+/* ---- deck mechanics ---- */
+.deck{height:100vh;width:100vw;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth}
+.deck::-webkit-scrollbar{display:none}
+.slide{
+  height:100vh;width:100vw;scroll-snap-align:start;scroll-snap-stop:always;
+  display:flex;flex-direction:column;position:relative;
+  padding:64px 64px 40px;background:var(--bg);
+}
+.slide.dark{background:radial-gradient(120% 120% at 80% -10%,#1c3358 0%,#0e1b2e 55%)}
+
+/* progress + nav */
+.hud{position:fixed;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.08);z-index:50}
+.hud .bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--peri));width:0;transition:width .3s}
+.pager{position:fixed;right:22px;bottom:18px;z-index:50;font-size:11px;color:var(--txt-faint);font-family:'IBM Plex Mono'}
+.pager.on-dark{color:rgba(255,255,255,.55)}
+.hint{position:fixed;left:22px;bottom:16px;z-index:50;font-size:10.5px;color:var(--txt-faint);letter-spacing:.3px}
+.hint.on-dark{color:rgba(255,255,255,.4)}
+
+/* ---- logo ---- */
+.brandrow{display:flex;align-items:center;gap:13px}
+.logo-img{height:30px;width:auto;display:block}
+.logo-img.logo-lg{height:44px}
+
+/* slide chrome */
+.eyebrow{font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:14px}
+.dark .eyebrow{color:var(--peri2)}
+.title{font-weight:800;font-size:40px;line-height:1.04;letter-spacing:-1px;color:var(--navy)}
+.dark .title{color:#fff}
+.lead{font-size:16px;color:var(--txt-dim);line-height:1.5;max-width:760px;margin-top:14px}
+.dark .lead{color:#c4cfde}
+.sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:26px}
+.sechead .num{font-family:'IBM Plex Mono';font-size:13px;font-weight:600;color:#fff;background:var(--blue);padding:5px 11px;border-radius:8px;letter-spacing:.5px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:48px}
+.topbar .stage{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt-faint);font-weight:600}
+.topbar .stage.on-dark{color:rgba(255,255,255,.5)}
+
+/* ---- cover ---- */
+.cover{flex:1;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.cover .big{font-weight:800;font-size:60px;line-height:1.02;letter-spacing:-1.6px;color:#fff;max-width:16ch}
+.cover .big em{font-style:normal;color:var(--peri2)}
+.cover .sub{font-size:17px;color:#aebbcd;max-width:62ch;line-height:1.55;margin-top:18px}
+.cover .for{margin-top:34px;display:flex;align-items:center;gap:16px;font-size:13px;color:#8fa0b6;flex-wrap:wrap}
+.cover .for .pill{border:1px solid rgba(255,255,255,.16);border-radius:30px;padding:7px 15px;color:#dbe4f0}
+.cover .for .pill b{color:#fff;font-weight:700}
+
+/* ---- generic layout ---- */
+.body{flex:1;display:flex;flex-direction:column;justify-content:center}
+.cols{display:grid;gap:22px}
+
+/* bullets */
+.checks{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+.checks li{list-style:none;display:flex;gap:13px;align-items:flex-start;font-size:15px;color:var(--txt-dim);line-height:1.5}
+.checks li b{color:var(--txt);font-weight:700}
+.ck{flex:none;width:22px;height:22px;border-radius:7px;background:var(--peri-soft);display:grid;place-items:center;margin-top:1px}
+.ck svg{width:12px;height:12px;color:var(--blue)}
+.ck .mono{font-size:11px;color:var(--blue);font-weight:600}
+.dark .checks li{color:#c4cfde}
+.dark .checks li b{color:#fff}
+.dark .ck{background:rgba(147,169,240,.18)}
+.dark .ck svg{color:var(--peri2)}
+.dark .ck .mono{color:var(--peri2)}
+
+/* roadmap */
+.road{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:8px}
+.phase{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.phase:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--blue)}
+.phase.p2:before{background:var(--peri)}
+.phase.p3:before{background:linear-gradient(180deg,var(--blue),var(--peri))}
+.phase.p4:before{background:var(--navy)}
+.phase .pn{font-family:'IBM Plex Mono';font-size:11px;color:var(--txt-faint);font-weight:600;letter-spacing:1px}
+.phase h4{font-size:18px;font-weight:800;letter-spacing:-.4px;margin:8px 0 4px}
+.phase p{font-size:12.5px;color:var(--txt-dim);line-height:1.5;margin-top:8px}
+
+/* cards / rhythm */
+.tiles{display:grid;gap:16px;grid-template-columns:repeat(4,1fr);margin-top:6px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+.tile .step{font-family:'IBM Plex Mono';font-size:11px;color:var(--blue);font-weight:600;letter-spacing:1px}
+.tile .val{font-weight:800;font-size:24px;letter-spacing:-.5px;margin-top:10px;color:var(--navy)}
+.tile .note{font-size:12.5px;color:var(--txt-faint);margin-top:8px;line-height:1.45}
+
+.callout{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px 26px;box-shadow:var(--shadow)}
+.callout .lab{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:10px}
+.callout p{font-size:15px;color:var(--txt-dim);line-height:1.55}
+.callout p b{color:var(--txt);font-weight:700}
+
+.foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--txt-faint);padding-top:24px}
+.dark .foot{color:rgba(255,255,255,.45)}
+
+@media print{
+  body{overflow:visible}
+  .deck{height:auto;overflow:visible}
+  .slide{height:100vh;page-break-after:always;break-after:page}
+  .hud,.pager,.hint{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- 1 · COVER -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img logo-lg" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">Lab 01 · 09:00-09:30</div>
+  </div>
+
+  <div class="cover">
+    <div class="eyebrow">CI/CD for Ignition · Lab 01</div>
+    <div class="big">Welcome to the <em>series</em>.</div>
+    <div class="sub">Eight labs that take you from Git fundamentals to a full CI/CD pipeline, applied to Ignition, built to be practical for your day-to-day work. Today we start with the foundation everything else stands on: Git.</div>
+    <div class="for">
+      <span>Guided by</span>
+      <span class="pill"><b>Sam</b></span>
+      <span class="pill"><b>Jasper</b></span>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Mustry Academy</span>
+    <span>Git Fundamentals</span>
+  </div>
+</section>
+
+<!-- 2 · WHAT THIS COURSE IS ABOUT -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow">
+      <img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage">Introduction</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">01</span>
+      <div>
+        <div class="title">What this course is about</div>
+        <div class="lead">A <b>CI/CD course for Ignition</b>: not a pure Git course, not a pure CI/CD course.</div>
+      </div>
+    </div>
+    <ul class="checks" style="max-width:880px">
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We go deep into Git and CI/CD</b>, but always applied to Ignition, and always made very practical for that setting.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Practical tools for your day-to-day work.</b> The goal is what you can use on Monday, not theory for its own sake.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Git first.</b> Every CI/CD pipeline triggers off, and reasons about, Git history. If this foundation is shaky, nothing downstream is trustworthy.</span></li>
+    </ul>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 01 · Git Fundamentals</span></div>
+</section>
+
+<!-- 3 · HOW THE SERIES FITS TOGETHER -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow">
+      <img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage">Introduction</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">02</span>
+      <div>
+        <div class="title">How the series fits together</div>
+        <div class="lead"><b>8 labs in total.</b> Each builds on the last, and each lab has its own Git repo, so you always get a fresh start, even if you didn't finish the previous one.</div>
+      </div>
+    </div>
+    <div class="road">
+      <div class="phase p1">
+        <div class="pn">LAB 01 · TODAY</div>
+        <h4>Git Fundamentals</h4>
+        <p>The object model and the everyday workflow: the foundation a pipeline stands on.</p>
+      </div>
+      <div class="phase p2">
+        <div class="pn">LABS 02-07</div>
+        <h4>Building up</h4>
+        <p>Branching &amp; review, automated testing, build &amp; packaging, continuous delivery, all applied to Ignition.</p>
+      </div>
+      <div class="phase p3">
+        <div class="pn">LAB 08 · FINALE</div>
+        <h4>The big challenge</h4>
+        <p>A larger build you complete in breakout rooms, with us there to guide you.</p>
+      </div>
+      <div class="phase p4">
+        <div class="pn">THROUGHOUT</div>
+        <h4>Own repo per lab</h4>
+        <p>Fresh start every time, so a missed lab never blocks the next one.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 01 today → Lab 08 capstone</span></div>
+</section>
+
+<!-- 4 · FORK THE REPO -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow">
+      <img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage">Introduction</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">03</span>
+      <div>
+        <div class="title">Get your own copy — fork the repo</div>
+        <div class="lead">Each lab lives in a repo on <b>GitHub</b>. <b>Fork</b> it to your own account first — that gives you a personal copy to commit to, branch, and break things in safely.</div>
+      </div>
+    </div>
+    <div class="tiles">
+      <div class="tile">
+        <div class="step">STEP 01</div>
+        <div class="val">Open the repo</div>
+        <div class="note">Go to the lab's GitHub page — we'll drop the link in the chat.</div>
+      </div>
+      <div class="tile">
+        <div class="step">STEP 02</div>
+        <div class="val">Click Fork</div>
+        <div class="note">Top-right of the page. Pick <b>your own account</b> as the owner and confirm.</div>
+      </div>
+      <div class="tile">
+        <div class="step">STEP 03</div>
+        <div class="val">Clone it</div>
+        <div class="note">Copy your fork's URL and clone it to your machine, or open it in VS Code.</div>
+      </div>
+      <div class="tile">
+        <div class="step">STEP 04</div>
+        <div class="val">Work freely</div>
+        <div class="note">Commit, branch and push — it's all in <b>your</b> fork, separate from everyone else.</div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:22px">
+      <div class="lab">Clone your fork</div>
+      <p><span class="mono" style="color:var(--blue-d)">git clone https://github.com/&lt;your-username&gt;/cicd-lab-01-git-fundamentals.git</span><br>Because it's <b>your</b> fork, you can <span class="mono">push</span> to it freely — your work never collides with anyone else's.</p>
+    </div>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Fork → clone → work in your own copy</span></div>
+</section>
+
+<!-- 5 · WHY NOT WINDOWS -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow">
+      <img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage">Introduction</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">04</span>
+      <div>
+        <div class="title">Why we're not using Windows</div>
+        <div class="lead">Nothing against Windows — but <b>CI/CD lives in the Linux world</b>, so that's where we work.</div>
+      </div>
+    </div>
+    <ul class="checks" style="max-width:880px">
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>The pipeline runs on Linux.</b> GitHub Actions runners are Linux machines — working the same way locally means what works on your laptop also works in CI.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Deployments land on Linux.</b> Production Ignition gateways run on Linux-based systems — servers and containers alike. What we build here has to run <b>there</b>.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>File paths are different.</b> Windows says <span class="mono">C:\Projects\app</span>, Linux says <span class="mono">/home/you/app</span> — different separators, no drive letters, and case-sensitive. Scripts that mix the two break in confusing ways.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Line endings: CRLF vs LF.</b> Windows ends lines with <span class="mono">CRLF</span>, Linux with <span class="mono">LF</span>. One stray <span class="mono">CR</span> silently breaks shell scripts and pollutes Git diffs — a classic time-sink we skip entirely.</span></li>
+    </ul>
+    <div class="callout" style="margin-top:22px">
+      <div class="lab">On a Windows machine?</div>
+      <p>You're not excluded — install <b>WSL2</b>, enable Docker Desktop's <b>WSL2 backend</b>, and run all lab commands <b>inside WSL</b>, not in PowerShell or Git Bash. See the platform notes in your welcome package.</p>
+    </div>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Linux, macOS, or Windows + WSL2</span></div>
+</section>
+
+<!-- 6 · HOW THE LABS WORK -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow">
+      <img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage">Introduction</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">05</span>
+      <div>
+        <div class="title">How the labs work</div>
+        <div class="lead">Every lab follows the same rhythm. Optional stretch challenges if you finish early.</div>
+      </div>
+    </div>
+    <div class="tiles">
+      <div class="tile">
+        <div class="step">PHASE 01</div>
+        <div class="val">Teaching</div>
+        <div class="note">We lay down the concepts together.</div>
+      </div>
+      <div class="tile">
+        <div class="step">PHASE 02</div>
+        <div class="val">We-do</div>
+        <div class="note">Instructor live-codes the moves.</div>
+      </div>
+      <div class="tile">
+        <div class="step">PHASE 03</div>
+        <div class="val">You-do</div>
+        <div class="note">Hands-on in <b>breakout rooms</b>.</div>
+      </div>
+      <div class="tile">
+        <div class="step">PHASE 04</div>
+        <div class="val">Debrief</div>
+        <div class="note">Wrap-up &amp; questions.</div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:22px">
+      <div class="lab">Questions</div>
+      <p><b>Interrupt us anytime</b> — if something isn't clear to you, it probably isn't clear to others either. And for <b>sensitive or company-specific questions</b>, join the <b>office hours at the end of the day</b>.</p>
+    </div>
+    <p class="lead" style="margin-top:18px">Notes you take in <span class="mono">NOTES.local.md</span> are gitignored, so they're yours to keep.</p>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Teaching → We-do → You-do → Debrief</span></div>
+</section>
+
+<!-- 7 · BREAKOUT ROOM RULES -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow">
+      <img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage">Introduction</div>
+  </div>
+
+  <div class="body">
+    <div class="sechead">
+      <span class="num">06</span>
+      <div>
+        <div class="title">Breakout room rules</div>
+        <div class="lead">A "look over your shoulder" kind of class.</div>
+      </div>
+    </div>
+    <ul class="checks" style="max-width:880px">
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Sam and Jasper float</b> around the breakout rooms to see who could use some help.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Everyone shares their screen</b> at the same time. That's what lets us look over your shoulder and jump in where it's useful.</span></li>
+    </ul>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Share your screen in breakout rooms</span></div>
+</section>
+
+<!-- 8 · AI AGENTS -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow">
+      <img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions">
+    </div>
+    <div class="stage on-dark">Introduction</div>
+  </div>
+
+  <div class="body">
+    <div class="eyebrow">A challenge to you</div>
+    <div class="title" style="max-width:18ch">AI can probably one-shot these labs.</div>
+    <p class="lead" style="margin-top:18px;max-width:720px">We'd challenge you to do this class <b style="color:#fff">as much as possible without it</b>, so you actually get the fundamentals.</p>
+    <p class="lead" style="margin-top:14px;max-width:720px">Once you own the fundamentals, you'll steer AI <b style="color:#fff">far better</b> when you build this out for yourself.</p>
+  </div>
+
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Next up → The Oatmakers story</span></div>
+</section>
+
+</div>
+
+<div class="hud"><div class="bar" id="bar"></div></div>
+<div class="pager" id="pager">01 / 08</div>
+<div class="hint" id="hint">↑ ↓ / scroll to navigate</div>
+
+<script>
+const deck=document.getElementById('deck');
+const slides=[...document.querySelectorAll('.slide')];
+const bar=document.getElementById('bar');
+const pager=document.getElementById('pager');
+const hint=document.getElementById('hint');
+function pad(n){return String(n).padStart(2,'0')}
+const POS_KEY='deckpos:'+location.pathname;
+function update(){
+  const i=Math.round(deck.scrollTop/window.innerHeight);
+  bar.style.width=((i)/(slides.length-1)*100)+'%';
+  pager.textContent=pad(i+1)+' / '+pad(slides.length);
+  const dark=slides[i]&&slides[i].classList.contains('dark');
+  pager.classList.toggle('on-dark',dark);
+  hint.classList.toggle('on-dark',dark);
+  try{localStorage.setItem(POS_KEY,String(i))}catch(e){}
+}
+// On a reload (Live Server save, or manual F5), jump back to the slide you were
+// on. A fresh open (new tab / typed URL) is nav type 'navigate' → starts at 1.
+(function restorePos(){
+  try{
+    const nav=performance.getEntriesByType('navigation')[0];
+    if(!nav||nav.type!=='reload')return;
+    const saved=parseInt(localStorage.getItem(POS_KEY)||'0',10);
+    if(saved>0)deck.scrollTop=saved*window.innerHeight;
+  }catch(e){}
+})();
+deck.addEventListener('scroll',()=>{requestAnimationFrame(update)});
+window.addEventListener('keydown',e=>{
+  const i=Math.round(deck.scrollTop/window.innerHeight);
+  if(e.key==='ArrowDown'||e.key==='PageDown'||e.key===' '){e.preventDefault();deck.scrollTo({top:(i+1)*window.innerHeight})}
+  if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();deck.scrollTo({top:(i-1)*window.innerHeight})}
+  if(e.key==='Home'){deck.scrollTo({top:0})}
+  if(e.key==='End'){deck.scrollTo({top:slides.length*window.innerHeight})}
+});
+update();
+setTimeout(()=>{hint.style.transition='opacity .6s';hint.style.opacity='0'},4200);
+</script>
+</body>
+</html>
