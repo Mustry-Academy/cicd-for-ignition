@@ -48,7 +48,7 @@ payload (`view.json`, etc.). That manifest is what the gateway reads to track th
 the gateway rewrites it on every interaction (timestamps, signatures), this repo ships a normalized
 diff driver plus `scripts/clean-ignition-resource-churn.sh` to undo the volatile-only rewrites.
 
-This is the bread and butter of CI/CD for Ignition. The whole `projects/<name>/` directory is what the `deploy.yml` workflow ships onto the **test** gateway (on push to `main`) and what `release.yml` ships onto **production** (on tag push from `main`) in the deploy part. On the **local** gateway it just sits there via bind mount — edit-and-scan, no copy step. This is what the deploy part of the lab builds.
+This is the bread and butter of CI/CD for Ignition. The whole `projects/<name>/` directory is what the `lab04-deploy.yml` workflow ships onto the **test** gateway (on push to `main`) and what `lab04-release.yml` ships onto **production** (on tag push from `main`) in the deploy part. On the **local** gateway it just sits there via bind mount — edit-and-scan, no copy step. This is what the deploy part of the lab builds.
 
 ### `config/`
 

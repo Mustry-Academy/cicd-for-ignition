@@ -1,69 +1,83 @@
-# Deploy to the test gateway on push to main.
+# Release to the production gateway on tag push (GitHub Flow release).
 #
-# GitHub Flow: `main` is the single long-lived branch. Feature branches merge into
-# it via PR, and every push here ships the working tree to the TEST gateway.
-# Releases to production happen separately (tag on main → release.yml).
+# GitHub Flow: `main` is always deployable. When you want to cut a release, tag a
+# commit on `main` `lab04-vX.Y.Z`. That tag fires this workflow. The tag pins the exact
+# commit production ships — "release what you froze on main".
 #
-# File-based deploy via `docker cp` — the runner is a container without the
-# host's paths, so it ships files INTO the test gateway's container and then
-# asks the gateway to scan. The gateway's projects/ and config/ are
-# bind-mounted from ./gateways/test on the host, so you can verify what a
-# deploy shipped with `ls gateways/test/projects`. Runs on a self-hosted
-# runner with the `lab04` label that has access to the same Docker daemon
-# as the test gateway container.
+# Triggers on tags matching `lab04-v*` (e.g. lab04-v1.0.0, lab04-v2.3.1-rc1) —
+# the lab prefix keeps other labs' tags in this repo from firing it. Also supports
+# manual dispatch with a tag input — that's the rollback button: re-deploy any
+# already-released tag to production without touching git.
 #
-# Required setup on GitHub (Settings → Environments → "lab-gateway-test"):
-#   Secret:    IGNITION_API_KEY    The IGNITION_API_KEY_TEST value from your
+# Mechanics: file-based deploy via `docker cp` into the production gateway's
+# container, then trigger a scan. The gateway's projects/ and config/ are
+# bind-mounted from ./gateways/production on the host for easy verification.
+# Identical to lab04-deploy.yml except for the environment, container name, and
+# default URL.
+#
+# Required setup on GitHub (Settings → Environments → "lab04-gateway-production"):
+#   Secret:    IGNITION_API_KEY    The IGNITION_API_KEY_PRODUCTION value from your
 #                                  .env (scripts/setup.sh generated it,
 #                                  unique to your clone).
 #   Variable:  IGNITION_URL        Optional. Defaults to
-#                                  http://ignition-test:8088 — the in-compose
+#                                  http://ignition-production:8088 — the in-compose
 #                                  service name (the lab's bundled runner runs
 #                                  on the same docker network as the gateways).
-#                                  Override to http://localhost:8089 if your
+#                                  Override to http://localhost:8090 if your
 #                                  runner is on the host instead.
-#   Variable:  IGNITION_CONTAINER  Optional. Defaults to lab04-ignition-test.
+#   Variable:  IGNITION_CONTAINER  Optional. Defaults to lab04-ignition-production.
+#
+# Add required reviewers on the lab04-gateway-production environment if you want a
+# manual approval gate before production releases — common pattern, doesn't need
+# any workflow change.
 
-name: Deploy
+name: Lab 04 · Release
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "projects/**"
-      - "services/config/**"
-      - ".deployignore"
-      - "scripts/scan.sh"
-      - "scripts/lib.sh"
-      - ".github/workflows/deploy.yml"
+    tags: ['lab04-v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to deploy (e.g. lab04-v1.0.0)'
+        required: true
+        type: string
 
 concurrency:
-  group: deploy-lab-gateway-test
+  group: lab04-release-lab04-gateway-production
   cancel-in-progress: false
 
 permissions:
   contents: read
 
+# Every run step works inside the lab folder: the prune, the docker cp and
+# the rest all see this lab's files, not the whole monorepo.
+defaults:
+  run:
+    working-directory: labs/04-ignition-file-based-deploy
+
 jobs:
-  # No validation job here: ci.yml already ran on the PR that put this commit
-  # on main — that PR run is the gate, so re-running it before every deploy
-  # would validate the same commit twice. The trade-off: a direct push to
-  # main skips validation, which is why main only moves via PRs.
-  deploy:
-    name: Deploy to test gateway
+  # No validation job here: you tag a commit that is already on main, and it
+  # passed lab04-ci.yml on the PR that merged it — re-validating the same commit on
+  # the tag would run the suite twice. The tag chooses which validated commit
+  # ships; only tag commits that came through a PR.
+  release:
+    name: Release to production gateway
     runs-on: [self-hosted, lab04]
-    environment: lab-gateway-test
+    environment: lab04-gateway-production
     env:
-      IGNITION_URL: ${{ vars.IGNITION_URL || 'http://ignition-test:8088' }}
-      IGNITION_CONTAINER: ${{ vars.IGNITION_CONTAINER || 'lab04-ignition-test' }}
+      IGNITION_URL: ${{ vars.IGNITION_URL || 'http://ignition-production:8088' }}
+      IGNITION_CONTAINER: ${{ vars.IGNITION_CONTAINER || 'lab04-ignition-production' }}
       IGNITION_API_KEY: ${{ secrets.IGNITION_API_KEY }}
       GATEWAY_DATA_PATH: /usr/local/bin/ignition/data
 
     steps:
-      - name: Check out repo
+      - name: Check out repo at tag
         uses: actions/checkout@v4
         with:
+          # When triggered by a tag push, github.ref already points at the
+          # tag. When triggered manually, use the user-supplied input.
+          ref: ${{ github.event.inputs.tag || github.ref }}
           clean: true
 
       - name: Verify deploy prerequisites
@@ -83,9 +97,6 @@ jobs:
           echo "Prerequisites OK (container=$IGNITION_CONTAINER state=$state)."
 
       - name: Prune working tree per .deployignore
-        # Patterns containing a slash → repo-relative path match.
-        # Bare names (.DS_Store, *.swp) → match anywhere in the tree, the
-        # way .gitignore semantically works.
         run: |
           set -euo pipefail
           [ -f .deployignore ] || { echo "No .deployignore — skipping prune"; exit 0; }

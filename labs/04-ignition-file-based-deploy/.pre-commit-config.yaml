@@ -4,23 +4,27 @@
 #
 # Setup:
 #   pip install pre-commit
-#   pre-commit install
+#   scripts/setup.sh   (points git at the repo-root hook dispatcher, which runs
+#                       this config whenever a commit touches this lab)
 #
-# Run all hooks on the full repo:
-#   pre-commit run --all-files
+# The dispatcher runs it from the REPO ROOT, so every path below is
+# root-relative and every hook is scoped to this lab's files. To run all hooks
+# on the whole lab by hand, from the repo root:
+#   pre-commit run --all-files --config labs/04-ignition-file-based-deploy/.pre-commit-config.yaml
 
 repos:
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.35.1
     hooks:
       - id: yamllint
-        args: ["-c", ".yamllint.yml"]
+        files: ^(labs/04-ignition-file-based-deploy/|\.github/workflows/lab04-)
+        args: ["-c", "labs/04-ignition-file-based-deploy/.yamllint.yml"]
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
     hooks:
       - id: shellcheck
-        files: \.sh$
+        files: ^labs/04-ignition-file-based-deploy/.*\.sh$
         # -x follows the sourced lib.sh; source resolution comes from .shellcheckrc
         args: ["-x"]
 
@@ -28,6 +32,9 @@ repos:
     rev: v1.7.1
     hooks:
       - id: actionlint
+        # This lab's workflows live at the repo root as lab04-*.yml.
+        files: ^\.github/workflows/lab04-.*\.ya?ml$
+        args: ["-config-file", "labs/04-ignition-file-based-deploy/.github/actionlint.yaml"]
 
   # Ignition-native linter for Perspective views (naming, polling, scripts...).
   # The hook only fires on staged view.json files; --config points it at ours.
@@ -35,4 +42,5 @@ repos:
     rev: v0.6.1
     hooks:
       - id: ign-lint
-        args: ["--config=rule_config.json"]
+        files: ^labs/04-ignition-file-based-deploy/.*view\.json$
+        args: ["--config=labs/04-ignition-file-based-deploy/rule_config.json"]

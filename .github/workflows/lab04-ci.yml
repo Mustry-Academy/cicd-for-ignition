@@ -1,10 +1,10 @@
 # Validation — runs on every pull request into main. That PR run is THE gate:
-# once a commit merges, deploy.yml (push to main) and release.yml (tag) ship
+# once a commit merges, lab04-deploy.yml (push to main) and lab04-release.yml (tag) ship
 # it without re-validating — the same commit already passed here.
 #
 # GitHub Flow has one long-lived branch, so we validate PRs into it:
 #   main  ← feature/* branches merge here via PR. A push to main then ships to
-#           the test gateway (deploy.yml); a tag on main ships to production (release.yml).
+#           the test gateway (lab04-deploy.yml); a tag on main ships to production (lab04-release.yml).
 #
 # Purpose: catch the cheap stuff before a deploy gets near it. We DON'T spin
 # up Ignition here; that's left to the deploy workflow on its self-hosted
@@ -12,20 +12,28 @@
 # actionlint, shellcheck, ign-lint) plus this lab's own JSON / .deployignore
 # checks, and they all run free on ubuntu-latest.
 
-name: CI
+name: Lab 04 · CI
 
 on:
   pull_request:
     branches: [main]
+    paths:
+      - "labs/04-ignition-file-based-deploy/**"
+      - ".github/workflows/lab04-ci.yml"
 
 # Cancel any in-flight CI run for this PR when a new commit lands.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: lab04-ci-${{ github.ref }}
   cancel-in-progress: true
 
 # Least-privilege default.
 permissions:
   contents: read
+
+# Every run step works inside the lab folder; `with:` inputs do not.
+defaults:
+  run:
+    working-directory: labs/04-ignition-file-based-deploy
 
 jobs:
   # Job ids double as the status-check names branch protection matches on
@@ -47,10 +55,14 @@ jobs:
         run: pip install yamllint==1.35.1 ign-lint==0.6.1
 
       - name: yamllint
-        run: yamllint -c .yamllint.yml .
+        run: yamllint -c .yamllint.yml . ../../.github/workflows/lab04-*.yml
 
       - name: actionlint
         uses: raven-actions/actionlint@v2
+        with:
+          # Only this lab's workflows, with this lab's runner labels.
+          files: .github/workflows/lab04-*.yml
+          flags: -config-file labs/04-ignition-file-based-deploy/.github/actionlint.yaml
 
       - name: shellcheck
         # -x follows the sourced lib.sh; source resolution comes from .shellcheckrc

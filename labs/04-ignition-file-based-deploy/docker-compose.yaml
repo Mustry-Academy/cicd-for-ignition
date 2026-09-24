@@ -5,11 +5,11 @@
 #                                            (working gateway — edits show
 #                                             up immediately on disk)
 #   ignition-test     http://localhost:8089   projects/ + config/ bind-mounted from
-#                                            ./gateways/test, populated by deploy.yml
+#                                            ./gateways/test, populated by lab04-deploy.yml
 #                                            (push to main)
 #   ignition-production    http://localhost:8090   projects/ + config/ bind-mounted from
-#                                            ./gateways/production, populated by release.yml
-#                                            (tag push v*)
+#                                            ./gateways/production, populated by lab04-release.yml
+#                                            (tag push lab04-v*)
 #
 #   timescaledb      localhost:5432          databases: ignition_local_development, ignition_test,
 #                                                       ignition_production (one per env)
@@ -139,7 +139,7 @@ services:
       timescaledb:
         condition: service_healthy
 
-  # --- test gateway: populated by deploy.yml (push to main) -------------------
+  # --- test gateway: populated by lab04-deploy.yml (push to main) -------------------
   ignition-test:
     image: inductiveautomation/ignition:8.3.8
     container_name: lab04-ignition-test
@@ -190,7 +190,7 @@ services:
       timescaledb:
         condition: service_healthy
 
-  # --- production gateway: populated by release.yml (tag push v*) ------------------
+  # --- production gateway: populated by lab04-release.yml (tag push lab04-v*) ------------------
   ignition-production:
     image: inductiveautomation/ignition:8.3.8
     container_name: lab04-ignition-production
@@ -278,9 +278,9 @@ services:
   #
   # The runner sits on the lab's compose network, so it reaches the gateways by
   # service name (ignition-local, ignition-test, ignition-production) — see the
-  # IGNITION_URL defaults in .github/workflows/deploy.yml and release.yml.
+  # IGNITION_URL defaults in .github/workflows/lab04-deploy.yml and lab04-release.yml.
   #
-  # Why /var/run/docker.sock is mounted: deploy.yml and release.yml use
+  # Why /var/run/docker.sock is mounted: lab04-deploy.yml and lab04-release.yml use
   # `docker cp` and `docker exec` to push project files INTO the test/production
   # gateway containers. That requires the runner to talk to the host's
   # Docker daemon. Lab convenience, NOT a production pattern.

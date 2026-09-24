@@ -1,9 +1,9 @@
 #!/bin/bash
 # One-shot setup for the lab 04 stack:
 #   - sanity-checks the host (docker compose v2, curl, WSL quirks)
-#   - installs the repo's git hooks (skip-worktree for the machine-local
+#   - installs the course repo's git hooks (skip-worktree for the machine-local
 #     Ignition config file) and a diff driver that hides volatile resource.json
-#     metadata; volatile-only churn is undone with
+#     metadata (scripts/install-git-config.sh at the repo root); volatile-only churn is undone with
 #     scripts/clean-ignition-resource-churn.sh
 #   - ensures .env is in place
 #   - generates a unique API key per gateway into .env and writes the
@@ -69,48 +69,30 @@ echo ""
 echo "This script initializes the development environment:"
 echo "  - three Ignition 8.3 gateways:"
 echo "      local  http://localhost:8088   (your working gateway, bind-mounted from the repo)"
-echo "      test    http://localhost:8089   (populated by deploy.yml on push to main)"
-echo "      production   http://localhost:8090   (populated by release.yml on tag push)"
+echo "      test    http://localhost:8089   (populated by lab04-deploy.yml on push to main)"
+echo "      production   http://localhost:8090   (populated by lab04-release.yml on tag push)"
 echo "  - one TimescaleDB on localhost:5432 hosting ignition_local_development / ignition_test / ignition_production"
 echo ""
 
 
-# ---- Git hooks ------------------------------------------------------------
+# ---- Git hooks + diff driver -----------------------------------------------
+# One shared config for the whole course repo: core.hooksPath points at the
+# root dispatchers (they run this lab's scripts/git-hooks/post-checkout from
+# inside this folder), and the textconv normalizer that .gitattributes routes
+# resource.json through, so volatile Designer metadata (timestamps,
+# signatures) never shows up in diffs.
 install_git_hooks() {
-    local repo_hooks_dir
-    repo_hooks_dir="$(git rev-parse --git-path hooks 2>/dev/null)" || return 0
-    local source_dir="$PROJECT_ROOT/scripts/git-hooks"
-    [ -d "$source_dir" ] || return 0
-    mkdir -p "$repo_hooks_dir"
-    # Clones set up before post-merge/post-rewrite were dropped still have
-    # symlinks to the deleted files; git errors on every merge/rebase until
-    # they are removed.
-    for stale in post-merge post-rewrite; do
-        local link="$repo_hooks_dir/$stale"
-        if [ -L "$link" ] && [ ! -e "$link" ]; then
-            rm -f "$link"
-        fi
-    done
-    # post-checkout only. Git keeps the skip-worktree bit across merge, rebase,
-    # amend, reset --hard and stash, so hooks on those events had nothing to do.
-    # The bit is only lost when the file leaves the index and comes back, which
-    # is a checkout.
-    ln -sf "$source_dir/post-checkout" "$repo_hooks_dir/post-checkout"
-    if [ -x "$source_dir/skip-worktree-ignition-resources" ]; then
-        "$source_dir/skip-worktree-ignition-resources" || true
+    local top
+    top="$(git -C "$PROJECT_ROOT" rev-parse --show-toplevel 2>/dev/null)" || return 0
+    "$top/scripts/install-git-config.sh"
+    # A fresh clone has no skip-worktree bits, and post-checkout cannot fire on
+    # clone, so apply them once here.
+    if [ -x "$PROJECT_ROOT/scripts/git-hooks/skip-worktree-ignition-resources" ]; then
+        "$PROJECT_ROOT/scripts/git-hooks/skip-worktree-ignition-resources" || true
     fi
 }
 
 install_git_hooks
-
-# ---- Git diff driver --------------------------------------------------------
-# .gitattributes routes resource.json through this textconv normalizer so
-# volatile Designer metadata (timestamps, signatures) never shows up in diffs.
-configure_git_diff_drivers() {
-    git config diff.ignition-resource.textconv "$PROJECT_ROOT/scripts/git-diff/normalize-ignition-resource-json.py"
-}
-
-configure_git_diff_drivers
 
 # ---- .env -----------------------------------------------------------------
 ensure_env_file() {
@@ -146,7 +128,7 @@ runner_pat_reminder() {
     if [ -z "$pat" ] || printf '%s' "$pat" | grep -q 'replace-me' \
         || [ -z "$repo_url" ] || printf '%s' "$repo_url" | grep -q '<your-github-user>'; then
         echo -e "${YELLOW}Runner not configured yet — the lab04-runner container will restart-loop until you:${NC}"
-        echo "  1. Point RUNNER_REPO_URL in .env at your fork."
+        echo "  1. Point RUNNER_REPO_URL in .env at your fork (https://github.com/<you>/cicd-for-ignition)."
         echo "  2. Set RUNNER_GITHUB_PAT in .env to a repo-scope PAT"
         echo "     (github.com/settings/tokens → Generate new token (classic) → tick 'repo')."
         echo "  Then re-run scripts/setup.sh. The gateways work without this; only CI needs the runner."
@@ -489,7 +471,7 @@ echo "  IGNITION_API_KEY_LOCAL / _TEST / _PRODUCTION — one per gateway; script
 echo "  picks the right one from its argument (local | test | production)."
 echo "  For CI, copy the _TEST and _PRODUCTION"
 echo "  values from .env into the IGNITION_API_KEY secret on the"
-echo "  lab-gateway-test / lab-gateway-production GitHub environments."
+echo "  lab04-gateway-test / lab04-gateway-production GitHub environments."
 echo ""
 echo "Useful commands:"
 echo "  docker compose ps                          # check container state"

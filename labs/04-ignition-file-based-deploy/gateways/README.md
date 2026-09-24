@@ -6,10 +6,10 @@ directories, bind-mounted into their containers (see `docker-compose.yaml`):
 ```
 gateways/
 ├── test/
-│   ├── projects/   ← what deploy.yml shipped (push to main)
+│   ├── projects/   ← what lab04-deploy.yml shipped (push to main)
 │   └── config/     ← gateway config, incl. what the deploy copied
 └── production/
-    ├── projects/   ← what release.yml shipped (tag push v*)
+    ├── projects/   ← what lab04-release.yml shipped (tag push lab04-v*)
     └── config/
 ```
 

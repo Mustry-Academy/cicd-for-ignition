@@ -526,7 +526,7 @@ scripts/clean-ignition-resource-churn.sh --apply  <span class="cm"># restore fro
       <span class="num">07</span>
       <div>
         <div class="title">The file-based deploy in five steps</div>
-        <div class="lead">This is literally what <span class="inlinecode">deploy.yml</span> does on every push to <span class="inlinecode">main</span>, and what <span class="inlinecode">release.yml</span> does on every tag.</div>
+        <div class="lead">This is literally what <span class="inlinecode">lab04-deploy.yml</span> does on every push to <span class="inlinecode">main</span>, and what <span class="inlinecode">lab04-release.yml</span> does on every tag.</div>
       </div>
     </div>
 
@@ -617,7 +617,6 @@ LICENSE
 .github/
 docs/
 exercises/
-instructor-notes/
 tests/
 third-party-modules/
 db-init/
@@ -665,7 +664,7 @@ docker-compose.yaml <span class="cm"># ← unless you want it to run there with 
       </div>
     </div>
     <div class="cols2">
-      <div class="code"><pre><span class="cm"># the "Ship" step from deploy.yml ($DATA = GATEWAY_DATA_PATH)</span>
+      <div class="code"><pre><span class="cm"># the "Ship" step from lab04-deploy.yml ($DATA = GATEWAY_DATA_PATH)</span>
 docker exec "$IGNITION_CONTAINER" sh -c '
   rm -rf $DATA/projects/*
   <span class="cm"># wipe config/, but keep the subtrees .deployignore protects</span>
@@ -738,7 +737,7 @@ scripts/scan.sh test</pre></div>
         <ul class="checks">
           <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Keys are per-gateway, not per-URL.</b> Generate each in <i>that gateway's</i> UI (Config → Security → API Keys). The test key will never authenticate against production.</span></li>
           <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Least privilege:</b> scope the deploy key to <b>Project Scan + Config Scan</b> only. The deploy runner has no business taking backups or writing tags.</span></li>
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>In CI the key lives as an <b>environment-scoped GitHub secret</b> (<span class="inlinecode">lab-gateway-test</span> / <span class="inlinecode">lab-gateway-production</span>): per-target secrets and deploy history for free, exactly like Lab 03 taught.</span></li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>In CI the key lives as an <b>environment-scoped GitHub secret</b> (<span class="inlinecode">lab04-gateway-test</span> / <span class="inlinecode">lab04-gateway-production</span>): per-target secrets and deploy history for free, exactly like Lab 03 taught.</span></li>
         </ul>
         <div class="callout" style="margin-top:16px">
           <div class="lab" style="color:var(--blue)">Symptom dictionary</div>
@@ -809,20 +808,20 @@ scripts/scan.sh test</pre></div>
       <span class="num">12</span>
       <div>
         <div class="title">Two workflows, one pattern</div>
-        <div class="lead"><span class="inlinecode">deploy.yml</span> and <span class="inlinecode">release.yml</span> run the <b>same five deploy steps</b>: checkout → prune → ship → scan → verify. Validation already happened on the PR (<span class="inlinecode">ci.yml</span>), so they go straight to shipping. Diff them and the only differences are <b>the trigger and the target</b>. That's the whole deployment policy.</div>
+        <div class="lead"><span class="inlinecode">lab04-deploy.yml</span> and <span class="inlinecode">lab04-release.yml</span> run the <b>same five deploy steps</b>: checkout → prune → ship → scan → verify. Validation already happened on the PR (<span class="inlinecode">lab04-ci.yml</span>), so they go straight to shipping. Diff them and the only differences are <b>the trigger and the target</b>. That's the whole deployment policy.</div>
       </div>
     </div>
     <table class="tbl" style="max-width:1080px">
-      <tr><th></th><th>deploy.yml → test</th><th>release.yml → production</th></tr>
-      <tr><td><b>Trigger</b></td><td>Push to <code>main</code>, gated by a <code>paths:</code> filter (<code>projects/**</code>, <code>services/config/**</code>, …). Docs-only pushes don't deploy.</td><td>Tag <code>v*</code> · manual <code>workflow_dispatch</code> with a <b>tag input</b>: the rollback button.</td></tr>
-      <tr><td><b>Checks out</b></td><td>The merged commit</td><td>The tag: <code>ref: inputs.tag || github.ref</code>, so re-deploying <code>v0.1.0</code> ships that exact tree again.</td></tr>
-      <tr><td><b>Environment</b></td><td><code>lab-gateway-test</code> · secret <code>IGNITION_API_KEY</code></td><td><code>lab-gateway-production</code>: add <b>required reviewers</b> here for an approval gate, zero workflow changes.</td></tr>
+      <tr><th></th><th>lab04-deploy.yml → test</th><th>lab04-release.yml → production</th></tr>
+      <tr><td><b>Trigger</b></td><td>Push to <code>main</code>, gated by a <code>paths:</code> filter (<code>projects/**</code>, <code>services/config/**</code>, …). Docs-only pushes don't deploy.</td><td>Tag <code>lab04-v*</code> · manual <code>workflow_dispatch</code> with a <b>tag input</b>: the rollback button.</td></tr>
+      <tr><td><b>Checks out</b></td><td>The merged commit</td><td>The tag: <code>ref: inputs.tag || github.ref</code>, so re-deploying <code>lab04-v0.1.0</code> ships that exact tree again.</td></tr>
+      <tr><td><b>Environment</b></td><td><code>lab04-gateway-test</code> · secret <code>IGNITION_API_KEY</code></td><td><code>lab04-gateway-production</code>: add <b>required reviewers</b> here for an approval gate, zero workflow changes.</td></tr>
       <tr><td><b>Target defaults</b></td><td><code>http://ignition-test:8088</code> · <code>lab04-ignition-test</code></td><td><code>http://ignition-production:8088</code> · <code>lab04-ignition-production</code></td></tr>
       <tr><td><b>Concurrency</b></td><td colspan="2">One group per gateway, <code>cancel-in-progress: false</code>: new runs <b>queue</b>; an in-flight copy is never killed.</td></tr>
     </table>
     <div class="callout">
       <div class="lab" style="color:var(--blue)">Read the diff yourself</div>
-      <p><code>diff .github/workflows/deploy.yml .github/workflows/release.yml</code>: everything from <b>Verify prerequisites</b> down is step-for-step the pattern you just learned. Promote the same mechanics to a new environment by changing <b>trigger + environment + two defaults</b>, nothing else.</p>
+      <p><code>diff .github/workflows/lab04-deploy.yml .github/workflows/lab04-release.yml</code>: everything from <b>Verify prerequisites</b> down is step-for-step the pattern you just learned. Promote the same mechanics to a new environment by changing <b>trigger + environment + two defaults</b>, nothing else.</p>
     </div>
   </div>
 
@@ -842,7 +841,7 @@ scripts/scan.sh test</pre></div>
     <ul class="checks" style="max-width:940px;margin-top:22px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We-do (part 1).</b> Live tour of <span class="mono" style="color:#dbe4f0">data/</span> from inside the container, plus the marker trick: touch a marker, click in the UI, <span class="mono" style="color:#dbe4f0">find -newer</span> the file it wrote.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>We-do (part 2).</b> A view created on disk by hand, scanned into the local gateway, then shipped to test with the exact <span class="mono" style="color:#dbe4f0">docker cp</span> commands the workflow automates.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do (breakout rooms).</b> Part 1: classify real UI changes into buckets. Part 2: wire your fork's runner, merge a PR into <span class="mono" style="color:#dbe4f0">main</span> → <b>test</b>, tag <span class="mono" style="color:#dbe4f0">v0.1.0</span> → <b>production</b>. Then break a deploy on purpose.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You-do (breakout rooms).</b> Part 1: classify real UI changes into buckets. Part 2: wire your fork's runner, merge a PR into <span class="mono" style="color:#dbe4f0">main</span> → <b>test</b>, tag <span class="mono" style="color:#dbe4f0">lab04-v0.1.0</span> → <b>production</b>. Then break a deploy on purpose.</span></li>
     </ul>
     <p class="lead" style="font-size:13.5px;color:#8fa0b6;margin-top:22px">Day 3 teaser: everything a scan <i>can't</i> apply (modules, the gateway baseline) gets baked into images. Lab 05.</p>
   </div>
@@ -978,16 +977,16 @@ function bindControls(slideEl,ctrl){
   const fBind = flow(440,270,1005,140,'bind mount · edit → scan',teal);
   const fPushD= flow(440,400,517,485,'merge PR into main',peri);
   const fShipD= flow(880,485,1005,410,'deploy.yml · docker cp + scan',peri);
-  const fTag  = flow(440,430,530,555,'tag vX.Y.Z on main',amber);
+  const fTag  = flow(440,430,530,555,'tag lab04-vX.Y.Z on main',amber);
   const fShipP= flow(880,560,1005,600,'release.yml · docker cp + scan',amber);
 
   const lead=slides[10].querySelector('#promo-step');
   const steps=[
     {on:[repo,local,fBind],t:'<b>local</b> is your scratchpad: it bind-mounts <b>projects/</b> and <b>services/config/</b> straight from the repo. Edit a file, hit scan, see it at :8088, no CI involved.'},
     {on:[runner],t:'The <b>bundled runner</b> registers against <i>your fork</i> and polls GitHub for jobs. It shares the host\'s Docker socket, which is how it reaches inside the other containers. Lab convenience, not a production pattern.'},
-    {on:[test,fPushD,fShipD],t:'Merge a feature PR into <b>main</b> → <b>deploy.yml</b> runs on the runner → wipe + docker cp + scan → the change is live on <b>test</b> (:8089). Many small merges a day.'},
-    {on:[production,fTag,fShipP],t:'Merging to <b>main</b> ships <i>test</i>, not production. Push a tag <b>vX.Y.Z</b> on main → <b>release.yml</b> ships that exact commit to <b>production</b> (:8090). Production always runs a named, re-deployable version.'},
-    {on:[],t:'The pipelines hold the routing: <b>deploy.yml → test</b> · <b>release.yml → production</b> · <b>local outside the flow entirely</b>. Your merge or tag just triggers them, and no human picks a target by hand.'}
+    {on:[test,fPushD,fShipD],t:'Merge a feature PR into <b>main</b> → <b>lab04-deploy.yml</b> runs on the runner → wipe + docker cp + scan → the change is live on <b>test</b> (:8089). Many small merges a day.'},
+    {on:[production,fTag,fShipP],t:'Merging to <b>main</b> ships <i>test</i>, not production. Push a tag <b>lab04-vX.Y.Z</b> on main → <b>lab04-release.yml</b> ships that exact commit to <b>production</b> (:8090). Production always runs a named, re-deployable version.'},
+    {on:[],t:'The pipelines hold the routing: <b>lab04-deploy.yml → test</b> · <b>lab04-release.yml → production</b> · <b>local outside the flow entirely</b>. Your merge or tag just triggers them, and no human picks a target by hand.'}
   ];
   const all=[repo,local,runner,test,production,fBind,fPushD,fShipD,fTag,fShipP];
   controllers.promo={max:steps.length-1,render(s){

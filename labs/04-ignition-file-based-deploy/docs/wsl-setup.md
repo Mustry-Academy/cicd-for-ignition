@@ -7,18 +7,18 @@ If you are on macOS or Linux, you can skip this page.
 
 ## The one rule that matters
 
-**Clone the lab repos inside the WSL filesystem, not on your Windows drive.**
+**Clone the course repo inside the WSL filesystem, not on your Windows drive.**
 
 ```bash
 # Good — the Linux side, fast and permission-clean
-cd ~
-git clone <lab-repo-url>
-cd <lab-repo>
+mkdir -p ~/mustry-academy && cd ~/mustry-academy
+gh repo fork Mustry-Academy/cicd-for-ignition --clone
+cd cicd-for-ignition
 code .            # opens VS Code connected to WSL
 
 # Bad — the Windows side, causes permission errors
 cd /mnt/c/Users/<you>/Documents
-git clone <lab-repo-url>
+gh repo fork Mustry-Academy/cicd-for-ignition --clone
 ```
 
 Anything under `/mnt/c`, `/mnt/d` and friends is your Windows disk seen through
@@ -37,15 +37,16 @@ You can tell where you are at any time:
 
 ```bash
 pwd
-# /home/you/cicd-lab-04-...   -> good
+# /home/you/mustry-academy/cicd-for-ignition/...   -> good
 # /mnt/c/Users/you/...        -> move it
 ```
 
 To move an existing clone:
 
 ```bash
-mv /mnt/c/Users/<you>/<lab-repo> ~/<lab-repo>
-cd ~/<lab-repo>
+mkdir -p ~/mustry-academy
+mv /mnt/c/Users/<you>/cicd-for-ignition ~/mustry-academy/cicd-for-ignition
+cd ~/mustry-academy/cicd-for-ignition/labs/04-ignition-file-based-deploy
 scripts/setup.sh
 ```
 

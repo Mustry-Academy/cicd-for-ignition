@@ -1,12 +1,12 @@
 #!/bin/bash
-# validate.sh — local mirror of .github/workflows/ci.yml.
+# validate.sh — local mirror of .github/workflows/lab04-ci.yml (repo root).
 #
 # Run this before opening a PR to catch the cheap stuff the CI workflow checks,
 # without waiting for a runner:
 #   1. Every *.json under projects/ and services/ parses.
 #   2. .deployignore patterns are relative (no leading /).
 #   3. security-properties doesn't name a throwaway temp_N identity.
-#   4. actionlint passes on .github/workflows/ (only if actionlint is installed).
+#   4. actionlint passes on this lab's workflows (only if actionlint is installed).
 #
 # Exits non-zero if any check fails. No Ignition or Docker needed.
 
@@ -86,9 +86,10 @@ else
 fi
 
 # 4. actionlint (optional) -----------------------------------------------------
-echo "→ actionlint (.github/workflows/)"
+echo "→ actionlint (../../.github/workflows/lab04-*.yml)"
 if command -v actionlint > /dev/null 2>&1; then
-  if actionlint -color; then
+  # The workflows live at the repo root; lint only this lab's, with its runner labels.
+  if actionlint -color -config-file .github/actionlint.yaml ../../.github/workflows/lab04-*.yml; then
     echo -e "  ${GREEN}ok${NC}"
   else
     rc=1

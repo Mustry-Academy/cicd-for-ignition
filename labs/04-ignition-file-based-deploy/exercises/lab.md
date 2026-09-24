@@ -21,7 +21,8 @@ You should leave this lab able to:
 ## Pre-flight
 
 ```bash
-cp -n .env.example .env
+cd ~/mustry-academy/cicd-for-ignition/labs/04-ignition-file-based-deploy
+cp -n .env.example .env   # no-op if course-setup.sh already created it
 scripts/setup.sh    # idempotent — brings up the stack and waits for all three gateways
 # When it finishes:
 curl -fsS http://localhost:8088/StatusPing
@@ -31,15 +32,15 @@ Open <http://localhost:8088> (the `local` gateway) in your browser. Login: `admi
 
 Before you start the deploy part, get these in place (they take a few minutes and the #1 "nothing deploys" cause is forgetting to enable Actions on the fork — or a push that only touched docs, which the `paths:` filter skips):
 
-- **A fork of this repo on GitHub, with Actions enabled.** The bundled runner registers against your fork, not the upstream. Forks ship with workflows **disabled** — open your fork's *Actions* tab and click "I understand my workflows, go ahead and enable them."
-- **`gh` pointed at your fork:** `gh repo set-default <you>/cicd-lab-04-ignition-file-based-deploy`. Same move as Lab 03, and it's stored per clone — so every lab fork needs it again. Without it, `gh` commands (like `gh pr create`) ask which repo you mean, or worse, target the course repo instead of your fork.
-- **A GitHub Personal Access Token (PAT) with `repo` scope**, plus `RUNNER_REPO_URL` in `.env` pointed at **your fork**. The bundled `github-runner` container uses the PAT to auto-register against your fork. You create this token once here; **Labs 05 and 06 reuse the same one**, so keep it somewhere safe. To create it:
+- **Your fork of the course repo (`<you>/cicd-for-ignition`), with Actions enabled.** The bundled runner registers against your fork, not the upstream. Forks ship with workflows **disabled** — if you haven't yet, open your fork's *Actions* tab and click "I understand my workflows, go ahead and enable them." (Once per fork, not per lab.)
+- **`gh` pointed at your fork:** `gh repo set-default <you>/cicd-for-ignition`. You did this once for the course clone; `gh repo set-default --view` confirms it. Without it, `gh` commands (like `gh pr create`) ask which repo you mean, or worse, target the course repo instead of your fork.
+- **A GitHub Personal Access Token (PAT) with `repo` scope**, plus `RUNNER_REPO_URL` in `.env` pointed at **your fork** (`https://github.com/<you>/cicd-for-ignition`). If you ran the root `course-setup.sh`, both are already in `.env`. The bundled `github-runner` container uses the PAT to auto-register against your fork. You create this token once here; **Labs 05 and 06 reuse the same one**, so keep it somewhere safe. To create it:
   1. Go to **github.com/settings/tokens** → **Generate new token** → **Generate new token (classic)**.
   2. Give it a name (e.g. `cicd-course-runner`) and tick the **`repo`** scope.
   3. Click **Generate token** and copy the `ghp_...` value (you can't read it back later).
   4. Paste it into `.env` as `RUNNER_GITHUB_PAT=ghp_...`. It stays in `.env` and is never committed.
 - **An Ignition API key per gateway you want to scan.** You already have these: `scripts/setup.sh` generated a key per gateway into `.env` (`IGNITION_API_KEY_LOCAL` / `_TEST` / `_PRODUCTION`), unique to your clone, and installed the matching token on each gateway. Nothing key-related is in git — a committed key would be a working credential in every fork. (In the gateway UI you'd do the same by hand: *Config → Security → API Keys → New*, scoped to `Project Scan` and `Config Scan`.)
-- **GitHub Environments** for the deploy workflows: `lab-gateway-test` for `deploy.yml`, `lab-gateway-production` for `release.yml`. Each needs a secret `IGNITION_API_KEY` (the matching `_TEST` / `_PRODUCTION` value from your `.env`).
+- **GitHub Environments** for the deploy workflows: `lab04-gateway-test` for `lab04-deploy.yml`, `lab04-gateway-production` for `lab04-release.yml`. Each needs a secret `IGNITION_API_KEY` (the matching `_TEST` / `_PRODUCTION` value from your `.env`).
 
 Read-ahead: [`docs/ignition-file-structure.md`](../docs/ignition-file-structure.md) and [`docs/file-based-deploy-pattern.md`](../docs/file-based-deploy-pattern.md).
 
@@ -181,7 +182,7 @@ The five steps:
 
 ## The deploy, by hand, once (guided, ~20 min)
 
-Edit a view in the shipped `example-project` and ship it to test by hand — this is exactly what `deploy.yml` automates. Because `local` bind-mounts `./projects/`, editing a file in your working tree *is* editing the local gateway's disk:
+Edit a view in the shipped `example-project` and ship it to test by hand — this is exactly what `lab04-deploy.yml` automates. Because `local` bind-mounts `./projects/`, editing a file in your working tree *is* editing the local gateway's disk:
 
 1. Change `projects/example-project/com.inductiveautomation.perspective/views/pages/overview/view.json` (e.g., `props.defaultSize.height`: `920` → `700`).
 2. Scan the **local** gateway — local sees the change via bind mount immediately; the scan tells it to notice:
@@ -196,7 +197,7 @@ Edit a view in the shipped `example-project` and ship it to test by hand — thi
    ```
    Verify in http://localhost:8089 — the same view should appear, the same height.
 
-   `deploy.yml` does one more thing before copying: it **wipes** `projects/` and `config/` on the target (sparing the entries `.deployignore` protects — `config/local/`, `config/resources/local/`, and the gateway-owned internal identity by name: `user-source/default/`, `user-source/opcua-module/`, `identity-provider/default/`), so a resource deleted in the repo disappears from the gateway too. You'll read that step line by line in the workflow anatomy below.
+   `lab04-deploy.yml` does one more thing before copying: it **wipes** `projects/` and `config/` on the target (sparing the entries `.deployignore` protects — `config/local/`, `config/resources/local/`, and the gateway-owned internal identity by name: `user-source/default/`, `user-source/opcua-module/`, `identity-provider/default/`), so a resource deleted in the repo disappears from the gateway too. You'll read that step line by line in the workflow anatomy below.
 4. Inspect `.deployignore`. Notice it excludes `README.md`, `LICENSE`, the `.github/` directory, `docs/`, `scripts/`, the per-instance `services/config/resources/local/`, and the gateway-owned **internal** identity by name: `user-source/default/`, `user-source/opcua-module/`, `identity-provider/default/` (deploying those would overwrite the target's admin user — instant lockout). Identity resources you add yourself (database or AD user sources, SAML/OIDC providers) hold no password data and deploy normally, as does `security-properties` (permission policy — tracked and shipped). For each pattern, say **why the gateway shouldn't have that file**.
 
 > **Leave the edit uncommitted for now.** Part 2.3 commits it together with the project you'll create there — that's the moment the repo catches up with what you hand-deployed.
@@ -241,9 +242,9 @@ In your fork on GitHub, *Settings → Actions → Runners* should show the runne
 
 In your fork:
 
-1. *Settings → Environments → New environment*: `lab-gateway-test`.
+1. *Settings → Environments → New environment*: `lab04-gateway-test`.
 2. Under that environment, *Add secret*: `IGNITION_API_KEY` = the `IGNITION_API_KEY_TEST` value from your `.env` (the **test gateway's** key, generated by `setup.sh`).
-3. Repeat for `lab-gateway-production` with `IGNITION_API_KEY_PRODUCTION` from `.env` (the **production gateway's** key).
+3. Repeat for `lab04-gateway-production` with `IGNITION_API_KEY_PRODUCTION` from `.env` (the **production gateway's** key).
 
 > **API keys are per-gateway, not per-URL.** Each gateway only accepts *its own* key; the test key won't authenticate against production. The host ports (8089/8090) are just how *you* reach the UIs — the **runner** reaches the same gateways by their compose service names (`http://ignition-test:8088`, `http://ignition-production:8088`), which is why `IGNITION_URL`'s default differs from the host port.
 
@@ -260,8 +261,8 @@ You **don't** need to set `IGNITION_URL` or `IGNITION_CONTAINER` variables unles
    git commit -m "Add sample-project"
    git push -u origin feature/add-sample-project
    ```
-4. On GitHub, open a PR **into `main`**. Watch [`ci.yml`](../.github/workflows/ci.yml) run on `ubuntu-latest` (free): it validates JSON, `.deployignore`, and the workflow files themselves.
-5. Merge the PR into `main`. [`deploy.yml`](../.github/workflows/deploy.yml) fires because of the `paths:` filter (and only on `main`). Validation already ran on the PR — that's the gate — so the deploy goes straight to shipping.
+4. On GitHub, open a PR **into `main`**. Watch [`lab04-ci.yml`](../../../.github/workflows/lab04-ci.yml) run on `ubuntu-latest` (free): it validates JSON, `.deployignore`, and the workflow files themselves.
+5. Merge the PR into `main`. [`lab04-deploy.yml`](../../../.github/workflows/lab04-deploy.yml) fires because of the `paths:` filter (and only on `main`). Validation already ran on the PR — that's the gate — so the deploy goes straight to shipping.
 6. Watch the workflow run. The interesting steps are **Ship projects and config into gateway container** (the `docker cp` half) and **Trigger gateway scan** (`POST /data/api/v1/scan/{projects,config}`). On a fresh gateway the scan step self-heals: a 401/403 makes it restart the gateway once (the token Ship just copied loads at boot) and retry — first deploy green, every later deploy hot-scans.
 7. Verify in http://localhost:8089 — Config → Projects lists **`sample-project`**, and its view opens (the deploy-by-hand's height tweak is there too, now via the pipeline). Then verify from the **host**: `ls gateways/test/projects` shows the deployed tree (test's `projects/` and `config/` bind-mount to `./gateways/test/`), so you can `cat` the exact files CI just shipped.
 8. **Multi-project check.** The deploy step copies `./projects/.` (the whole directory), so your single merge deployed `example-project`, `packaging-site` **and** `sample-project` at once. The unit of deploy is the `projects/` tree, not a single project.
@@ -272,19 +273,19 @@ Cut a release the GitHub Flow way: tag the commit on `main` you want in producti
 
 ```bash
 git switch main && git pull
-git tag v0.1.0
-git push origin v0.1.0        # ← release.yml fires
+git tag lab04-v0.1.0
+git push origin lab04-v0.1.0        # ← lab04-release.yml fires
 ```
 
-> **`fatal: tag 'v0.1.0' already exists`?** Your fork copied every tag the upstream repo had at fork time. `git tag -l` shows what's taken — either take the next free number (`v0.1.1` works exactly the same), or delete the stale tag first: `git tag -d v0.1.0 && git push origin :refs/tags/v0.1.0`.
+> **`fatal: tag 'lab04-v0.1.0' already exists`?** Your fork copied every tag the upstream repo had at fork time. `git tag -l` shows what's taken — either take the next free number (`lab04-v0.1.1` works exactly the same), or delete the stale tag first: `git tag -d lab04-v0.1.0 && git push origin :refs/tags/lab04-v0.1.0`.
 
-[`release.yml`](../.github/workflows/release.yml) fires on the tag. You only ever tag a commit that is already on `main` — it passed CI on its PR — so the release goes straight to shipping. Watch it run, then check http://localhost:8090 — the change you merged into main and just released should be visible on production. Host-side check works here too: `ls gateways/production/projects`. The push to `main` deployed to test on its own; the **tag** is what promotes to production, so production always runs a named, re-deployable version. That's also your rollback button: `release.yml`'s `workflow_dispatch` takes a tag input.
+[`lab04-release.yml`](../../../.github/workflows/lab04-release.yml) fires on the tag. You only ever tag a commit that is already on `main` — it passed CI on its PR — so the release goes straight to shipping. Watch it run, then check http://localhost:8090 — the change you merged into main and just released should be visible on production. Host-side check works here too: `ls gateways/production/projects`. The push to `main` deployed to test on its own; the **tag** is what promotes to production, so production always runs a named, re-deployable version. That's also your rollback button: `lab04-release.yml`'s `workflow_dispatch` takes a tag input.
 
 ### Part 2.5 — Break a deploy on purpose (optional, ~5 min)
 
 Cause one of these and read the workflow output:
 
-- **Wrong API key.** Set garbage in `lab-gateway-test`'s secret, re-run the deploy. The **Ship step succeeds** (`docker cp` doesn't care about keys) but the **scan 403s**. Files are in the container; the gateway never reloaded. *What's your recovery story?*
+- **Wrong API key.** Set garbage in `lab04-gateway-test`'s secret, re-run the deploy. The **Ship step succeeds** (`docker cp` doesn't care about keys) but the **scan 403s**. Files are in the container; the gateway never reloaded. *What's your recovery story?*
 - **Stopped container.** `docker compose stop ignition-test`, then trigger a deploy. The **verify step fails fast** ("container is in state 'exited', expected 'running'") before any file moved — much better than failing halfway.
 
 Then fix it and re-run (manual `workflow_dispatch` works too). The steps are idempotent, so the deploy converges.
@@ -294,9 +295,9 @@ For your chosen failure, write down: **symptom → state of the gateway → reco
 ## Definition of done (part 2)
 
 - [ ] The bundled runner shows **online** in your fork (`self-hosted, lab04`).
-- [ ] Both GitHub environments (`lab-gateway-test`, `lab-gateway-production`) exist, each with an `IGNITION_API_KEY` secret.
-- [ ] A push to **`main`** (merged PR) triggered `deploy.yml` and **the project you created** is on the **test** gateway (:8089).
-- [ ] A `v*` tag on `main` triggered `release.yml` and that project is on the **production** gateway (:8090).
+- [ ] Both GitHub environments (`lab04-gateway-test`, `lab04-gateway-production`) exist, each with an `IGNITION_API_KEY` secret.
+- [ ] A push to **`main`** (merged PR) triggered `lab04-deploy.yml` and **the project you created** is on the **test** gateway (:8089).
+- [ ] A `lab04-v*` tag on `main` triggered `lab04-release.yml` and that project is on the **production** gateway (:8090).
 - [ ] You broke **one** deploy on purpose and can describe the failure mode and recovery.
 - [ ] You can name the GitHub Flow routing (push to `main` → test, tag on `main` → production) and explain, in five steps, what the runner does between "merge" and "gateway reloaded."
 
@@ -304,7 +305,7 @@ For your chosen failure, write down: **symptom → state of the gateway → reco
 
 Gateway-level config (the contents of `services/config/`) ships the same way `projects/` does — both workflows `docker cp ./services/config/.`. But not every gateway change rides that path, and not every change a scan can apply:
 
-- **Module enablement** lives in `services/modules.json` — a *sibling* of `services/config/`, **not under it**. The deploy workflows copy `./services/config/.`, so `modules.json` is **not shipped** by them; in this lab it's bind-mounted into all three gateways. Open `deploy.yml` and confirm the `docker cp` targets.
+- **Module enablement** lives in `services/modules.json` — a *sibling* of `services/config/`, **not under it**. The deploy workflows copy `./services/config/.`, so `modules.json` is **not shipped** by them; in this lab it's bind-mounted into all three gateways. Open `lab04-deploy.yml` and confirm the `docker cp` targets.
 - Even with a new `modules.json` on the gateway, **a scan won't apply it** — module enable/disable needs a gateway **restart** (`docker compose restart ignition-test`), unlike views/config which hot-reload on scan.
 
 So the question to chew on: why does copy + scan work beautifully for views and database connections, but not for modules? List everything else a scan could never apply (memory, Java args, module binaries…). What does that tell you about where the image-based deploy (Lab 05) earns its keep?
@@ -316,7 +317,7 @@ So the question to chew on: why does copy + scan work beautifully for views and 
 - What surprised you about the on-disk layout? Which bucket has the trickiest deploy story? (Hint: the one that *sometimes* needs a restart.)
 - For your current customer's CI/CD: where does each bucket live, and which are versioned?
 - What happens if the runner crashes mid-deploy? The `docker cp` is *not* atomic — what does the gateway do with a partially-copied project?
-- What's the rollback story? GitHub Flow gives you two levers: revert a bad merge on `main` (re-deploys **test**), or re-deploy a known-good tag to **production** via `release.yml`'s `workflow_dispatch`. Which applies to which gateway, and why?
+- What's the rollback story? GitHub Flow gives you two levers: revert a bad merge on `main` (re-deploys **test**), or re-deploy a known-good tag to **production** via `lab04-release.yml`'s `workflow_dispatch`. Which applies to which gateway, and why?
 - Where would the self-hosted runner sit on your customer's network? What does it need access to that GitHub-hosted runners don't have?
 
 > **Next:** baking this into images is Lab 05. Bring your `modules.json` stretch answer.

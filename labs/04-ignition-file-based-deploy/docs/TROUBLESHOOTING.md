@@ -68,7 +68,7 @@ git update-index --no-skip-worktree <path>
 
 ## The deploy 403s on the scan step
 
-The `IGNITION_API_KEY` secret on that GitHub environment (`lab-gateway-test` / `lab-gateway-production`)
+The `IGNITION_API_KEY` secret on that GitHub environment (`lab04-gateway-test` / `lab04-gateway-production`)
 is missing, wrong, or not the target gateway's own key. `scripts/setup.sh` generated one key per
 gateway into `.env` — set the secret to the matching `IGNITION_API_KEY_TEST` / `_PRODUCTION` value. Keys
 are **per-gateway** — a test key won't authenticate against production.
@@ -124,10 +124,10 @@ always `scripts/teardown.sh --volumes` before deleting or re-cloning the folder.
 
 This lab uses GitHub Flow — the branch decides the gateway:
 
-- **Did your PR actually merge into `main`?** `deploy.yml` fires on pushes to `main`, and merging a PR is what produces that push. If the PR is still open (or merged into some other branch), nothing ships to test.
+- **Did your PR actually merge into `main`?** `lab04-deploy.yml` fires on pushes to `main`, and merging a PR is what produces that push. If the PR is still open (or merged into some other branch), nothing ships to test.
 - **Did the change touch a deploy path?** Confirm it hit `projects/**` or `services/config/**`; a docs-only push to `main` is filtered out by the `paths:` filter.
 - **Is Actions enabled on your fork?** No enabled workflows means no runs at all. Check *Settings → Actions* on your fork.
-- **Production doesn't update on a `main` merge — that's intentional.** Production is reached by **tagging**: `git tag vX.Y.Z && git push origin vX.Y.Z` fires `release.yml`.
+- **Production doesn't update on a `main` merge — that's intentional.** Production is reached by **tagging**: `git tag lab04-vX.Y.Z && git push origin lab04-vX.Y.Z` fires `lab04-release.yml`.
 
 ## The deploy ran but my change isn't visible
 
@@ -143,8 +143,7 @@ This lab uses GitHub Flow — the branch decides the gateway:
 scripts/validate.sh    # JSON parse + .deployignore syntax + actionlint — mirrors CI
 ```
 
-Still stuck? The instructor answer key ([lab-key.md](../instructor-notes/lab-key.md)) has a
-deeper failure-mode walkthrough.
+Still stuck? Ask the instructor or post in the course Discord.
 
 
 ## Why resource.json keeps changing on its own
