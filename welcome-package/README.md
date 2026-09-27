@@ -58,9 +58,9 @@ CHROME="/path/to/chrome" ./build.sh
 ## Spinning up a new cohort
 
 Nothing in the package is tied to a specific cohort: dates and start times live in the
-calendar invite, not here. Check the three links in `links.conf` and rebuild. Create a new
-Discord invite per cohort: set it to never expire, and give it the cohort's role
-so everyone who joins through it gets that role.
+calendar invite, not here. Check the three links in `links.conf` and rebuild. The Discord
+link is the general public invite: this repo is public, so never put a cohort invite that
+grants a role in `links.conf`. Hand out cohort roles in Discord itself.
 
 To add a new link:
 
