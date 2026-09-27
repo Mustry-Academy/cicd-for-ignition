@@ -144,8 +144,10 @@ fi
 ok "$REPO does not exist yet"
 
 # Rulesets (the whole 'locked-down repo' premise) need a paid plan on
-# private repos. The plan field is only visible to org owners.
-plan="$(gh api "orgs/$ORG" --jq '.plan.name // ""' 2> /dev/null || true)"
+# private repos. The plan field is only visible to org owners. On an HTTP
+# error gh api prints the error body to stdout, so drop it: an unreadable
+# plan must end up in the warning below, not pass as a plan name.
+plan="$(gh api "orgs/$ORG" --jq '.plan.name // ""' 2> /dev/null)" || plan=""
 if [ "$VISIBILITY" = "private" ]; then
   case "$plan" in
     free)
