@@ -69,13 +69,30 @@ elif [ -n "$fork_slug" ] && [ "$fork_owner" != "Mustry-Academy" ]; then
         fi
     fi
 
-    # A fresh fork ships with workflows switched off. GitHub reports that as
-    # state "disabled_fork"; only the button in the Actions tab turns it on.
-    states="$(gh api "repos/$fork_slug/actions/workflows" --jq '.workflows[].state' 2>/dev/null || true)"
-    if [ -z "$states" ]; then
-        warn "Could not read your fork's workflows. Check the Actions tab of https://github.com/$fork_slug"
-    elif printf '%s\n' "$states" | grep -q '^disabled_fork$'; then
-        fail "Actions are not enabled on your fork yet. Open https://github.com/$fork_slug/actions and click \"I understand my workflows, go ahead and enable them\""
+    # A fresh fork ships with workflows switched off: GitHub lists none of them
+    # (or lists them as "disabled_fork"), even though the permissions endpoint
+    # already reads enabled=true. Writing enabled=true does what the "I
+    # understand my workflows" button in the Actions tab does.
+    fork_workflow_states() {  # gh prints the error body on stdout, so drop it on failure
+        local out
+        out="$(gh api "repos/$fork_slug/actions/workflows" --jq '.workflows[].state' 2>/dev/null)" || return 0
+        printf '%s\n' "$out"
+    }
+    states="$(fork_workflow_states)"
+    if [ -z "$states" ] || printf '%s\n' "$states" | grep -q '^disabled_fork$'; then
+        if gh api -X PUT "repos/$fork_slug/actions/permissions" -F enabled=true -f allowed_actions=all >/dev/null 2>&1; then
+            for _ in 1 2 3 4 5; do
+                states="$(fork_workflow_states)"
+                [ -n "$states" ] && break
+                sleep 2
+            done
+        fi
+        enabled_now=1
+    fi
+    if [ -z "$states" ] || printf '%s\n' "$states" | grep -q '^disabled_fork$'; then
+        fail "Could not enable Actions on your fork. Open https://github.com/$fork_slug/actions and click \"I understand my workflows, go ahead and enable them\""
+    elif [ -n "${enabled_now:-}" ]; then
+        ok "Actions enabled on your fork"
     else
         ok "Actions are enabled on your fork"
     fi

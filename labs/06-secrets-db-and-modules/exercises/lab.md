@@ -57,8 +57,8 @@ migrations. The workflows live at the course repo's root, not in this folder:
 > trigger switched off, and the failure mode is silent: your PR, your merge and
 > your `lab06-v*` tag produce **no workflow run and no error message anywhere**. If a
 > step below says "watch the run" and the Actions tab is empty, this is why.
-> (There is no CLI or API for this button — only *Run workflow* on an
-> already-registered workflow works without it.)
+> (`./course-setup.sh` at the repo root does the same thing for you; re-run it
+> if you're not sure.)
 
 Also make sure `gh` points at your fork —
 `gh repo set-default <you>/cicd-for-ignition`, the one-time course setup step
