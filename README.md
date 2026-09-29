@@ -18,13 +18,12 @@ Work in **WSL2 (Windows), Linux or macOS**. On Windows, keep the clone in your L
    gh repo fork Mustry-Academy/cicd-for-ignition --clone
    cd cicd-for-ignition
    ```
-2. **Enable Actions on your fork.** Forks start with workflows switched off: open the *Actions* tab of your fork and click **"I understand my workflows, go ahead and enable them"**. There is no CLI for this button.
-3. **Run the course setup:**
+2. **Run the course setup:**
    ```bash
    ./course-setup.sh
    ```
-   It runs the [preflight](./preflight/) checks (tools, Docker, course images), sets up this clone's git hooks, checks that `origin` is your fork and Actions are on, and prepares the `.env` files for Labs 04 and 06 (it asks once for the GitHub token their runner needs). Safe to re-run until everything is green.
-4. **Paste `preflight/preflight-report.txt`** in the Discord `#preflight-help` channel so the TA can confirm you're ready.
+   It runs the [preflight](./preflight/) checks (tools, Docker, course images), sets up this clone's git hooks, checks that `origin` is your fork, switches on Actions for it (forks start with workflows off), and prepares the `.env` files for Labs 04 and 06 (it asks once for the GitHub token their runner needs). Safe to re-run until everything is green.
+3. **Paste `preflight/preflight-report.txt`** in the Discord `#preflight-help` channel so the TA can confirm you're ready.
 
 ## Labs
 
