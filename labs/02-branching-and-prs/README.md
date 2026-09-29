@@ -35,7 +35,8 @@ your own fork, and open PRs inside it.**
    mkdir -p ~/mustry-academy && cd ~/mustry-academy
    gh repo fork Mustry-Academy/cicd-for-ignition --clone             # once per course (fork + clone)
    cd cicd-for-ignition
-   gh repo set-default <your-username>/cicd-for-ignition             # once: tell gh where PRs go, YOUR fork
+   gh repo set-default --view                                        # where gh's PRs go: must print YOUR fork
+   gh repo set-default <your-username>/cicd-for-ignition             # if not (course-setup.sh already sets it)
    cd labs/02-branching-and-prs
    ```
    > **WSL2 (Windows): keep the clone in your Linux home (`~/…`), never `/mnt/c/…`.**
@@ -47,9 +48,8 @@ your own fork, and open PRs inside it.**
 3. Open PRs **inside your fork**: base repo = your fork (the base *branch* varies
    per exercise step), compare = your branch. Watch out: GitHub's "Compare & pull
    request" banner defaults the base repo to the **upstream** course repo — switch
-   it to your fork every time. `gh pr create` won't guess at all: it errors with
-   "no default remote repository has been set" until the `gh repo set-default`
-   from step 1 is done.
+   it to your fork every time. `gh pr create` may default to the course repo too: check
+   `gh repo set-default --view` from step 1 prints your fork.
 4. **Invite your reviewer**: add a peer or one of the tutors as a collaborator on
    your fork (Settings → Collaborators → Add people), then request their review on
    each PR.
@@ -116,12 +116,15 @@ labs/02-branching-and-prs/
 ├── README.md
 ├── docker-compose.yml            ← one Ignition gateway (named volume + bind-mounted projects/)
 ├── .env.example                  ← copy to .env before running
+├── flint.config.json             ← Flint (VS Code) config: projects + local gateway
 ├── exercises/
-│   └── lab.md                    ← the lab (Parts 1 and 2)
+│   └── lab.md                    ← the lab (Parts 1–3)
 ├── docs/                         ← reference reading
 │   ├── branching-strategies.md
-│   └── pr-review-style.md
+│   ├── pr-review-style.md
+│   └── wsl-setup.md              ← Windows/WSL: read once before this lab
 ├── scripts/
+│   ├── preflight.sh              ← WSL/permission checks setup.sh runs first
 │   ├── setup.sh                  ← boot the gateway and wait for RUNNING
 │   ├── scan.sh                   ← push project-file edits to the running gateway
 │   ├── teardown.sh               ← stop the gateway (--volumes to wipe state)

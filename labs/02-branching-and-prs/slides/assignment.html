@@ -281,7 +281,7 @@ body{
         <div class="gate">gate → scripts/validate.sh ✅ · reviewer invited</div>
       </div>
       <div class="pcard p2">
-        <div class="pn">PART 3 · REVIEW · +CONTRIBUTE</div>
+        <div class="pn">PART 3 · REVIEW &amp; MERGE</div>
         <h4>Review &amp; merge, in release order</h4>
         <p>Review a peer's PR with <span class="inlinecode">praise:</span> / <span class="inlinecode">suggestion:</span> / <span class="inlinecode">issue:</span>, respond to the review on yours, then merge: <b>the fix first, then the feature</b>.</p>
         <div class="gate">stretch → rerun it in Git Flow</div>
@@ -292,7 +292,7 @@ body{
       <p>You <b>argue</b> a strategy in Part 1, then <b>live</b> GitHub Flow's release week in Part 2 (the stretch lets you feel Git Flow's double-merge too). And the review loop only works if reviewers are <b>invited early</b>. Open PRs first, review while you wait.</p>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Discuss → run the scenario → review → contribute</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Discuss → run the scenario → review → merge</span></div>
 </section>
 
 <!-- 4 · SETUP · 1 · FORK & CLONE -->
@@ -307,8 +307,8 @@ body{
       <div class="steps">
         <div class="step"><div class="ix t">1</div><div class="tx">Go back to the <b>parent folder from Lab 01</b>: <span class="inlinecode">~/mustry-academy/</span> — your clone of the course repo lives in here, one folder per lab under <span class="inlinecode">labs/</span>.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone — once per course.</b> Did it in Lab 01? Skip to the <span class="inlinecode">cd</span>. Otherwise <span class="inlinecode">gh repo fork … --clone</span> forks the course repo to <i>your</i> GitHub account and clones your fork, in one go. Prefer the website? Press <b>Fork</b> on github.com — but you still need to <span class="inlinecode">git clone</span> your fork afterwards.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Check the remotes:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b>: that's where every branch and PR in this lab goes. <span class="inlinecode">gh</span> also adds <span class="inlinecode">upstream</span> → the course repo, handy for pulling course updates.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx"><b>Point <span class="inlinecode">gh</span> at your fork:</b> <span class="inlinecode">gh repo set-default</span>, and pick <b>your fork</b>. With two repos in play, <span class="inlinecode">gh pr create</span> refuses to run ("no default remote repository has been set") until you choose — and choosing upstream would aim your PRs at the course repo.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Check the remotes:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b>: that's where every branch and PR in this lab goes. The <span class="inlinecode">gh repo fork --clone</span> route also adds <span class="inlinecode">upstream</span> → the course repo; the plain <span class="inlinecode">git clone</span> route doesn't, and you don't need it today.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Point <span class="inlinecode">gh</span> at your fork:</b> with two repos in play, <span class="inlinecode">gh</span> may default to the <b>course repo</b>, and then <span class="inlinecode">gh pr create</span> aims your PRs there. Check with <span class="inlinecode">gh repo set-default --view</span>: it must print <b>your fork</b> (<span class="inlinecode">course-setup.sh</span> sets this). If not, run <span class="inlinecode">gh repo set-default &lt;your-username&gt;/cicd-for-ignition</span>.</div></div>
         <div class="step"><div class="ix t">5</div><div class="tx">From inside <span class="inlinecode">labs/02-branching-and-prs</span>, open VS Code with <span class="inlinecode">code .</span> — then work from its integrated terminal (<span class="inlinecode">Ctrl+`</span>), which already sits in the right folder.</div></div>
       </div>
       <div>
@@ -324,8 +324,9 @@ cd cicd-for-ignition
 <span class="cm"># 3: origin → YOUR username? good.</span>
 git remote -v
 
-<span class="cm"># 4: tell gh where PRs go → pick YOUR fork</span>
-gh repo set-default &lt;your-username&gt;/cicd-for-ignition
+<span class="cm"># 4: where do gh's PRs go? must print YOUR fork</span>
+gh repo set-default --view
+gh repo set-default &lt;your-username&gt;/cicd-for-ignition   <span class="cm"># if not</span>
 
 <span class="cm"># 5: open VS Code on this lab's folder</span>
 cd labs/02-branching-and-prs
@@ -479,7 +480,7 @@ scripts/validate.sh       <span class="cm"># → ✓ all project files valid</sp
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix p">1</div><div class="tx">GitHub Flow needs just <b>one long-lived branch: <span class="inlinecode">main</span></b>. Every branch you cut starts there and returns there through a PR.</div></div>
-        <div class="step"><div class="ix p">2</div><div class="tx"><b>Tag what's live: <span class="inlinecode">lab02-v1.2</span> on <span class="inlinecode">main</span>.</b> This is "production" (v1.2), the thing the P1 bug is running against. In GitHub Flow, <b>tags carry the release history</b>. The <span class="inlinecode">lab02-</span> prefix keeps this lab's tags apart from the other labs' in your fork.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx"><b>Tag what's live: <span class="inlinecode">lab02-v1.2.0</span> on <span class="inlinecode">main</span>.</b> This is "production" (v1.2), the thing the P1 bug is running against. In GitHub Flow, <b>tags carry the release history</b>. The <span class="inlinecode">lab02-</span> prefix keeps this lab's tags apart from the other labs' in your fork. Make it <b>annotated</b> (<span class="inlinecode">-a</span>), as Lab 01 taught for releases.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx"><b>Push the tag</b> to your fork — your first real <span class="inlinecode">git push</span> of the course, named this morning, used now. The world matches the teaching-deck diagram.</div></div>
       </div>
       <div>
@@ -487,15 +488,15 @@ scripts/validate.sh       <span class="cm"># → ✓ all project files valid</sp
 git switch main
 
 <span class="cm"># mark what's live in production</span>
-git tag lab02-v1.2
-git push origin lab02-v1.2      <span class="cm"># → "production" is v1.2</span></pre></div>
+git tag -a lab02-v1.2.0 -m "Release 1.2.0"
+git push origin lab02-v1.2.0      <span class="cm"># → "production" is v1.2</span></pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Refresher</span>
-          <p><b>Both named in Lab 01 — today they graduate to used.</b> <b><span class="inlinecode">git tag</span></b> pins a permanent name to one exact commit; unlike a branch, it <b>never moves</b> — that's what makes it a release marker. <b><span class="inlinecode">git push</span></b> uploads your local commits and refs to a remote (<span class="inlinecode">origin</span> = your fork). Tags don't ride along with a normal push — <span class="inlinecode">git push origin lab02-v1.2</span> sends one explicitly — and a <b>new branch</b> needs <span class="inlinecode">git push -u origin &lt;branch&gt;</span> once; the <span class="inlinecode">-u</span> links it to your fork, so later pushes are plain <span class="inlinecode">git push</span>.</p>
+          <p><b>Both named in Lab 01 — today they graduate to used.</b> <b><span class="inlinecode">git tag</span></b> pins a permanent name to one exact commit; unlike a branch, it <b>never moves</b> — that's what makes it a release marker. <b><span class="inlinecode">git push</span></b> uploads your local commits and refs to a remote (<span class="inlinecode">origin</span> = your fork). Tags don't ride along with a normal push — <span class="inlinecode">git push origin lab02-v1.2.0</span> sends one explicitly — and a <b>new branch</b> needs <span class="inlinecode">git push -u origin &lt;branch&gt;</span> once; the <span class="inlinecode">-u</span> links it to your fork, so later pushes are plain <span class="inlinecode">git push</span>.</p>
         </div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">The mental model</span>
-          <p><span class="inlinecode">main</span> = the one shared line of development · <span class="inlinecode">lab02-v1.2</span> = the exact commit customers are running · <b>releasing = merging to <span class="inlinecode">main</span> and tagging</b>. Every branch you cut next is short-lived: off <span class="inlinecode">main</span>, back to <span class="inlinecode">main</span>.</p>
+          <p><span class="inlinecode">main</span> = the one shared line of development · <span class="inlinecode">lab02-v1.2.0</span> = the exact commit customers are running · <b>releasing = merging to <span class="inlinecode">main</span> and tagging</b>. Every branch you cut next is short-lived: off <span class="inlinecode">main</span>, back to <span class="inlinecode">main</span>.</p>
         </div>
       </div>
     </div>
@@ -514,7 +515,7 @@ git push origin lab02-v1.2      <span class="cm"># → "production" is v1.2</spa
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix p">1</div><div class="tx"><b>Branch off <span class="inlinecode">main</span></b> — in GitHub Flow every branch starts at <span class="inlinecode">main</span> and returns to it through a PR: <span class="inlinecode">feature/v2-silo-detail</span>.</div></div>
-        <div class="step"><div class="ix p">2</div><div class="tx"><b>Add the view.</b> Easiest path: copy the <span class="inlinecode">overview</span> resource folder to <span class="inlinecode">silo-detail</span> under <span class="inlinecode">views/pages/</span>, edit its <span class="inlinecode">view.json</span> title, and register the page in <span class="inlinecode">page-config/config.json</span> so it's reachable.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx"><b>Add the view.</b> Easiest path: copy the <span class="inlinecode">overview</span> resource folder to <span class="inlinecode">silo-detail</span> under <span class="inlinecode">views/pages/</span>, edit the <span class="inlinecode">Subtitle</span> label's <span class="inlinecode">text</span> in its <span class="inlinecode">view.json</span>, and register the page in <span class="inlinecode">page-config/config.json</span> so it's reachable.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx"><b>Validate → commit.</b> <span class="inlinecode">scripts/validate.sh</span> green, then commit in <a href="https://www.conventionalcommits.org/" style="color:var(--blue-d)"><b>Conventional Commits</b></a> style: <span class="inlinecode">type(scope): summary</span>, where the type names the kind of change — today you'll need <span class="inlinecode">feat</span> and <span class="inlinecode">fix</span>. Machines can parse it too, which pays off when releases get automated.</div></div>
         <div class="step"><div class="ix p">4</div><div class="tx"><b>Open the PR — on your fork.</b> After the push, GitHub shows a <b>"Compare &amp; pull request"</b> banner on your fork's page (or use <span class="inlinecode">gh pr create</span> — it targets your fork thanks to the <span class="inlinecode">gh repo set-default</span> from setup). Set <b>base repo = your fork</b>, base <span class="inlinecode">main</span>, compare <span class="inlinecode">feature/v2-silo-detail</span> — the banner defaults the base to the upstream course repo. Then fill in the template: <b>What · Why · How to test</b>.</div></div>
         <div class="step"><div class="ix p">5</div><div class="tx"><b>Invite your reviewer, leave the PR open.</b> On your fork: <b>Settings → Collaborators → Add people</b> — a peer from your room or one of the tutors. Once they accept the invite, pick them under <b>Reviewers</b> on the PR; they'll review it in Part 3. <b>Don't merge yet</b> — the ambush comes first. (A copied view makes a big diff; that's fine — the review focuses on the page registration and valid JSON, not the line count.)</div></div>
@@ -645,7 +646,8 @@ git push
 <span class="cm"># merge order = release order in GitHub Flow:</span>
 <span class="cm">#  1. fix → main, then tag the release</span>
 git switch main && git pull
-git tag lab02-v1.2.1 && git push origin lab02-v1.2.1
+git tag -a lab02-v1.2.1 -m "Release 1.2.1: null-reading fix"
+git push origin lab02-v1.2.1
 
 <span class="cm">#  2. update the feature, then feature → main</span>
 git switch feature/v2-silo-detail
@@ -671,16 +673,18 @@ git push</pre></div>
     <div class="sechead"><span class="num warm">OPTIONAL · 1</span><div><div class="title">Stretch 1: now do it in Git Flow</div><div class="lead">Same scenario, the heavyweight strategy. The point isn't the code; it's <b>feeling</b> what Git Flow's ceremony buys — support for more than one live version — and what it costs.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx"><b>Rewind the repo first.</b> After Part 2, <span class="inlinecode">main</span> already has both changes: reset your fork's <span class="inlinecode">main</span> back to <span class="inlinecode">lab02-v1.2</span> and clear the local feature and fix branches (it's your own fork; force-push is fine <i>here</i>, but it rewinds <span class="inlinecode">main</span> for every lab, so do it before other labs' work lands there — and note it's exactly what Stretch 2's protection forbids on a shared repo).</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx"><b>Rewind the repo first.</b> After Part 2, <span class="inlinecode">main</span> already has both changes: reset your fork's <span class="inlinecode">main</span> back to <span class="inlinecode">lab02-v1.2.0</span> and clear the local feature and fix branches (it's your own fork; force-push is fine <i>here</i>, but it rewinds <span class="inlinecode">main</span> for every lab, so do it before other labs' work lands there — and note it's exactly what Stretch 2's protection forbids on a shared repo).</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Build the Git Flow world:</b> a long-lived <span class="inlinecode">develop</span> next to <span class="inlinecode">main</span>. Rerun the two changes Git Flow's way: the view on <span class="inlinecode">feature/*</span> <b>off <span class="inlinecode">develop</span></b> → PR into <span class="inlinecode">develop</span>; the fix on <span class="inlinecode">hotfix/*</span> <b>off <span class="inlinecode">main</span></b> → <b>two PRs</b>, into <span class="inlinecode">main</span> (tag <span class="inlinecode">lab02-v1.2.1</span>) <b>and</b> into <span class="inlinecode">develop</span>.</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Feel the difference.</b> The hotfix merges <b>twice</b> — skip the <span class="inlinecode">develop</span> merge and v2.0 regresses the fix next release. In Part 2, <span class="inlinecode">v1.2</span> lived in a tag; here a whole branch structure guards it. That's the trade-off, in your hands.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># rewind the fork to before the scenario</span>
 git switch main
-git reset --hard lab02-v1.2
+git reset --hard lab02-v1.2.0
 git push --force origin main
-git branch -D feature/v2-silo-detail fix/null-reading  <span class="cm"># local leftovers</span>
+git fetch --prune                     <span class="cm"># forget remote branches GitHub deleted</span>
+git branch -D feature/v2-silo-detail fix/null-reading  <span class="cm"># local leftovers;</span>
+<span class="cm">#   "branch not found" = already gone, fine</span>
 git tag -d lab02-v1.2.1
 git push origin --delete lab02-v1.2.1         <span class="cm"># un-release the patch</span>
 
@@ -717,6 +721,7 @@ git push -u origin develop
         <div class="step"><div class="ix p">2</div><div class="tx"><b>Require a pull request before merging</b> with 1 approval.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx"><b>Dismiss stale approvals</b> when new commits are pushed; an approve shouldn't survive a rewrite.</div></div>
         <div class="step"><div class="ix p">4</div><div class="tx"><b>Restrict direct pushes to <span class="inlinecode">main</span></b> for everyone, <b>including admins</b> ("do not allow bypassing").</div></div>
+        <div class="step"><div class="ix p">5</div><div class="tx"><b>Temporary: delete the rule when you're done</b> (Settings → Branches → Delete). On your own fork nobody can approve your PRs, so it would block Labs 03–07, and Lab 03 adds its own rule on <span class="inlinecode">main</span>.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># Settings → Branches → Add branch protection rule</span>
@@ -724,7 +729,9 @@ git push -u origin develop
       Required approvals: 1
 [x] Dismiss stale pull request approvals
       when new commits are pushed
-[x] Do not allow bypassing the above settings</pre></div>
+[x] Do not allow bypassing the above settings
+
+<span class="cm"># done? delete the rule, or it blocks Labs 03–07</span></pre></div>
         <div class="goal" style="margin-top:18px;border-left-color:var(--peri)">
           <span class="badge" style="background:var(--peri);color:var(--navy)">No CI check, yet</span>
           <p>We don't require "passing CI" here because Lab 02 ships <b>no CI on purpose</b>: <span class="inlinecode">validate.sh</span> is something <i>you</i> run. <b>Lab 03 turns it into a required status check</b> no one can merge past.</p>

@@ -99,10 +99,9 @@ needs a peer to have reviewed yours.
 
 > Careful when opening PRs on a fork: GitHub's "Compare & pull request" banner
 > defaults the **base repo** to the upstream course repo — switch it to **your
-> fork** every time. `gh pr create` won't guess: it errors with "no default remote
-> repository has been set" until you run
-> `gh repo set-default <your-username>/cicd-for-ignition` once (part of
-> setup) and pick your fork.
+> fork** every time. `gh pr create` may default to the course repo too. Check with
+> `gh repo set-default --view`: it must print your fork (`course-setup.sh` sets
+> this). If not, run `gh repo set-default <your-username>/cicd-for-ignition`.
 
 ### 1. Discuss: which strategy fits your team? (breakout room)
 
@@ -127,24 +126,25 @@ production ambushes you. You thread both through GitHub Flow.
 marking what's in production. In GitHub Flow, tags carry the release history. Tag
 what's live as `v1.2` on `main` and push the tag. Your fork hosts every lab of the
 course, so this lab's tags carry a `lab02-` prefix: the release is v1.2, the tag is
-`lab02-v1.2`.
+`lab02-v1.2.0` (every lab tags `labNN-vX.Y.Z`). Use an **annotated** tag (`-a`), as
+Lab 01 taught for releases: it records who tagged, when, and why.
 
 ```bash
 git switch main
-git tag lab02-v1.2
-git push origin lab02-v1.2      # "production" is v1.2
+git tag -a lab02-v1.2.0 -m "Release 1.2.0"
+git push origin lab02-v1.2.0      # "production" is v1.2
 ```
 
-Mental model: `main` = the one shared line of development, `lab02-v1.2` = the exact
+Mental model: `main` = the one shared line of development, `lab02-v1.2.0` = the exact
 commit customers are running, releasing = merging to `main` and tagging. Every
 branch you cut next is short-lived: off `main`, back to `main` through a PR.
 
-> **Two commands graduate from "named" to "used" today.** `git tag lab02-v1.2` pins a
+> **Two commands graduate from "named" to "used" today.** `git tag -a lab02-v1.2.0` pins a
 > permanent, human-readable name to the exact commit you're on; unlike a branch, a
 > tag never moves — that's what makes it a release marker. `git push` uploads your
 > local commits and refs to a remote (`origin` = your fork on GitHub; this morning
 > everything stayed local). Two habits that trip people up: tags don't ride along
-> with a normal push, so `git push origin lab02-v1.2` sends one explicitly — and a *new*
+> with a normal push, so `git push origin lab02-v1.2.0` sends one explicitly — and a *new*
 > branch needs `git push -u origin <branch>` once, where `-u` links it to your
 > fork so every later push is just `git push`.
 
@@ -231,7 +231,7 @@ Then respond and merge, in release order:
 
    ```bash
    git switch main && git pull
-   git tag lab02-v1.2.1 && git push origin lab02-v1.2.1
+   git tag -a lab02-v1.2.1 -m "Release 1.2.1: null-reading fix" && git push origin lab02-v1.2.1
    ```
 
    Delete the fix branch once it's merged (GitHub offers a button; take it).
@@ -248,13 +248,15 @@ Then respond and merge, in release order:
   the ceremony buys (support for more than one live version) and what it costs.
   First rewind your fork — after the scenario, `main` already has both changes.
   This rewinds your fork's `main` for the whole course, so do it before you commit
-  other labs' work to `main`; anything after `lab02-v1.2` goes too:
+  other labs' work to `main`; anything after `lab02-v1.2.0` goes too:
 
   ```bash
   git switch main
-  git reset --hard lab02-v1.2
+  git reset --hard lab02-v1.2.0
   git push --force origin main       # your own fork: force-push is fine here
-  # GitHub's delete button only removed the remote branches; clear the local ones too:
+  # GitHub's delete button only removed the remote branches; forget those, then clear
+  # the local ones too ("branch not found" just means it's already gone):
+  git fetch --prune
   git branch -D feature/v2-silo-detail fix/null-reading
   # and un-release the patch, so the stretch can re-tag it:
   git tag -d lab02-v1.2.1 && git push origin --delete lab02-v1.2.1
@@ -277,7 +279,9 @@ Then respond and merge, in release order:
   `main` (no one, including admins). Screenshot the settings and share it with a
   one-line description of what you protected against. We don't require "passing CI"
   here because Lab 02 ships no CI: `validate.sh` is something *you* run, and Lab 03
-  turns it into a required status check.
+  turns it into a required status check. **Temporary: delete the rule when you're done**
+  (Settings → Branches → Delete). On your own fork nobody can approve your PRs, so it
+  would block Labs 03–07, and Lab 03 adds its own rule on `main`.
 
 ## Debrief
 
