@@ -4,7 +4,7 @@
 # Run this before opening a PR to catch the cheap stuff the CI workflow checks,
 # without waiting for a runner:
 #   1. Every *.json under projects/ and services/ parses.
-#   2. .deployignore patterns are relative (no leading /).
+#   2. .deployignore patterns stay inside the lab (no .. segments).
 #   3. security-properties doesn't name a throwaway temp_N identity.
 #   4. actionlint passes on this lab's workflows (only if actionlint is installed).
 #
@@ -35,15 +35,18 @@ else
 fi
 
 # 2. .deployignore syntax ------------------------------------------------------
-echo "→ .deployignore syntax (patterns must be relative)"
+echo "→ .deployignore syntax (patterns stay inside the lab)"
 if [ -f .deployignore ]; then
   di_fail=0
   n=0
+  climbs_out='(^|/)[.][.](/|$)'   # a .. path segment
   while IFS= read -r line || [ -n "$line" ]; do
     n=$((n + 1))
     [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-    if [[ "$line" =~ ^/ ]]; then
-      echo -e "  ${RED}line $n:${NC} pattern must be relative, not absolute: $line"
+    # A leading / anchors a pattern to the lab root (see .deployignore);
+    # a .. segment would reach outside the lab.
+    if [[ "$line" =~ $climbs_out ]]; then
+      echo -e "  ${RED}line $n:${NC} pattern must stay inside the lab (no ..): $line"
       di_fail=1
     fi
   done < .deployignore

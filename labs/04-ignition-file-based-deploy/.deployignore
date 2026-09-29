@@ -3,23 +3,31 @@
 # Format: gitignore-style. One pattern per line. Blank lines and lines starting
 # with `#` are ignored. Trailing slashes match directories.
 #
+# Anchored vs floating, as in .gitignore:
+#   /tests/      leading slash → only the lab root's tests/ folder
+#   tests/       no slash      → ANY folder named tests, even a script package
+#                                inside a project. Easy to prune real code by accident.
+#   a/b/         slash inside  → that path, relative to the lab root
+#
 # The deploy script reads this file and prunes the working tree before copying.
 # Anything matched here exists in the repo but never lands on the gateway.
 
-# Lab-only files that have nothing to do with the gateway runtime
-README.md
-LICENSE
-.deployignore
+# Lab-only files that have nothing to do with the gateway runtime. Anchored:
+# a project may hold a script package called tests or scripts, and that ships.
+/README.md
+/LICENSE
+/.deployignore
+/.env.example
+/.github/
+/docs/
+/exercises/
+/scripts/
+/tests/
+/third-party-modules/
+/db-init/
+# Git metadata can sit anywhere, so these float.
 .gitignore
 .gitattributes
-.env.example
-.github/
-docs/
-exercises/
-scripts/
-tests/
-third-party-modules/
-db-init/
 services/config/local/
 # Per-instance identity (UUID, OPC-UA keystores, machine-local system props).
 # Must never be copied onto another gateway — each instance owns its own.
@@ -41,7 +49,7 @@ services/config/resources/core/ignition/identity-provider/default/
 # local gateway's token sits under services/config.
 services/config/resources/core/ignition/api-token/
 # Test/production gateway state (bind mounts) — never part of a deploy payload
-gateways/
+/gateways/
 
 # OS noise
 .DS_Store
@@ -52,6 +60,6 @@ Thumbs.db
 .idea/
 *.swp
 
-# Compose / development-only files
-docker-compose.yaml
+# Compose / development-only files (.env floats: never ship a secrets file)
+/docker-compose.yaml
 .env

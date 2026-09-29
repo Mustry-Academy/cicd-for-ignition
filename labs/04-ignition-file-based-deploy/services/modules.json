@@ -2,12 +2,12 @@
   "com.inductiveautomation.alarm-notification": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Alarm Notification-module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.inductiveautomation.connectors.kafka": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Kafka Connector-module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.inductiveautomation.eam": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Enterprise Administration-module.modl",
@@ -16,17 +16,17 @@
   "com.inductiveautomation.eventstream": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/EventStream-module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.inductiveautomation.historian": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Historian-module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.inductiveautomation.historian.sql": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/SQL Historian-module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.inductiveautomation.jdbc.mariadb": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/MariaDB JDBC Driver Module.modl",
@@ -39,12 +39,12 @@
   "com.inductiveautomation.jdbc.postgresql": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/PostgreSQL JDBC Driver Module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.inductiveautomation.opcua": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/OPC-UA-module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.inductiveautomation.opcua.drivers.ablegacy": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Allen-Bradley Drivers-module.modl",
@@ -73,7 +73,7 @@
   "com.inductiveautomation.opcua.drivers.modbus": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Modbus Driver v2-module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.inductiveautomation.opcua.drivers.omron": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Omron-Driver.modl",
@@ -90,17 +90,17 @@
   "com.inductiveautomation.opcua.drivers.tcpudp": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/UDP and TCP Drivers-module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.inductiveautomation.perspective": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Perspective-module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.inductiveautomation.reporting": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Reporting-module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.inductiveautomation.sfc": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/SFC-module.modl",
@@ -117,7 +117,7 @@
   "com.inductiveautomation.symbol-factory": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Symbol Factory-module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.inductiveautomation.vision": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Vision-module.modl",
@@ -126,7 +126,7 @@
   "com.inductiveautomation.webdev": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Web Developer Module.modl",
     "onStartup": "enabled",
-    "certFingerprint": "0299d53c38bdbe7ca79bd6c778a5bab884e4c813"
+    "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
   },
   "com.mussonindustrial.embr.charts": {
     "filename": "/third-party-modules/Embr-Charts-Ignition83-4.0.1.modl",

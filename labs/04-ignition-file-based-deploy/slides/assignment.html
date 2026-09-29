@@ -213,7 +213,7 @@ body{
       <div class="pcard">
         <div class="pn">PART 1 · WE DO</div>
         <h4>Find the file</h4>
-        <p>Add a database connection, then catch the file the gateway wrote: touch a marker, <span class="inlinecode">find -newer</span>.</p>
+        <p>Read the shipped database connection and its per-mode overrides, then make a UI change and let <span class="inlinecode">git status</span> show where the gateway wrote it.</p>
         <div class="gate">exercises/lab.md · We do</div>
       </div>
       <div class="pcard p1">
@@ -255,9 +255,9 @@ body{
       <div class="steps">
         <div class="step"><div class="ix t">1</div><div class="tx">Go to your course clone <span class="inlinecode">~/mustry-academy/cicd-for-ignition/</span> — every lab is a folder under <span class="inlinecode">labs/</span>; this one is <span class="inlinecode">labs/04-ignition-file-based-deploy</span>. <b>On WSL2, clone into your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>: the gateways' bind mounts are far slower and line endings get messy across the Windows boundary.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone — once for the whole course.</b> Already did it for an earlier lab? Skip this. Otherwise <span class="inlinecode">gh repo fork … --clone</span> forks the course repo to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Enable Actions.</b> Open your fork's <b>Actions</b> tab and click "<i>I understand my workflows, enable them</i>" (once per fork). Skip this and no PR or tag will ever deploy. This is also where <span class="inlinecode">RUNNER_REPO_URL</span> in <span class="inlinecode">.env</span> must point — at <b>your fork</b>, not the course repo.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Enable Actions.</b> Open your fork's <b>Actions</b> tab and click "<i>I understand my workflows, go ahead and enable them</i>" (once per fork; the root <span class="inlinecode">course-setup.sh</span> may already have done it). Skip this and no PR or tag will ever deploy. This is also where <span class="inlinecode">RUNNER_REPO_URL</span> in <span class="inlinecode">.env</span> must point — at <b>your fork</b>, not the course repo.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx"><b>Create a runner PAT</b> — the bundled runner needs it to register. At <span class="inlinecode">github.com/settings/tokens</span>: <b>Generate new token (classic)</b> → tick the <span class="inlinecode">repo</span> scope → <b>Generate</b> → copy the <span class="inlinecode">ghp_…</span> value. You make this <b>once</b>; Labs 05 and 06 reuse the same token, so keep it handy.</div></div>
-        <div class="step"><div class="ix t">5</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp -n .env.example .env</span> (the root <span class="inlinecode">course-setup.sh</span> may already have created it) and check <b>two lines</b>: point <span class="inlinecode">RUNNER_REPO_URL</span> at <b>your fork</b>, and paste your token into <span class="inlinecode">RUNNER_GITHUB_PAT</span>. Leave everything else as shipped: the admin logins stay as-is, and the three <span class="inlinecode">IGNITION_API_KEY_*</span> lines stay <b>empty</b> — <span class="inlinecode">setup.sh</span> generates a unique key per gateway into <span class="inlinecode">.env</span> in the next step. No key ever lives in the repo.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">[ -f .env ] || cp .env.example .env</span> (the root <span class="inlinecode">course-setup.sh</span> may already have created it) and check <b>two lines</b>: point <span class="inlinecode">RUNNER_REPO_URL</span> at <b>your fork</b>, and paste your token into <span class="inlinecode">RUNNER_GITHUB_PAT</span>. Leave everything else as shipped: the admin logins stay as-is, and the three <span class="inlinecode">IGNITION_API_KEY_*</span> lines stay <b>empty</b> — <span class="inlinecode">setup.sh</span> generates a unique key per gateway into <span class="inlinecode">.env</span> in the next step. No key ever lives in the repo.</div></div>
         <div class="step"><div class="ix t">6</div><div class="tx"><b>Check the remotes and set the default:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b> — then <span class="inlinecode">gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition</span> so <span class="inlinecode">gh</span> targets <b>your fork</b>, not the course repo (once per clone; already done if you set it in an earlier lab). Then <span class="inlinecode">code .</span> to open VS Code, and <span class="inlinecode">scripts/setup.sh</span> brings up the stack (three gateways + TimescaleDB + the runner).</div></div>
       </div>
       <div>
@@ -270,20 +270,21 @@ gh repo fork Mustry-Academy/cicd-for-ignition --clone
 <span class="cm">#      then this lab's folder in your course clone</span>
 cd ~/mustry-academy/cicd-for-ignition/labs/04-ignition-file-based-deploy
 
-<span class="cm"># 3: origin → YOUR username? good. Then make gh target YOUR fork:</span>
-git remote -v
-gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition
+<span class="cm"># 3: your fork's Actions tab → enable workflows (once)</span>
 
 <span class="cm"># 4: make a repo-scope PAT (github.com/settings/tokens)</span>
 <span class="cm">#    Generate new token (classic) → tick "repo" → copy ghp_…</span>
 
 <span class="cm"># 5: copy the env file, change TWO lines only</span>
-cp -n .env.example .env
+[ -f .env ] || cp .env.example .env
 <span class="cm">#    RUNNER_REPO_URL=https://github.com/<span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition</span>
 <span class="cm">#    RUNNER_GITHUB_PAT=<span class="cmd2">ghp_your_token</span></span>
 <span class="cm">#    leave the logins as-is; setup.sh fills the API keys in</span>
 
-<span class="cm"># 6: open VS Code, then bring the stack up</span>
+<span class="cm"># 6: origin → YOUR username? Make gh target YOUR fork,</span>
+<span class="cm">#    open VS Code, then bring the stack up</span>
+git remote -v
+gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition
 code .
 scripts/setup.sh          <span class="cm"># three gateways + TimescaleDB + runner</span></pre></div>
       </div>
@@ -319,7 +320,7 @@ git status                 <span class="cm"># new / edited files, right here</sp
 git diff services/config</pre></div>
         <div class="goal warn-g" style="margin-top:18px">
           <span class="badge">Heads-up</span>
-          <p>Expect a <b>longer path than 8.1 habits suggest</b>: scope first, then module namespace. And the flip side — only the bind-mounted <span class="inlinecode">config/</span> shows in git; <b>operational</b> changes (a new user lands in the internal DB, caches) go to the container's volume and never touch the host.</p>
+          <p>Expect a <b>longer path than 8.1 habits suggest</b>: scope first, then module namespace. And not everything on the host shows in git: a <b>new user</b> is written to <span class="inlinecode">services/config/…/user-source/default/users.json</span>, but <span class="inlinecode">.gitignore</span> hides it because it holds <b>password hashes</b>. Caches and runtime state stay in the container's volume.</p>
         </div>
       </div>
     </div>
@@ -340,7 +341,7 @@ git diff services/config</pre></div>
         <div class="step"><div class="ix t">1</div><div class="tx"><b>Edit a view that already exists</b>: the shipped <span class="inlinecode">overview</span> view's <span class="inlinecode">view.json</span> in <span class="inlinecode">example-project</span> (e.g. <span class="inlinecode">height: 920 → 700</span>). Local bind-mounts <span class="inlinecode">./projects/</span>, so editing the file in your working tree <b>is</b> editing the local gateway's disk.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx">Run scan.sh, verify at <span class="inlinecode">localhost:8088 (or Designer)</span>. The scan makes the gateway <i>notice</i> what's on disk.</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Ship to test by hand</b>: <span class="inlinecode">docker cp</span> the project, scan. Test starts <b>empty</b>, so nothing to wipe. Verify at <span class="inlinecode">localhost:8089 (or Designer)</span>: same view, same height. Bonus check from the host: <span class="inlinecode">ls gateways/test/projects</span> shows what just landed.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx">Open <span class="inlinecode">.deployignore</span>. For each pattern, say <b>why the gateway shouldn't have that file</b>.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx">Open <span class="inlinecode">.deployignore</span>. For each pattern, say <b>why the gateway shouldn't have that file</b>. Notice the leading <span class="inlinecode">/</span>: it anchors a pattern to the lab root, as in <span class="inlinecode">.gitignore</span>. Without it, <span class="inlinecode">tests/</span> would also prune <span class="inlinecode">example-project</span>'s script package called <span class="inlinecode">tests</span>.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 1: edit the shipped view — the bind mount means your</span>
@@ -358,7 +359,7 @@ docker cp ./projects/. \
 scripts/scan.sh test</pre></div>
         <div class="goal" style="margin-top:16px">
           <span class="badge">What lab04-deploy.yml adds</span>
-          <p>Before copying, it also <b>wipes</b> <span class="inlinecode">projects/</span> + <span class="inlinecode">config/</span> (sparing what <span class="inlinecode">.deployignore</span> protects: <span class="inlinecode">config/local/</span>, <span class="inlinecode">config/resources/local/</span>, and the internal identity by name: <span class="inlinecode">user-source/default/</span> + <span class="inlinecode">user-source/opcua-module/</span> + <span class="inlinecode">identity-provider/default/</span>), so a resource deleted in the repo disappears from the gateway too. Other identity resources and <span class="inlinecode">security-properties</span> are ordinary config and ship normally. You'll read that step in the workflow anatomy.</p>
+          <p>Before copying, it also <b>wipes</b> <span class="inlinecode">projects/</span> + <span class="inlinecode">config/</span> (sparing what <span class="inlinecode">.deployignore</span> protects: <span class="inlinecode">config/local/</span>, <span class="inlinecode">config/resources/local/</span>, and the internal identity by name: <span class="inlinecode">user-source/default/</span> + <span class="inlinecode">user-source/opcua-module/</span> + <span class="inlinecode">identity-provider/default/</span>, plus the gateway's own <span class="inlinecode">api-token/</span>), so a resource deleted in the repo disappears from the gateway too. Other identity resources and <span class="inlinecode">security-properties</span> are ordinary config and ship normally. You'll read that step in the workflow anatomy.</p>
         </div>
       </div>
     </div>
@@ -403,14 +404,14 @@ docker compose logs --tail 50 github-runner
     <div class="stage">File-based deploy · you do · part 3</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num p" style="background:var(--peri)">PART 3</span><div><div class="title">Ship to the development environment via the <span class="mono" style="font-size:30px">main</span> branch</div><div class="lead">15 min. A real PR rides the pipeline: feature branch → PR → CI → merge → lab04-deploy.yml → test gateway.</div></div></div>
+    <div class="sechead"><span class="num p" style="background:var(--peri)">PART 3</span><div><div class="title">Ship to the test environment via the <span class="mono" style="font-size:30px">main</span> branch</div><div class="lead">15 min. A real PR rides the pipeline: feature branch → PR → CI → merge → lab04-deploy.yml → test gateway.</div></div></div>
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix p">1</div><div class="tx"><b>Create a new project named <span class="inlinecode">sample-project</span></b> on the local gateway, the way you always do in Ignition (Designer → New Project, or Config → Projects). The bind mount drops it into your working tree — <span class="inlinecode">git status</span> shows an untracked <span class="inlinecode">projects/sample-project/</span>. That folder <b>is</b> your deployable.</div></div>
         <div class="step"><div class="ix p">2</div><div class="tx"><b>Create one simple view</b> in that project in the Designer (any name, e.g. a label with your name on it) and <b>save</b>. That gives you something visible to recognize on the test gateway after the deploy.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx">Branch <span class="inlinecode">feature/add-sample-project</span> off <span class="inlinecode">main</span>, <span class="inlinecode">git add projects/</span> and commit — this also picks up the we-do's height tweak, so the repo matches your local gateway — then push.</div></div>
-        <div class="step"><div class="ix p">4</div><div class="tx">Open a PR <b>into <span class="inlinecode">main</span> on GitHub</b>. Watch <span class="inlinecode">lab04-ci.yml</span> run on <span class="inlinecode">ubuntu-latest</span> (free): JSON, <span class="inlinecode">.deployignore</span> and workflow validation.</div></div>
-        <div class="step"><div class="ix p">5</div><div class="tx"><b>Merge.</b> <span class="inlinecode">lab04-deploy.yml</span> fires (note the <span class="inlinecode">paths:</span> filter, since docs-only pushes don't deploy). Validation already happened on the PR, so it goes straight to shipping. Watch the <b>Ship</b> and <b>Trigger gateway scan</b> steps.</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx">Open a PR <b>into <span class="inlinecode">main</span> on GitHub</b>. Watch <span class="inlinecode">lab04-ci.yml</span> run on <span class="inlinecode">ubuntu-latest</span> (free): yamllint, actionlint, shellcheck, ign-lint, <span class="inlinecode">docker compose config</span>, JSON validity, <span class="inlinecode">.deployignore</span> syntax, and the security-properties identity check.</div></div>
+        <div class="step"><div class="ix p">5</div><div class="tx"><b>Merge.</b> <span class="inlinecode">lab04-deploy.yml</span> fires (note the <span class="inlinecode">paths:</span> filter, since docs-only pushes don't deploy). Validation already happened on the PR, so it goes straight to shipping. Watch the <b>Ship</b> and <b>Trigger gateway scan</b> steps. The <b>first</b> deploy to a fresh gateway restarts it once (Ignition picks its deployment mode at boot); every later deploy scans hot.</div></div>
         <div class="step"><div class="ix p">6</div><div class="tx"><b>Verify at localhost:8089 (or Designer).</b> Config → Projects lists <span class="inlinecode">sample-project</span>. From the host, <span class="inlinecode">ls gateways/test/projects</span> shows the tree CI shipped — <span class="inlinecode">example-project</span>, <span class="inlinecode">packaging-site</span> <b>and</b> yours: the unit of deploy is the whole <span class="inlinecode">projects/</span> tree.</div></div>
       </div>
       <div>
@@ -447,10 +448,10 @@ ls gateways/test/projects</pre></div>
     <div class="sechead"><span class="num p" style="background:var(--peri)">PART 4</span><div><div class="title">Release to production: <span class="mono" style="font-size:30px">main</span> + a tag</div><div class="lead">10 min. The GitHub Flow release: tag the commit on <span class="inlinecode">main</span> you want in production. <b>The tag, not the merge, is what ships production.</b></div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix p">6</div><div class="tx">The change is already on <span class="inlinecode">main</span> from the test deploy, now tag it.</div></div>
-        <div class="step"><div class="ix p">7</div><div class="tx"><b>Observe: the tag is what ships production.</b> The merge already shipped test, but only a <span class="inlinecode">lab04-v*</span> tag reaches production.</div></div>
-        <div class="step"><div class="ix p">8</div><div class="tx">Tag <span class="inlinecode">lab04-v0.1.0</span> and push the tag. <span class="inlinecode">lab04-release.yml</span> fires: same five steps, different environment, production container. Tag already exists in your fork (inherited at fork time)? Take the next free number, <span class="inlinecode">git tag -l</span> shows what's taken.</div></div>
-        <div class="step"><div class="ix p">9</div><div class="tx"><b>Verify at localhost:8090 (or Designer).</b> Production now shows the change you merged into <span class="inlinecode">main</span> and just released. Host-side check: <span class="inlinecode">ls gateways/production/projects</span>.</div></div>
+        <div class="step"><div class="ix p">1</div><div class="tx">The change is already on <span class="inlinecode">main</span> from the test deploy, now tag it.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx"><b>Observe: the tag is what ships production.</b> The merge already shipped test, but only a <span class="inlinecode">lab04-v*</span> tag reaches production.</div></div>
+        <div class="step"><div class="ix p">3</div><div class="tx">Tag <span class="inlinecode">lab04-v0.1.0</span> and push the tag. <span class="inlinecode">lab04-release.yml</span> fires: same five steps, different environment, production container. Tag already exists in your fork (inherited at fork time)? Take the next free number, <span class="inlinecode">git tag -l</span> shows what's taken.</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx"><b>Verify at localhost:8090 (or Designer).</b> Production now shows the change you merged into <span class="inlinecode">main</span> and just released. Host-side check: <span class="inlinecode">ls gateways/production/projects</span>.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># on main, the change is already there from the test deploy</span>
@@ -478,7 +479,7 @@ git push origin lab04-v0.1.0        <span class="cm"># ← lab04-release.yml fir
     <div class="sechead"><span class="num p" style="background:var(--peri)">PART 5</span><div><div class="title">Break a deploy on purpose</div><div class="lead">~5 min, optional but strongly encouraged, because reading the failure is half the lesson. Pick one.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix p">A</div><div class="tx"><b>Wrong API key.</b> Set garbage in <span class="inlinecode">lab04-gateway-test</span>'s secret, re-run the deploy. The <b>Ship step succeeds</b> (docker cp doesn't care about keys) but the <b>scan 403s</b>. Files are in the container; the gateway never reloaded. <i>What's your recovery story?</i></div></div>
+        <div class="step"><div class="ix p">A</div><div class="tx"><b>Wrong API key.</b> Set garbage in <span class="inlinecode">lab04-gateway-test</span>'s secret, re-run the deploy. The <b>Ship step succeeds</b> (docker cp doesn't care about keys), then the scan step gets a <b>401</b> and fails fast, naming the secret to check. Files are in the container, but the gateway never loaded them. <i>What's your recovery story?</i></div></div>
         <div class="step"><div class="ix p">B</div><div class="tx"><b>Stopped container.</b> <span class="inlinecode">docker compose stop ignition-test</span>, then trigger a deploy. The <b>verify step fails fast</b>: "container is in state 'exited', expected 'running'", before any file moved. Much better than failing halfway.</div></div>
         <div class="step"><div class="ix p">C</div><div class="tx">Then <b>fix it and re-run</b> the workflow (manual <span class="inlinecode">workflow_dispatch</span> works too). The steps are idempotent, so the deploy converges.</div></div>
       </div>

@@ -68,6 +68,10 @@ jobs:
       IGNITION_CONTAINER: ${{ vars.IGNITION_CONTAINER || 'lab04-ignition-test' }}
       IGNITION_API_KEY: ${{ secrets.IGNITION_API_KEY }}
       GATEWAY_DATA_PATH: /usr/local/bin/ignition/data
+      # The gateway's -Dignition.config.mode (docker-compose.yaml) and this
+      # job's environment, for the first-deploy check and error messages.
+      CONFIG_MODE: test
+      ENVIRONMENT: lab04-gateway-test
 
     steps:
       - name: Check out repo
@@ -92,15 +96,18 @@ jobs:
           echo "Prerequisites OK (container=$IGNITION_CONTAINER state=$state)."
 
       - name: Prune working tree per .deployignore
-        # Patterns containing a slash → repo-relative path match.
-        # Bare names (.DS_Store, *.swp) → match anywhere in the tree, the
-        # way .gitignore semantically works.
+        # The way .gitignore works: a leading slash (/tests/) anchors a
+        # pattern to the lab root; any other pattern containing a slash is a
+        # lab-relative path; bare names (tests/, .DS_Store, *.swp) match
+        # anywhere in the tree, projects included.
         run: |
           set -euo pipefail
           [ -f .deployignore ] || { echo "No .deployignore — skipping prune"; exit 0; }
           while IFS= read -r line || [ -n "$line" ]; do
             [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
             pat="${line%/}"
+            # Leading / → anchored to the lab root (./tests, not any tests/).
+            [[ "$pat" == /* ]] && pat=".$pat"
             if [[ "$pat" == */* ]]; then
               if [ -e "$pat" ]; then
                 echo "  pruning (path):  $pat"
@@ -183,17 +190,35 @@ jobs:
         # step above removes scripts/ (it is in .deployignore), so that script is
         # not on disk in this job.
         #
-        # Self-heal on 401/403: on a gateway that has not yet loaded its API
-        # token (setup.sh writes it to the gateway's disk; the wipe above
-        # spares it) or whose first-boot commissioning reset the permissions
-        # in security-properties (the Ship step just copied the repo's copy
-        # back), the scan cannot authenticate. The gateway only loads both at
-        # boot, so: restart it once, wait for RUNNING, retry the scans. First
-        # deploy to a fresh gateway heals itself; every later deploy scans
-        # hot, no restart. A 401 that SURVIVES the restart means the token
-        # was never generated on the host — run scripts/setup.sh there.
+        # First deploy to a fresh gateway: it booted before it had its
+        # $CONFIG_MODE config mode on disk (the Ship step just copied it in),
+        # and Ignition only picks its deployment mode at boot. A scan would
+        # load the files but leave the gateway on `core`, so instead restart
+        # it once. Every later deploy finds the mode active and scans hot.
+        #
+        # 401: the gateway rejected the API key, so fail fast and say which
+        # secret to check. 403: the key is valid but lacks permission, which
+        # happens when first-boot commissioning reset security-properties (the
+        # Ship step just copied the repo's copy back, read at boot): restart
+        # once and retry.
         run: |
           set -euo pipefail
+          key_rejected() {
+            echo "::error::The gateway rejected the API key (HTTP 401). Check that the IGNITION_API_KEY secret on environment '$ENVIRONMENT' matches IGNITION_API_KEY_$(printf '%s' "$CONFIG_MODE" | tr '[:lower:]' '[:upper:]') in your .env. If it does, re-run scripts/setup.sh: it rewrites the gateway's token."
+            exit 1
+          }
+          restart_gateway() {
+            docker restart "$IGNITION_CONTAINER" >/dev/null
+            for _ in $(seq 1 60); do
+              if curl -fsS --max-time 3 "$IGNITION_URL/StatusPing" 2>/dev/null | grep -q RUNNING; then
+                echo "gateway RUNNING again"
+                return 0
+              fi
+              sleep 5
+            done
+            echo "gateway did not reach RUNNING after restart" >&2
+            exit 1
+          }
           run_scans() {
             local what code
             for what in projects config; do
@@ -202,32 +227,44 @@ jobs:
                 -H "X-Ignition-API-Token: $IGNITION_API_KEY" \
                 "$IGNITION_URL/data/api/v1/scan/$what")"
               echo "scan $what -> HTTP $code"
-              if [ "$code" = "401" ] || [ "$code" = "403" ]; then
-                return 42
-              fi
+              case "$code" in
+                401) return 41 ;;
+                403) return 43 ;;
+              esac
               if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
                 echo "scan $what failed (HTTP $code)" >&2
                 return 1
               fi
             done
           }
+
+          info="$(curl -sS -w '\n%{http_code}' --connect-timeout 5 --max-time 30 \
+            -H "X-Ignition-API-Token: $IGNITION_API_KEY" \
+            "$IGNITION_URL/data/api/v1/gateway-info")"
+          code="${info##*$'\n'}"
+          echo "gateway-info -> HTTP $code"
+          [ "$code" = "401" ] && key_rejected
+          if [ "$code" = "200" ]; then
+            mode="$(printf '%s' "$info" | sed -n 's/.*"deploymentMode":"\([^"]*\)".*/\1/p')"
+            if [ "$mode" != "$CONFIG_MODE" ]; then
+              echo "First deploy to this gateway: it runs in mode '${mode:-none}', not '$CONFIG_MODE'."
+              echo "Ignition picks its deployment mode at boot, so restarting it once to load"
+              echo "the mode and everything just shipped. Later deploys scan hot, no restart."
+              restart_gateway
+            fi
+          fi
+
           rc=0
           run_scans || rc=$?
-          if [ "$rc" = "42" ]; then
-            echo "Scan not authorized — the gateway has not loaded the deployed"
-            echo "API token / security-properties yet (first deploy to a fresh"
-            echo "gateway). Restarting it to load them, then retrying."
-            docker restart "$IGNITION_CONTAINER"
-            for _ in $(seq 1 60); do
-              if curl -fsS --max-time 3 "$IGNITION_URL/StatusPing" 2>/dev/null | grep -q RUNNING; then
-                break
-              fi
-              sleep 5
-            done
-            run_scans
-          elif [ "$rc" != "0" ]; then
-            exit "$rc"
+          if [ "$rc" = "43" ]; then
+            echo "Scan forbidden (HTTP 403): the gateway has not loaded the permissions"
+            echo "just shipped (security-properties is read at boot). Restarting it once."
+            restart_gateway
+            rc=0
+            run_scans || rc=$?
           fi
+          [ "$rc" = "41" ] && key_rejected
+          exit "$rc"
 
       - name: Smoke-check gateway health
         run: |

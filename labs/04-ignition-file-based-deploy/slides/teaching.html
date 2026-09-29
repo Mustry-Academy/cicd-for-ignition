@@ -741,7 +741,7 @@ scripts/scan.sh test</pre></div>
         </ul>
         <div class="callout" style="margin-top:16px">
           <div class="lab" style="color:var(--blue)">Symptom dictionary</div>
-          <p><i>"The file is right there but my change isn't picked up"</i> → <b>you forgot the scan</b>. <i>"Scan returns 403"</i> → wrong key, or the key lacks scan permissions. And fittingly: the key is itself a config resource on disk at <code>config/resources/core/ignition/api-token/&lt;name&gt;/config.json</code>, storing only a hash. In this lab <code>setup.sh</code> generates a unique key per gateway into <code>.env</code> and writes the token onto each gateway's disk — nothing key-related is committed (a committed key is a working credential in every clone of the repo), and the deploy's wipe step spares <code>api-token/</code> so the key survives every deploy. One wrinkle the workflows handle for you: a <b>fresh gateway</b> hasn't loaded that token yet, so its very first scan 401s or 403s. The scan step then restarts the gateway once (the token is already on its disk; it loads at boot) and retries. First deploy heals itself; every later deploy scans hot.</p>
+          <p><i>"The file is right there but my change isn't picked up"</i> → <b>you forgot the scan</b>. <i>"Scan returns 401"</i> → wrong key. <i>"Scan returns 403"</i> → the key is valid but lacks scan permissions. And fittingly: the key is itself a config resource on disk at <code>config/resources/core/ignition/api-token/&lt;name&gt;/config.json</code>, storing only a hash. In this lab <code>setup.sh</code> generates a unique key per gateway into <code>.env</code> and writes the token onto each gateway's disk — nothing key-related is committed (a committed key is a working credential in every clone of the repo), and the deploy's wipe step spares <code>api-token/</code> so the key survives every deploy. One wrinkle the workflows handle for you: a <b>fresh gateway</b> booted before its config mode (<code>test</code> / <code>production</code>) was on its disk, and Ignition picks its deployment mode at boot. So the first deploy restarts it once; every later deploy scans hot.</p>
         </div>
       </div>
     </div>
@@ -776,7 +776,7 @@ scripts/scan.sh test</pre></div>
       </div>
       <div class="fail">
         <h5>Wrong API key for the gateway</h5>
-        <p>The <code>docker cp</code> succeeds (it doesn't care about keys), the scan <b>403s</b>: files shipped, gateway never reloaded. Know your recovery: fix the secret, re-run, idempotent.</p>
+        <p>The <code>docker cp</code> succeeds (it doesn't care about keys), the scan <b>401s</b>: files shipped, gateway never loaded them. Know your recovery: fix the secret, re-run, idempotent.</p>
       </div>
       <div class="fail">
         <h5>Scanning when a restart is needed</h5>

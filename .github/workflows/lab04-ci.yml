@@ -101,18 +101,19 @@ jobs:
           exit $fail
 
       - name: .deployignore syntax
-        # Patterns must be relative (no leading /). Other shapes are fine —
-        # the prune step is forgiving.
+        # Patterns must stay inside the lab (no .. segments). A leading /
+        # anchors a pattern to the lab root, as in .gitignore.
         run: |
           set +e
           [ -f .deployignore ] || { echo "No .deployignore — nothing to validate"; exit 0; }
           fail=0
           n=0
+          climbs_out='(^|/)[.][.](/|$)'   # a .. path segment
           while IFS= read -r line || [ -n "$line" ]; do
             n=$((n+1))
             [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-            if [[ "$line" =~ ^/ ]]; then
-              echo "::error file=.deployignore,line=$n::Pattern must be relative, not absolute: $line"
+            if [[ "$line" =~ $climbs_out ]]; then
+              echo "::error file=.deployignore,line=$n::Pattern must stay inside the lab (no ..): $line"
               fail=1
             fi
           done < .deployignore
