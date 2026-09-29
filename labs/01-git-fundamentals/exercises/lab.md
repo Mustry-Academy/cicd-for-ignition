@@ -199,8 +199,9 @@ session — then only steps 3–4 apply. The point: everyone in the room works f
    github.com — but you still need to clone your fork afterwards:
    `git clone git@github.com:<your-username>/cicd-for-ignition.git`.
    You fork once: every lab is a folder in this one repo. Then `cd cicd-for-ignition/labs/01-git-fundamentals`.
-3. Check the remote: `git remote -v` must show **your username**, not `Mustry-Academy` — your fork
-   is where you can commit, branch and push freely.
+3. Check the remote: in `git remote -v`, `origin` must show **your username** — your fork
+   is where you can commit, branch and push freely. An `upstream` pointing at `Mustry-Academy` is
+   fine: `gh` adds it so you can pull course updates.
 4. From the lab folder, open VS Code with `code .` and work from its integrated terminal
    (`` Ctrl+` ``) from here on.
 
@@ -234,10 +235,11 @@ checks that `HEAD` is your focused commit, and Phase 2's merges and resets break
 
 ### Phase 1 — whodunnit, then a focused commit
 
-The warm-up left you on a scratch branch — first return to a clean `main`:
+The warm-up left you on a scratch branch — first return to a clean `main` and delete the scratch branch, so it doesn't clutter `git log --all` in Phase 2:
 
 ```bash
 git switch main
+git branch -D we-do-greeting-polish
 ```
 
 Jot each answer in `NOTES.local.md` as you go.
@@ -270,13 +272,13 @@ git tag BASE    # a name that stays put while main moves
 
 1. `git switch -c feature/greeting-tweaks` from `main`.
 2. Run `scripts/seed-messy-state.sh`. Confirm `git status` shows three changed files.
-3. Use `git add -p` to produce **three separate commits**, each containing **one** of the three changes. Write a sensible message for each — imagine the reviewer needs to skim them in 30 seconds. (Lumped everything into one commit? Redo with `git reset HEAD~1 --soft` and try again.)
+3. Use `git add -p` to produce **three separate commits**, each containing **one** of the three changes. Write a sensible message for each — imagine the reviewer needs to skim them in 30 seconds. (Lumped everything into one commit? Redo with `git reset HEAD~1` and try again: unlike `--soft`, it also unstages, so `add -p` has hunks to offer.)
 
 **Part B — a real merge commit.**
 
 4. From Part A, `feature/greeting-tweaks` is **three commits ahead**; `main` still sits at your Phase 1 commit.
 5. Put one small **unrelated** commit directly on `main` — append a line to `docs/why-version-control.md` (a file neither Phase 1 nor the seed touches), then `git commit -am "chore: unrelated note on main"`. Now the branches have **diverged**, so a fast-forward is impossible.
-6. `git merge feature/greeting-tweaks` — Git can't fast-forward, so it records a **merge commit**.
+6. `git merge feature/greeting-tweaks -m "Merge feature/greeting-tweaks"` — Git can't fast-forward, so it records a **merge commit**. The `-m` supplies its message inline, so no editor opens.
 7. `git cat-file -p HEAD` and **count the `parent` lines: two** — your own three-way merge commit from the slide. `git log --graph --decorate --oneline --all` shows the diamond where the branches rejoin (at the top; the course repo's own history continues below it).
 8. **Sketch the graph in `NOTES.local.md` and keep it** — in Part C you'll fold in the same feature work with a *linear* history instead.
 
@@ -317,11 +319,11 @@ PY
 git commit -am "main: add a comment inside greet()"
 ```
 
-Then `git switch feature/greeting-tweaks && git rebase main` — the feature commit that added a docstring to `greet()` touches the same spot, so Git halts with a conflict on that commit. Open `sample-app/app.py`, resolve (keep both the comment and the docstring), `git add sample-app/app.py`, then `git rebase --continue`. Confirm linear history with `git log --graph --decorate --oneline --all`. If you'd rather bail, `git rebase --abort` is also a valid exit.
+Then `git switch feature/greeting-tweaks && git rebase main` — the feature commit that added a docstring to `greet()` touches the same spot, so Git halts with a conflict on that commit. Open `sample-app/app.py`, resolve (keep both the comment and the docstring), `git add sample-app/app.py`, then `git rebase --continue` (an editor opens with the commit message: save and close it). Confirm linear history with `git log --graph --decorate --oneline --all`. If you'd rather bail, `git rebase --abort` is also a valid exit.
 
 **2. Diff without `git diff` (deeper dive).** Pick two adjacent commits you made yourself (e.g. two of your Part A commits). Using only `git cat-file` and `git ls-tree`, determine: which files exist in commit B but not A? For files in both, which blob SHAs differ? For the changed blobs, print both and identify the changed line(s) by eye. You're reconstructing what `git diff` does internally — a tree walk plus a blob comparison. Confirm with `git diff <A> <B>`.
 
-**3. Cherry-pick one commit.** Grab a **single** commit from a branch without merging the whole thing — and watch it land as a **brand-new commit**. (Did Stretch 1 first? Pick the **docs** or **test** commit: Stretch 1's rebase rewrote the docstring commit so its diff now expects the conflict-bait comment, and picking it onto `BASE` would conflict again.)
+**3. Cherry-pick one commit.** Grab a **single** commit from a branch without merging the whole thing — and watch it land as a **brand-new commit**. (Did Stretch 1 first? Pick the **README (Run me)** or **test** commit: Stretch 1's rebase rewrote the docstring commit so its diff now expects the conflict-bait comment, and picking it onto `BASE` would conflict again.)
 
 ```bash
 git switch main && git reset --hard BASE    # main is behind your feature work again
