@@ -93,8 +93,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # QEMU lets this amd64 runner also emit the arm64 variant. Our Dockerfile
-      # is COPY-only (no RUN/compile), so there's nothing to emulate — building
-      # both platforms is cheap.
+      # is COPYs plus one tiny RUN (a sha256sum listing of the modules), with
+      # no compile step, so emulating arm64 costs seconds — building both
+      # platforms is cheap.
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 

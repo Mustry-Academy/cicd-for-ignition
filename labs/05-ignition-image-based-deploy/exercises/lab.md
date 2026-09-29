@@ -27,7 +27,7 @@ You should leave this lab able to:
 scripts/setup.sh    # idempotent — safe even if the stack is already up
 ```
 
-You'll need Docker with Compose v2 and ~8 GB free RAM. No GitHub setup is needed — both parts run entirely on your machine. If you'd like to read ahead: [`docs/dockerfile-anatomy.md`](../docs/dockerfile-anatomy.md).
+You'll need Docker with Compose v2 and ~8 GB free RAM. No PAT or GitHub setup is needed — both parts run entirely on your machine (the stretch uses your fork's Actions). If you'd like to read ahead: [`docs/dockerfile-anatomy.md`](../docs/dockerfile-anatomy.md).
 
 ---
 
@@ -119,11 +119,13 @@ Together, build and dissect the image.
    The modules/config layers stay `CACHED`; only the `projects/` layer (and anything after it) rebuilds. Then drop a new dummy file into `third-party-modules/` and rebuild — notice *more* layers bust because that `COPY` sits higher in the Dockerfile. (A *new* file **is** a content change. Delete the dummy again afterwards, or it ships in every future build.)
 
 3. **See what `.dockerignore` kept out.** The build already measured it: the first lines of the
-   build output include `transferring context: ~60MB`. Compare with the folder on disk:
+   build output include a `transferring context` line (about 5 MB). Compare with the folder on disk:
    ```bash
-   du -sh .      # ≈ 130 MB — the build transferred only ~60
-   du -sh .git   # the biggest excluded chunk
+   du -sh .                                          # about 10 MB on disk
+   du -sh . slides docs scripts third-party-modules  # where the difference went
    ```
+   `.git` isn't in this folder at all: in the course monorepo it sits at the repo root
+   (`../../.git`), outside the build context, so it never reaches Docker.
    Want the definitive list of what Docker *can* see? Dump the context with a throwaway probe
    build and list it:
    ```bash
@@ -134,6 +136,8 @@ Together, build and dissect the image.
    docker run --rm ctx-probe find /ctx -maxdepth 1
    ```
    Only `projects/`, `services/`, and `third-party-modules/` — exactly what the Dockerfile COPYs.
+   (Lint and editor config such as `.yamllint.yml` and `rule_config.json` is in `.dockerignore`
+   too: CI and your editor use it, the gateway never does.)
 
 4. **Explore the image, not the repo.** Open the image in Docker Desktop (*Images →
    `cicd-lab-05-ignition` → Files*) — or whatever image browser you prefer — and find all four
@@ -205,7 +209,10 @@ Together, we deploy the part 1 image to the test gateway once:
 3. **Wait for RUNNING:** `curl -s localhost:8089/StatusPing` until it prints
    RUNNING (a fresh-image boot re-commissions the gateway — give it a few minutes).
 4. **Verify:** open http://localhost:8089/app/home/perspective/session-launcher and launch example-project — the baked project is live. No copy, no scan: the container was **replaced**. Inspect again — test now runs your image.
-5. **What persisted:** historian data in TimescaleDB is untouched. The container died; the data that matters didn't live in it.
+5. **What persisted:** the historian's tables in TimescaleDB are untouched. The container died; the data that matters didn't live in it. Check before and after each deploy:
+   ```bash
+   docker exec lab05-timescaledb psql -U ignition -d ignition_test -c '\dt'
+   ```
 
 ## You do (40 min)
 
@@ -230,7 +237,7 @@ gets its own immutable `:sha` tag — that tag is your rollback point in Part 2.
 3. Commit on a feature branch and merge to `main` (GitHub flow, like every lab):
    ```bash
    git checkout -b feature/tweak-view
-   git add -A && git commit -m "Change overview title"
+   git add projects/ && git commit -m "Change overview title"
    git checkout main && git merge feature/tweak-view
    ```
 4. Rebuild + redeploy:
@@ -256,7 +263,7 @@ gets its own immutable `:sha` tag — that tag is your rollback point in Part 2.
 - [ ] You shipped a view change end-to-end: edit → commit → rebuild → redeploy → visible on test.
 - [ ] Your image store holds **two immutable `:sha` tags**, one per build, each traceable to its commit via the revision label.
 - [ ] You rolled test back to the older tag and verified the old view is live again.
-- [ ] You checked that historian data survived both deploys, and can say why.
+- [ ] You checked that the historian's tables survived both deploys (`psql … -c '\dt'`), and can say why.
 - [ ] You can name the two steps a production pipeline adds between your build and your run (push + pull), and why we skipped them today.
 
 > **Fresh gateway alert.** Each deploy gave test a brand-new gateway: new internal
@@ -306,8 +313,9 @@ Three directions, pick by appetite:
 
 2. **Go deeper on the image:** shrink the build context with
    `--progress=plain`, do layer forensics with `docker history --no-trunc`, or
-   (if you have a fork with Actions) add a no-push `docker build` smoke-test
-   job to `lab05-ci.yml` so a broken Dockerfile fails the PR.
+   read the no-push `docker build` smoke-test job that `lab05-ci.yml` already
+   runs on every PR: why does it build without pushing, and what would a
+   broken Dockerfile look like in the PR's checks?
 3. **A first taste of Lab 06** — bake more kinds of cargo, the way the
    production image from the teaching does:
    - **A third-party module:** enable an unused `.modl` from
