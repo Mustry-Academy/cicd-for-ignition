@@ -266,7 +266,7 @@ body{
       <div class="steps">
         <div class="step"><div class="ix t">1</div><div class="tx">Make <b>one parent folder</b> for the whole series: <span class="inlinecode">~/mustry-academy/</span>. The course repo lives in here, with one folder per lab under <span class="inlinecode">labs/</span>.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone.</b> <span class="inlinecode">gh repo fork … --clone</span> forks the course repo to <i>your</i> GitHub account and clones your fork, in one go. You fork once, for every lab. Prefer the website? Press <b>Fork</b> on github.com — but you still need to <span class="inlinecode">git clone</span> your fork afterwards.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Check the remote:</b> <span class="inlinecode">git remote -v</span> must show <b>your username</b>, not <span class="inlinecode">Mustry-Academy</span> — your fork is where you can commit, branch and push freely.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Check the remote:</b> in <span class="inlinecode">git remote -v</span>, <span class="inlinecode">origin</span> must show <b>your username</b> — your fork is where you can commit, branch and push freely. An <span class="inlinecode">upstream</span> pointing at <span class="inlinecode">Mustry-Academy</span> is fine: <span class="inlinecode">gh</span> adds it so you can pull course updates.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx">From the lab folder, open VS Code with <span class="inlinecode">code .</span> — then work from its integrated terminal (<span class="inlinecode">Ctrl+`</span>), which already sits in the right folder.</div></div>
       </div>
       <div>
@@ -279,7 +279,7 @@ gh repo fork Mustry-Academy/cicd-for-ignition --clone
 git clone git@github.com:&lt;your-username&gt;/cicd-for-ignition.git
 cd cicd-for-ignition/labs/01-git-fundamentals
 
-<span class="cm"># 3: origin → YOUR username? good.</span>
+<span class="cm"># 3: origin → YOUR username? good. (upstream → Mustry-Academy is fine)</span>
 git remote -v
 
 <span class="cm"># 4: open VS Code right here</span>
@@ -384,7 +384,8 @@ git log --graph --decorate --oneline -5</pre></div>
     <div class="eyebrow">Phase 1 · solo · read the object graph</div>
     <div class="title" style="color:#fff;max-width:20ch">Read history like a detective</div>
     <p class="lead">Return to a clean baseline first, then work Phase 1 top to bottom, jotting each answer in <span class="mono" style="color:#dbe4f0">NOTES.local.md</span>.</p>
-    <div class="code" style="max-width:640px"><pre>git switch main   <span class="cm"># clean starting point</span></pre></div>
+    <div class="code" style="max-width:640px"><pre>git switch main                      <span class="cm"># clean starting point</span>
+git branch -D we-do-greeting-polish  <span class="cm"># drop the warm-up branch</span></pre></div>
     <ul class="checks" style="margin-top:22px;max-width:900px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Whodunnit (1-4):</b> <span class="mono" style="color:#dbe4f0">git blame</span> the line that swears it's <i>"safe to ship"</i>, then read its full story.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Focused commit + gate (5-7):</b> one clean commit, then pass <span class="mono" style="color:#dbe4f0">verify-lab.sh</span>.</span></li>
@@ -516,7 +517,7 @@ git commit -m <span class="cmd2">"…"</span>         <span class="cm"># …×3<
     </div>
     <div class="goal">
       <span class="badge">Staging discipline</span>
-      <p>The whole point of <span class="inlinecode">-p</span>: <b>three focused commits, not one blob.</b> If you lump them, redo with <span class="inlinecode">git reset HEAD~1 --soft</span>.</p>
+      <p>The whole point of <span class="inlinecode">-p</span>: <b>three focused commits, not one blob.</b> If you lump them, redo with <span class="inlinecode">git reset HEAD~1</span>: it undoes the commit <b>and</b> unstages, so <span class="inlinecode">add -p</span> has hunks to offer again.</p>
     </div>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part A of C</span></div>
@@ -601,7 +602,7 @@ git log --graph --decorate --oneline --all</pre></div>
         <div class="step"><div class="ix t">2</div><div class="tx">On <span class="inlinecode">main</span>, add a commit that edits the <b>same spot</b> inside <span class="inlinecode">greet()</span> that the feature's docstring commit touches (e.g. a comment just above the <span class="inlinecode">message =</span> line). <b>Same-region edits on both branches are what forces a conflict.</b></div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><span class="inlinecode">git switch feature/greeting-tweaks &amp;&amp; git rebase main</span>. Git <b>halts</b> on the conflicting commit.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx">Open <span class="inlinecode">sample-app/app.py</span>. Find the <span class="inlinecode">&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span> / <span class="inlinecode">=======</span> / <span class="inlinecode">&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span> markers and <b>resolve by keeping both</b> changes. Delete the markers.</div></div>
-        <div class="step"><div class="ix t">5</div><div class="tx"><span class="inlinecode">git add sample-app/app.py</span> → <span class="inlinecode">git rebase --continue</span>. Confirm linear history.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx"><span class="inlinecode">git add sample-app/app.py</span> → <span class="inlinecode">git rebase --continue</span>. An editor opens with the commit message: save and close it. Confirm linear history.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 1: pull main back behind the feature branch</span>
@@ -618,7 +619,7 @@ git rebase main
 
 <span class="cm"># 4 to 5: resolve, then continue</span>
 git add sample-app/app.py
-git rebase --continue
+git rebase --continue   <span class="cm"># editor opens: save + close</span>
 git log --graph --decorate --oneline --all</pre></div>
         <div class="goal warn-g" style="margin-top:16px">
           <span class="badge">Escape hatch</span>
@@ -679,7 +680,7 @@ git diff HEAD~1 HEAD</pre></div>
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix p">1</div><div class="tx">Start clean: <span class="inlinecode">git switch main &amp;&amp; git reset --hard BASE</span>. Now <span class="inlinecode">main</span> is behind your feature work again.</div></div>
-        <div class="step"><div class="ix p">2</div><div class="tx">Grab one commit's SHA from <span class="inlinecode">git log --oneline feature/greeting-tweaks</span>. <b>Did Stretch 1 first?</b> Pick the <b>docs</b> or <b>test</b> commit — the rewritten docstring commit would conflict again.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx">Grab one commit's SHA from <span class="inlinecode">git log --oneline feature/greeting-tweaks</span>. <b>Did Stretch 1 first?</b> Pick the <b>README (Run me)</b> or <b>test</b> commit — the rewritten docstring commit would conflict again.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx"><span class="inlinecode">git cherry-pick &lt;SHA&gt;</span>: Git replays just that change onto <span class="inlinecode">main</span> as a <b>new commit</b>.</div></div>
         <div class="step"><div class="ix p">4</div><div class="tx">Check <span class="inlinecode">git log</span>: the new commit has a <b>different SHA</b> than the original (same change, new identity) and <span class="inlinecode">feature/greeting-tweaks</span> is untouched.</div></div>
       </div>
