@@ -66,28 +66,32 @@ git update-index --no-skip-worktree <path>
   **any** non-empty value (even `"false"`) as "enable ephemeral mode", which deregisters the runner
   after every job.
 
-## The deploy 403s on the scan step
+## The scan step fails with HTTP 401
 
-The `IGNITION_API_KEY` secret on that GitHub environment (`lab04-gateway-test` / `lab04-gateway-production`)
-is missing, wrong, or not the target gateway's own key. `scripts/setup.sh` generated one key per
-gateway into `.env` — set the secret to the matching `IGNITION_API_KEY_TEST` / `_PRODUCTION` value. Keys
-are **per-gateway** — a test key won't authenticate against production.
+The gateway rejected the key. The `IGNITION_API_KEY` secret on that GitHub environment
+(`lab04-gateway-test` / `lab04-gateway-production`) is missing, wrong, or not the target gateway's
+own key. `scripts/setup.sh` generated one key per gateway into `.env`: set the secret to the matching
+`IGNITION_API_KEY_TEST` / `_PRODUCTION` value. Keys are **per-gateway**, so a test key won't
+authenticate against production. The workflow fails fast here, without restarting anything.
 
-## The scan step 401s on a fresh gateway
+If the secret does match `.env`, the gateway has no token on disk (for example the stack was
+started with plain `docker compose up` and `gateways/<gw>/config` was wiped since). The keys are not
+in git at all: `scripts/setup.sh` (via `scripts/generate-api-keys.sh`) generates them into `.env` and
+writes each gateway's token resource onto its disk before first boot, and the deploy wipe **spares**
+`api-token/`. Re-run `scripts/setup.sh`: it re-derives every token from the keys in `.env`, seeds
+them, and restarts what needs restarting.
 
-The scan API only accepts tokens the gateway has **loaded** — and a deploy can't scan in its own
-token, because the scan call already needs it (chicken-and-egg). The keys are not in git at all:
-`scripts/setup.sh` (via `scripts/generate-api-keys.sh`) generates them into `.env` and writes each
-gateway's token resource onto its disk before first boot, and the deploy wipe **spares**
-`api-token/` on the gateway. On a gateway that has the token on disk but never loaded it, the scan
-401s even though the files deployed fine. **The deploy workflows self-heal this:** on a 401 (token
-not loaded) or 403 (first-boot commissioning reset the permissions; the Ship step just copied the
-repo's `security-properties` back), the scan step restarts the gateway container once — it loads
-both at boot — waits for RUNNING, and retries the scans. So the first deploy to a fresh gateway
-goes green on its own; every later deploy hot-scans, no restart. A 401 that **survives** the
-restart means the gateway has no token on disk at all (e.g. the stack was started with plain
-`docker compose up` and `gateways/<gw>/config` was wiped since): re-run `scripts/setup.sh` — it
-re-derives every token from the keys in `.env`, seeds them, and restarts what needs restarting.
+## The first deploy restarts the gateway
+
+Expected. A fresh test or production gateway boots before its config mode (`test` /
+`production`) is on its disk, and Ignition picks its deployment mode at boot. So the scan step asks
+the gateway which mode it runs in; on the first deploy that's none, and it restarts the gateway
+once to load the mode and everything just shipped. Every later deploy scans hot, no restart.
+
+A **403** on the scan means the key is valid but lacks permission: first-boot commissioning reset
+`security-properties`, and the Ship step just copied the repo's copy back, which the gateway reads
+at boot. The scan step restarts the gateway once and retries.
+
 The same applies to failing **manual** scans (`scripts/scan.sh`): re-run `scripts/setup.sh`.
 
 ## Locked out of test/production after a deploy (admin password rejected)

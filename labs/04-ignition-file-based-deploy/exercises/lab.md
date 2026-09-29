@@ -261,9 +261,9 @@ You **don't** need to set `IGNITION_URL` or `IGNITION_CONTAINER` variables unles
    git commit -m "Add sample-project"
    git push -u origin feature/add-sample-project
    ```
-4. On GitHub, open a PR **into `main`**. Watch [`lab04-ci.yml`](../../../.github/workflows/lab04-ci.yml) run on `ubuntu-latest` (free): it validates JSON, `.deployignore`, and the workflow files themselves.
+4. On GitHub, open a PR **into `main`**. Watch [`lab04-ci.yml`](../../../.github/workflows/lab04-ci.yml) run on `ubuntu-latest` (free): yamllint, actionlint, shellcheck, ign-lint, `docker compose config`, JSON validity, `.deployignore` syntax, and the security-properties identity check.
 5. Merge the PR into `main`. [`lab04-deploy.yml`](../../../.github/workflows/lab04-deploy.yml) fires because of the `paths:` filter (and only on `main`). Validation already ran on the PR — that's the gate — so the deploy goes straight to shipping.
-6. Watch the workflow run. The interesting steps are **Ship projects and config into gateway container** (the `docker cp` half) and **Trigger gateway scan** (`POST /data/api/v1/scan/{projects,config}`). On a fresh gateway the scan step self-heals: a 401/403 makes it restart the gateway once (the token Ship just copied loads at boot) and retry — first deploy green, every later deploy hot-scans.
+6. Watch the workflow run. The interesting steps are **Ship projects and config into gateway container** (the `docker cp` half) and **Trigger gateway scan** (`POST /data/api/v1/scan/{projects,config}`). On the **first** deploy to a fresh gateway, the scan step restarts it once instead: the gateway booted before its `test` config mode was on disk, and Ignition picks its deployment mode at boot. Every later deploy scans hot, no restart.
 7. Verify in http://localhost:8089 — Config → Projects lists **`sample-project`**, and its view opens (the deploy-by-hand's height tweak is there too, now via the pipeline). Then verify from the **host**: `ls gateways/test/projects` shows the deployed tree (test's `projects/` and `config/` bind-mount to `./gateways/test/`), so you can `cat` the exact files CI just shipped.
 8. **Multi-project check.** The deploy step copies `./projects/.` (the whole directory), so your single merge deployed `example-project`, `packaging-site` **and** `sample-project` at once. The unit of deploy is the `projects/` tree, not a single project.
 
@@ -285,7 +285,7 @@ git push origin lab04-v0.1.0        # ← lab04-release.yml fires
 
 Cause one of these and read the workflow output:
 
-- **Wrong API key.** Set garbage in `lab04-gateway-test`'s secret, re-run the deploy. The **Ship step succeeds** (`docker cp` doesn't care about keys) but the **scan 403s**. Files are in the container; the gateway never reloaded. *What's your recovery story?*
+- **Wrong API key.** Set garbage in `lab04-gateway-test`'s secret, re-run the deploy. The **Ship step succeeds** (`docker cp` doesn't care about keys), then the scan step gets a **401** and fails fast, naming the secret to check. Files are in the container, but the gateway never loaded them. *What's your recovery story?*
 - **Stopped container.** `docker compose stop ignition-test`, then trigger a deploy. The **verify step fails fast** ("container is in state 'exited', expected 'running'") before any file moved — much better than failing halfway.
 
 Then fix it and re-run (manual `workflow_dispatch` works too). The steps are idempotent, so the deploy converges.
