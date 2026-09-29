@@ -1,0 +1,258 @@
+# Ignition 8.3 file structure — cheat sheet
+
+Reference reading for the file-structure part of the lab. Everything Ignition stores on disk, organized by *who owns it* and *whether it belongs in git*.
+
+## The three buckets
+
+Everything inside an Ignition gateway's `data/` directory falls into one of three buckets:
+
+| Bucket | What | Owner | In git? |
+|---|---|---|---|
+| **Project-level** | Per-project resources: views, scripts, tags, UDTs | The application (versioned, peer-reviewed) | **Yes** |
+| **Gateway-level** | Cross-project config: DB connections, tag providers, tag history connections, enabled modules, identity resources you configure (DB/AD user sources, SAML/OIDC identity providers, security-properties) | The application (versioned, but smaller scope) | **Yes** |
+| **Operational** | Runtime state: internal DBs, logs, temp, metadata, runtime users, the gateway-owned *internal* identity (the `default` user source and `default` identity provider that commissioning creates) | The gateway (gateway owns this, full stop) | **No** |
+
+The whole point of the file-structure part is to internalize this split. If you can answer "which bucket?" for any file in `data/`, you'll know how to version, deploy, and roll back.
+
+## The `data/` directory, top to bottom
+
+What you'll see when you `ls /usr/local/bin/ignition/data` inside the container:
+
+### `projects/`
+
+Project-level. One subdirectory per Ignition project. A project's resources are
+**namespaced by the module that owns them**: first the module, then the resource type, then the
+name. The real shape (from the shipped [`example-project`](../projects/example-project/)):
+
+```
+projects/
+└── <project-name>/
+    ├── project.json                              ← descriptor: {title, description, enabled, inheritable, parent}
+    ├── com.inductiveautomation.perspective/      ← Perspective module owns its resources
+    │   ├── views/
+    │   │   ├── pages/<PageName>/
+    │   │   │   ├── view.json                      ← the view definition
+    │   │   │   ├── resource.json                  ← per-resource manifest (scope, version, signature)
+    │   │   │   └── thumbnail.png                  ← (pages only)
+    │   │   ├── templates/<group>/<Name>/view.json
+    │   │   └── common/<...>/view.json
+    │   ├── page-config/
+    │   └── session-props/
+    └── ignition/                                 ← platform-owned project resources
+        └── global-props/
+        └── script-python/
+```
+
+The key 8.3 detail: **every resource folder carries a sibling `resource.json` manifest** next to its
+payload (`view.json`, etc.). That manifest is what the gateway reads to track the resource — and since
+the gateway rewrites it on every interaction (timestamps, signatures), this repo ships a normalized
+diff driver plus `scripts/clean-ignition-resource-churn.sh` to undo the volatile-only rewrites.
+
+This is the bread and butter of CI/CD for Ignition. The whole `projects/<name>/` directory is what the `lab04-deploy.yml` workflow ships onto the **test** gateway (on push to `main`) and what `lab04-release.yml` ships onto **production** (on tag push from `main`) in the deploy part. On the **local** gateway it just sits there via bind mount — edit-and-scan, no copy step. This is what the deploy part of the lab builds.
+
+### `config/`
+
+Gateway-level config. Shared across all projects. In 8.3 this is organized as
+**`config/resources/<scope>/<module-id>/<resource-type>/<name>/{config.json, resource.json}`** —
+scope-first, then namespaced by the owning module, just like project resources.
+
+The **scopes** (in this repo, under [`services/config/resources/`](../services/config/resources/)):
+
+| Scope | Purpose |
+|---|---|
+| `external` | Built-in Ignition defaults (the base everything inherits from). |
+| `core` | The locally-managed, **portable** config you version and ship (DB connections, tag providers, system properties). Inherits `external`. |
+| `local-development` / `test` / `production` | Per-environment overrides, selected at boot via `-Dignition.config.mode=<scope>`. Inherits `core`. |
+| `local` | **Per-instance, instance-bound** state — see the `local/` note below. |
+
+Real examples from `core/` in this repo:
+
+```
+config/resources/core/
+├── config-mode.json                                          ← scope descriptor {title, parent: "external"}
+├── ignition/
+│   ├── system-properties/{config.json, resource.json}        ← singleton (no <name> level)
+│   ├── database-connection/TimescaleDB/{config.json, resource.json}
+│   ├── opc-connection/Ignition OPC UA Server/{config.json, resource.json}
+│   └── tag-provider/example-tags/{config.json, resource.json}
+└── com.inductiveautomation.historian/
+    └── historian-provider/TimescaleDB Historian/{config.json, resource.json}
+```
+
+`config.json` holds the actual settings; the sibling `resource.json` is the manifest the gateway
+rewrites on every change (hence the churn-undo script). Resources here are *referenced* by projects but
+defined gateway-wide. A view might query a database, but the connection lives in
+`core/ignition/database-connection/<name>/`. Move a project to a new gateway and you'd port the
+project; you'd also port the matching `core/` resources.
+
+**The exception is the gateway-owned *internal* identity, excluded by name:
+`user-source/default/`, `user-source/opcua-module/`, and `identity-provider/default/` are
+untracked** (gitignored, and spared by the deploy workflows' wipe). Those are what first-boot
+commissioning creates, and `user-source/default/users.json` carries **that gateway's admin password
+hashes**. Commit and deploy one gateway's copy and you overwrite every other gateway's admin user —
+if the shipped hash isn't the password you expect, that's an instant lockout, recoverable only by
+wiping the target's state. Each gateway writes and owns its own; never commit them, never ship them.
+Everything else identity-related is ordinary config: a database or AD user source, a SAML/OIDC
+identity provider — those hold no password data (the users live in the external system) and are
+tracked and deployed like any other resource. `security-properties/` is tracked and deployed too:
+it is permission policy (APIToken scan grants, designer/config permissions), and the committed
+`systemAuthProfile=default` matches every gateway because commissioning creates the `default` user
+source on all of them. The scan-API token (`api-token/`) is the other deliberately untracked
+resource: `setup.sh` generates a unique key per gateway into `.env` and writes only the hash to
+disk — a committed token would be a working credential in every clone — and the deploy wipe spares
+it so the key survives deploys.
+
+### Deployment modes (this is the 8.3 feature behind those scopes)
+
+The `core` / `local-development` / `test` / `production` scopes above are not a lab invention. They are Ignition 8.3's
+**deployment modes** feature. A deployment mode lets you keep **one** configuration set that
+contains the settings for *every* environment, and have the gateway pick the right variant at boot.
+You define any modes you like (development, staging, production, or custom); the common case is just
+test and production.
+
+The mental model that makes it click: **the same resource name resolves to different settings per
+mode.** A device named `PLC-01` can be a **simulator** in development and the **real Modbus device**
+in production, under the same name, so your projects never change. A database connection keeps its
+name but points at the test database in `test` and the production database in `production`. Because it is all one
+config set, one gateway backup carries every environment's settings, and you stop tracking a pile of
+per-gateway differences by hand.
+
+On disk that is exactly what you see in this repo:
+
+```
+config/resources/
+├── core/                                   ← shared baseline, inherited by every mode
+│   └── ignition/database-connection/TimescaleDB/config.json
+├── local-development/  ignition/database-connection/TimescaleDB/config.json   ← local override
+├── test/  ignition/database-connection/TimescaleDB/config.json   ← test override
+└── production/  ignition/database-connection/TimescaleDB/config.json   ← production override
+```
+
+The **same** `database-connection/TimescaleDB` resource carries a **different `config.json` under
+each mode**, all inheriting `core`. Each scope has a `config-mode.json` descriptor declaring its
+parent (so `local-development`/`test`/`production` inherit `core`, which inherits `external`). The gateway selects the
+active mode at boot with `-Dignition.config.mode=<scope>`. A good way to *see* it: diff the local
+and production copies of the same connection.
+
+```bash
+diff services/config/resources/local-development/ignition/database-connection/TimescaleDB/config.json \
+     services/config/resources/production/ignition/database-connection/TimescaleDB/config.json
+```
+
+Everything one mode does *not* override falls through to `core`. This is a platform feature, not
+tied to any deploy strategy: it works the same whether you deploy by copying files (this lab) or by
+baking an image (Lab 05).
+
+### `modules.json`
+
+Gateway-level. A list of which modules to enable. In this repo the source of truth is
+[`services/modules.json`](../services/modules.json), bind-mounted to `data/modules.json` on the
+`local` gateway.
+
+```json
+{"modules": ["com.inductiveautomation.perspective", "..."]}
+```
+
+Editing this file changes which modules the gateway loads — but unlike project/config resources,
+this is **not** picked up by a scan; the gateway has to **restart** (see the table below).
+Versioning it is good practice — it documents the gateway's dependency surface. Note it is a
+sibling of `services/config/`, *not* under it, so the deploy workflows (which `docker cp`
+`./services/config/.`) do **not** ship it.
+
+### `modules/`
+
+Gateway-level binaries. `.modl` files for each installed module.
+
+- **In git?** Generally **no**. Modules are large binary artifacts. Pin module *versions* in a manifest (e.g., a separate `module-versions.txt`); install modules separately via your runner setup or a custom Docker image.
+- For lab 04, the host bind mount on `modules.json` enables modules at startup; the gateway downloads/installs the matching `.modl` files automatically.
+
+### `db/`
+
+**Operational.** The internal SQLite database (`config.idb`, plus `autobackup/` copies). The gateway
+is constantly reading and writing it — and it holds the **internal user store**: password hashes,
+last-login timestamps, lockout state. There is no separate `users.idb` file; the user tables live
+inside `config.idb`, which is one more reason this directory must never be committed. (A `gwbk`
+backup carries the same data — keep those out of git too.)
+
+- **In git?** Absolutely **no**.
+- **Backup story?** Gateway-level backup (`gwbk` file), not git.
+
+### `jar-cache/`, `metricsdb/`, `var/`
+
+**Operational.** Runtime breadcrumbs: the launcher jar cache, the metrics store, module runtime
+state. Note that gateway logs live *outside* `data/` entirely, at the install root
+(`/usr/local/bin/ignition/logs/` in the container).
+
+- **In git?** No.
+- **Backup?** Often you don't even back these up — they're regenerable.
+
+### `.resources/`, `migration-log-*.md`, `*.digest.json`
+
+**Operational / generated.** Ignition's content-addressed blob store (`.resources/`, files named by
+SHA-256), 8.3 migration logs, and theme/font/icon digests. The gateway regenerates these; they churn
+constantly. All are excluded by [`.gitignore`](../.gitignore) — if you ever see them in `git status`,
+something is wrong with your ignore rules.
+
+### `config/resources/local/`
+
+Per-instance, **instance-bound** state — *not* "mostly empty, ignore it." In this repo it holds the
+OPC-UA client/server keystores (`com.inductiveautomation.opcua/{client,server}-keystore/`), the
+gateway's UUID (`com.inductiveautomation.opcua/uuid/`), and `local-system-properties/`. These are
+tied to *this specific gateway instance* and must **not** be copied across gateways — promoting them
+would clone one gateway's identity onto another. Treat the `local` scope as belonging to the box,
+like operational state, even though it lives under `config/`.
+
+## The two questions to ask
+
+For any file you see on a running gateway, ask:
+
+1. **Would this file be different on a teammate's identical clone?** If yes → operational. If no → versionable.
+2. **Would I want this file in git history?** If yes → versioned. If no → ignored / backed up some other way.
+
+These two questions correctly classify ~99% of `data/` contents.
+
+## Minimal example for the lab
+
+The lab's solo work suggests creating a project on disk manually if you don't have the Designer installed. In 8.3 a view must live under its owning module's namespace **and** carry a sibling `resource.json` manifest, or the gateway won't register it. Minimal viable structure:
+
+```bash
+mkdir -p "projects/sample/com.inductiveautomation.perspective/views/Hello"
+cat > projects/sample/project.json <<'EOF'
+{"title":"Sample","description":"Demo project","enabled":true,"inheritable":false,"parent":""}
+EOF
+cat > "projects/sample/com.inductiveautomation.perspective/views/Hello/view.json" <<'EOF'
+{
+  "custom": {},
+  "params": {},
+  "props": { "defaultSize": { "height": 600, "width": 800 } },
+  "root": { "type": "ia.container.coord", "version": 0 }
+}
+EOF
+cat > "projects/sample/com.inductiveautomation.perspective/views/Hello/resource.json" <<'EOF'
+{"scope":"G","version":1,"restricted":false,"overridable":true,"files":["view.json"],"attributes":{}}
+EOF
+```
+
+After triggering a scan against the local gateway (`scripts/scan.sh`), the `sample` project shows up in the gateway. It won't look like much — that's the point. (Note: `scope` `G` = gateway/global; the manifest is what makes the resource visible to the scan.)
+
+## What changes when
+
+Some changes require **only** a scan; others require a **restart**.
+
+| Change | Scan only? |
+|---|---|
+| Add/modify a Perspective view | ✓ |
+| Add/modify a project script | ✓ |
+| Add/modify a tag UDT | ✓ |
+| Add a database connection | ✓ (config scan) |
+| Add/remove a module from `modules.json` | ✗ — needs restart |
+| Change gateway memory (`-m` arg) | ✗ — needs restart |
+| Change Java args | ✗ — needs restart |
+
+The shipped `scripts/scan.sh` only handles the scan-able cases. For the restart cases, the deploy needs an extra step (`docker compose restart ignition-local` / `-test` / `-production` in the lab; `Restart-Service` or `systemctl restart` on a real host).
+
+## Further reading
+
+- [Inductive Automation Docker image docs](https://docs.inductiveautomation.com/docs/8.3/platform/docker-image/) — what the official image expects under `data/`
+- [Ignition 8.3 Configuration files](https://docs.inductiveautomation.com/docs/8.3/configuration/) — official descriptions of resource files
+- [Project resources](https://docs.inductiveautomation.com/docs/8.3/platform/projects/) — what's a project, what's a resource

@@ -1,0 +1,58 @@
+# Mustry Academy — Lab 02
+# A single Ignition 8.3 gateway, used as the subject of the branching/PR exercises.
+#
+# The gateway's own config and runtime state live in a NAMED VOLUME
+# (ignition-data) that it generates itself on first boot — deliberately kept out
+# of the repo, so you never see or touch gateway config in this lab (that arrives
+# in Lab 04). The only thing bind-mounted from the repo is ./projects, so the
+# project files you edit on your laptop are the project files the gateway runs.
+#
+# Run it:
+#   cp .env.example .env
+#   scripts/setup.sh              # or:  docker compose up -d
+# Then:
+#   open http://localhost:8088   (log in with the .env credentials)
+
+services:
+  ignition:
+    image: inductiveautomation/ignition:8.3.8
+    container_name: lab02-ignition
+    # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
+    # owned 2003:0 mode 775, so any OTHER primary gid loses write access and
+    # the gateway fails to boot ("gateway.xml exists, but isnt readable or
+    # writable"). Instead we ADD the student's group, which -- together with
+    # the group-write + setgid bits scripts/setup.sh applies to the
+    # bind-mounted dirs -- makes everything the gateway writes editable by
+    # the student. No root-owned files, so no sudo.
+    # LAB_GID is exported by scripts/preflight.sh.
+    user: "2003:0"
+    group_add:
+      - "${LAB_GID:-0}"
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    volumes:
+      # Gateway-owned config + runtime state: self-generated, never in the repo.
+      - ignition-data:/usr/local/bin/ignition/data
+      # The one thing you edit: project files, straight from the repo.
+      - ./projects:/usr/local/bin/ignition/data/projects
+    environment:
+      ACCEPT_IGNITION_EULA: "Y"
+      IGNITION_EDITION: standard
+      # Skip the Quick Start prompt on first login — the lab seeds its own project.
+      DISABLE_QUICKSTART: "true"
+      GATEWAY_ADMIN_USERNAME: "${GATEWAY_ADMIN_USERNAME:-admin}"
+      GATEWAY_ADMIN_PASSWORD: "${GATEWAY_ADMIN_PASSWORD:-password}"
+      TZ: "Europe/Brussels"
+    command: >
+      -n lab02
+      -m 1024
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8088/StatusPing"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 90s
+
+volumes:
+  ignition-data:

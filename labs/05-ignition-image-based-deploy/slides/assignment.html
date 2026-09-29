@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 05 Assignment: Build the gateway image locally and deploy it</title>
+<link rel="icon" type="image/png" href="logos/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0e1b2e;
+  --navy2:#15233a;
+  --blue:#2563eb;
+  --blue-d:#1d4ed8;
+  --peri:#93a9f0;
+  --peri2:#a8bef7;
+  --peri-soft:#e8eefc;
+  --bg:#eef1f6;
+  --panel:#ffffff;
+  --panel2:#f5f8fc;
+  --line:#e3e9f1;
+  --line2:#d3dcea;
+  --txt:#15233a;
+  --txt-dim:#5a6a7e;
+  --txt-faint:#94a2b4;
+  --good:#16a34a; --good-soft:#e3f6ea;
+  --warn:#d97706; --warn-soft:#fbf0db;
+  --teal:#3bbdb4; --teal-l:#5fd6cd;
+  --shadow:0 1px 2px rgba(14,27,46,.05),0 10px 30px -16px rgba(14,27,46,.28);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--navy);
+  color:var(--txt);
+  font-family:'Libre Franklin',sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+
+/* ---- deck mechanics ---- */
+.deck{height:100vh;width:100vw;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth}
+.deck::-webkit-scrollbar{display:none}
+.slide{
+  height:100vh;width:100vw;scroll-snap-align:start;scroll-snap-stop:always;
+  display:flex;flex-direction:column;position:relative;
+  padding:64px 64px 40px;background:var(--bg);
+}
+.slide.dark{background:radial-gradient(120% 120% at 80% -10%,#1c3358 0%,#0e1b2e 55%)}
+
+/* progress + nav */
+.hud{position:fixed;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.08);z-index:50}
+.hud .bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--peri));width:0;transition:width .3s}
+.pager{position:fixed;right:22px;bottom:18px;z-index:50;font-size:11px;color:var(--txt-faint);font-family:'IBM Plex Mono'}
+.pager.on-dark{color:rgba(255,255,255,.55)}
+.hint{position:fixed;left:22px;bottom:16px;z-index:50;font-size:10.5px;color:var(--txt-faint);letter-spacing:.3px}
+.hint.on-dark{color:rgba(255,255,255,.4)}
+
+/* ---- logo ---- */
+.brandrow{display:flex;align-items:center;gap:13px}
+.logo-img{height:30px;width:auto;display:block}
+.logo-img.logo-lg{height:44px}
+
+/* slide chrome */
+.eyebrow{font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:14px}
+.dark .eyebrow{color:var(--peri2)}
+.title{font-weight:800;font-size:38px;line-height:1.05;letter-spacing:-1px;color:var(--navy)}
+.dark .title{color:#fff}
+.lead{font-size:16px;color:var(--txt-dim);line-height:1.5;max-width:820px;margin-top:14px}
+.dark .lead{color:#c4cfde}
+.sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:22px}
+.sechead .num{font-family:'IBM Plex Mono';font-size:12px;font-weight:600;color:#fff;background:var(--blue);padding:5px 11px;border-radius:8px;letter-spacing:.5px;white-space:nowrap}
+.sechead .num.phase2{background:var(--peri)}
+.sechead .num.warm{background:var(--teal)}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:40px}
+.topbar .stage{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt-faint);font-weight:600}
+.topbar .stage.on-dark{color:rgba(255,255,255,.5)}
+
+/* ---- cover ---- */
+.cover{flex:1;display:flex;flex-direction:column;justify-content:center;gap:8px}
+.cover .big{font-weight:800;font-size:52px;line-height:1.05;letter-spacing:-1.4px;color:#fff;max-width:22ch}
+.cover .big em{font-style:normal;color:var(--peri2)}
+.cover .sub{font-size:17px;color:#aebbcd;max-width:64ch;line-height:1.55;margin-top:18px}
+.cover .for{margin-top:30px;display:flex;align-items:center;gap:14px;font-size:13px;color:#8fa0b6;flex-wrap:wrap}
+.cover .for .pill{border:1px solid rgba(255,255,255,.16);border-radius:30px;padding:7px 15px;color:#dbe4f0}
+.cover .for .pill b{color:#fff;font-weight:700}
+
+/* ---- generic layout ---- */
+.body{flex:1;display:flex;flex-direction:column;justify-content:center}
+
+/* ---- numbered task steps ---- */
+.steps{display:flex;flex-direction:column;gap:13px;margin-top:4px}
+.step{display:grid;grid-template-columns:34px 1fr;gap:15px;align-items:start}
+.step .ix{width:34px;height:34px;border-radius:10px;background:var(--peri-soft);color:var(--blue);font-weight:800;font-size:14px;display:grid;place-items:center;font-family:'IBM Plex Mono'}
+.step .ix.t{background:rgba(59,189,180,.16);color:var(--teal)}
+.step .ix.p{background:rgba(147,169,240,.22);color:var(--blue-d)}
+.step .tx{font-size:15px;color:var(--txt-dim);line-height:1.5;padding-top:5px}
+.step .tx b{color:var(--txt);font-weight:700}
+.step .tx code,.inlinecode{font-family:'IBM Plex Mono';font-size:13.5px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--blue-d)}
+
+/* code block */
+.code{background:var(--navy);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);margin-top:6px;overflow:auto}
+.code pre{font-family:'IBM Plex Mono';font-size:14px;color:#dbe6f5;line-height:1.7}
+.code .cm{color:#7d93ad}
+.code .cmd2{color:var(--peri2)}
+
+/* goal / objective banner */
+.goal{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--blue);border-radius:14px;padding:16px 20px;box-shadow:var(--shadow);margin-top:auto}
+.goal .badge{font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#fff;background:var(--blue);padding:5px 10px;border-radius:7px;white-space:nowrap}
+.goal p{font-size:14px;color:var(--txt-dim);line-height:1.5}
+.goal p b{color:var(--txt);font-weight:700}
+.goal.warn-g{border-left-color:var(--warn)}
+.goal.warn-g .badge{background:var(--warn)}
+.goal.good-g{border-left-color:var(--good)}
+.goal.good-g .badge{background:var(--good)}
+
+/* checklist (dark) */
+.checks{display:flex;flex-direction:column;gap:13px;margin-top:6px}
+.checks li{list-style:none;display:flex;gap:13px;align-items:flex-start;font-size:15.5px;color:var(--txt-dim);line-height:1.5}
+.checks li b{color:var(--txt);font-weight:700}
+.ck{flex:none;width:23px;height:23px;border-radius:7px;background:var(--peri-soft);display:grid;place-items:center;margin-top:1px}
+.ck svg{width:12px;height:12px;color:var(--blue)}
+.dark .checks li{color:#c4cfde}
+.dark .checks li b{color:#fff}
+.dark .ck{background:rgba(147,169,240,.18)}
+.dark .ck svg{color:var(--peri2)}
+
+/* phase map (cover-ish overview) */
+.pmap{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:10px}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.pcard:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--teal)}
+.pcard.p1:before{background:var(--blue)}
+.pcard.p2:before{background:var(--peri)}
+.pcard .pn{font-family:'IBM Plex Mono';font-size:11px;color:var(--txt-faint);font-weight:600;letter-spacing:1px}
+.pcard h4{font-size:18px;font-weight:800;letter-spacing:-.3px;margin:8px 0 4px}
+.pcard p{font-size:13px;color:var(--txt-dim);line-height:1.5;margin-top:8px}
+.pcard .gate{font-family:'IBM Plex Mono';font-size:11px;color:var(--blue);font-weight:600;margin-top:12px}
+
+/* two-column for parts */
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+
+.foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--txt-faint);padding-top:22px}
+.dark .foot{color:rgba(255,255,255,.45)}
+
+@media print{
+  body{overflow:visible}
+  .deck{height:auto;overflow:visible}
+  .slide{height:100vh;page-break-after:always;break-after:page}
+  .hud,.pager,.hint{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- 1 · COVER -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img logo-lg" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Lab 05 · The assignment</div>
+  </div>
+  <div class="cover">
+    <div class="eyebrow">The assignment · breakout rooms · 2 × 40 min</div>
+    <div class="big">Build the gateway image locally, then deploy it by <em>replacing the container</em></div>
+    <div class="sub">Everything on your own machine. Together we build the gateway image and prove it's self-contained: no bind mounts, no scan call. Then you deploy that image to the local test gateway by recreating the container, ship a change end-to-end, and roll back by running the previous build's tag. No registry, no uploads, no GitHub setup needed.</div>
+    <div class="for">
+      <span>Floating to help</span>
+      <span class="pill"><b>Sam</b></span>
+      <span class="pill"><b>Jasper</b></span>
+      <span>·</span>
+      <span class="pill">share your screen</span>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 05: Image-based deploy</span></div>
+</section>
+
+<!-- 2 · HOW THIS WORKS / RULES -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">The assignment · ground rules</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">READ FIRST</span><div><div class="title">How this works</div></div></div>
+    <ul class="checks" style="max-width:940px">
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Share your screen</b> in your breakout room, and we'll drop in where it's useful.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Everything runs locally today.</b> A gateway image is ~2 GB, and uploading that from a course laptop is not a good use of your hour. The registry legs of the pipeline were covered in the teaching; here you do build, tag and run.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Stuck? </b><span class="inlinecode">docs/TROUBLESHOOTING.md</span> first; most issues are one of the first three entries.</span></li>
+    </ul>
+    <div class="goal good-g">
+      <span class="badge">Ask early</span>
+      <p>Stuck for more than a couple of minutes? <b>Say so in the room.</b> Don't sit blocked in silence; that's exactly what we're here for.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>We-do → Part 2</span></div>
+</section>
+
+<!-- 3 · THE PLAN -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">The assignment · the plan</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num">THE PLAN</span><div><div class="title">Two stops, in order</div></div></div>
+    <div class="pmap">
+      <div class="pcard">
+        <div class="pn">WE-DO · TOGETHER</div>
+        <h4>Build &amp; dissect the image</h4>
+        <p>Build with a provenance stamp, prove the layer cache, read what actually got baked, and run the image <b>with no bind mounts</b>.</p>
+        <div class="gate">leads into the solo part</div>
+      </div>
+      <div class="pcard p2">
+        <div class="pn">PART 2 · SOLO · 40 MIN</div>
+        <h4>Deploy locally by replacing the container</h4>
+        <p>Recreate the test gateway from your image → ship a change end-to-end → roll back to the previous build's tag.</p>
+        <div class="gate">gate → test rolled back, and you can explain why it was cheap</div>
+      </div>
+    </div>
+    <div class="goal">
+      <span class="badge">Why this order</span>
+      <p>Part 2 deploys <b>the image you build in the we-do</b>. There is nothing to deploy until you've built one and can prove what's inside it. Build first, deploy second.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>We-do → Part 2</span></div>
+</section>
+
+<!-- 4 · SETUP · FORK & CLONE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Before you start · setup</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num warm">SETUP</span><div><div class="title">First: your course fork, this lab's folder, bring the stack up</div><div class="lead">Everything runs locally today, so strictly speaking a plain clone would do — but work in your fork anyway, <b>like every previous lab</b>: the whole course lives in your own account, and the CI legs (<span class="inlinecode">lab05-deploy.yml</span> / <span class="inlinecode">lab05-release.yml</span>) are ready if you want them later.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix t">1</div><div class="tx">Go to your course clone <span class="inlinecode">~/mustry-academy/cicd-for-ignition/</span> — every lab is a folder under <span class="inlinecode">labs/</span>; this one is <span class="inlinecode">labs/05-ignition-image-based-deploy</span>. <b>On WSL2, clone into your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>: the gateways' bind mounts are far slower and line endings get messy across the Windows boundary.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone — once for the whole course.</b> Already did it for an earlier lab? Skip this. Otherwise <span class="inlinecode">gh repo fork … --clone</span> forks the course repo to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. No need to enable Actions today — nothing in the assignment triggers a workflow.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and — unlike Lab 04 — <b>change nothing</b>: the admin logins work as shipped, and <span class="inlinecode">setup.sh</span> generates a unique API key per gateway into <span class="inlinecode">.env</span> (no key ever lives in the repo or the image). No PAT, no fork, no GitHub account needed today.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Check the remotes and set the default:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b> — then <span class="inlinecode">gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition</span> so <span class="inlinecode">gh</span> targets <b>your fork</b>, not the course repo (once per clone; already done if you set it in an earlier lab — the stretch goal's PRs need it). Then <span class="inlinecode">code .</span> to open VS Code.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx"><span class="inlinecode">scripts/setup.sh</span> brings up the stack: the <b>local</b> authoring gateway (:8088, bind-mounted), <b>test</b> (:8089) and <b>production</b> (:8090) — both empty until their first image deploy — plus TimescaleDB. Four containers, no runner: today <b>you</b> are the last mile of the pipeline.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># 1–2: once per course: fork to your account + clone your fork</span>
+mkdir -p ~/mustry-academy &amp;&amp; cd ~/mustry-academy
+gh repo fork Mustry-Academy/cicd-for-ignition --clone
+<span class="cm">#    …or press "Fork" on github.com, then clone YOUR fork:</span>
+<span class="cm">#    git clone git@github.com:&lt;your-username&gt;/cicd-for-ignition.git</span>
+
+<span class="cm">#      then this lab's folder (stop the previous lab's stack first:</span>
+<span class="cm">#      docker compose down in its folder)</span>
+cd ~/mustry-academy/cicd-for-ignition/labs/05-ignition-image-based-deploy
+
+<span class="cm"># 3: copy the env file — change NOTHING today</span>
+cp .env.example .env
+
+<span class="cm"># 4: origin → YOUR username? good. Then point gh at your fork</span>
+git remote -v
+gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition
+
+<span class="cm"># 5: open VS Code, then bring the stack up</span>
+code .
+scripts/setup.sh          <span class="cm"># 3 gateways + TimescaleDB</span></pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">Why fork at all?</span>
+          <p>Consistency and ownership. Your fork is <b>your</b> copy of the whole course: every lab stays in your account after the masterclass, and if you later flip on the CI legs, the workflows push images to <b>your own</b> GHCR namespace — no extra setup.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Setup · fork &amp; clone → .env → setup.sh</span></div>
+</section>
+
+<!-- 5 · WE DO C·1 · BUILD + PROVENANCE + CACHE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">We do · together · Part 1</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num warm">WE DO · 1</span><div><div class="title">Build the image, stamp it with its commit, prove the cache</div><div class="lead">Build the gateway image with a real provenance stamp, then prove the layer cache behaves like the teaching slide said.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix t">1</div><div class="tx"><span class="inlinecode">scripts/build-image.sh</span> builds and tags <b>:sha-&lt;short&gt;</b> + <b>:local</b>. It passes <span class="inlinecode">--build-arg GIT_SHA=$(git rev-parse --short HEAD)</span> for you.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx"><span class="inlinecode">docker history</span> shows the baked layers, newest on top. Which layer has the biggest size?</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx">Read the <b>revision label</b> back and confirm it matches the last commit. That's how you trace any container to its commit.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx">Change a project file (e.g. change the perspective view size) and rebuild. Docker <b>checksums the content</b> of each <span class="inlinecode">COPY</span>'s inputs: the changed bytes bust the <span class="inlinecode">projects/</span> layer, but every layer above it stays <b>CACHED</b>, so the rebuild takes seconds.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx">Now drop a dummy file into <span class="inlinecode">third-party-modules/</span> and rebuild. That <span class="inlinecode">COPY</span> sits <b>higher</b> in the Dockerfile, and a busted layer rebuilds <b>everything after it</b>: modules, config <i>and</i> projects all re-copy. Delete the dummy afterwards — or it ships in every future build.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre>scripts/build-image.sh
+docker history cicd-lab-05-ignition:local
+
+<span class="cm"># step 3: trace image to its commit</span>
+docker inspect -f <span class="cmd2">'{{ index .Config.Labels
+  "org.opencontainers.image.revision" }}'</span> \
+  cicd-lab-05-ignition:local
+git rev-parse --short HEAD
+
+<span class="cm"># step 4: a content change busts projects/ only</span>
+scripts/build-image.sh
+
+<span class="cm"># step 5: a new file higher up busts much more</span>
+echo test &gt; third-party-modules/dummy.txt
+scripts/build-image.sh
+rm third-party-modules/dummy.txt</pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">Layer order</span>
+          <p>A busted layer busts <b>everything after it</b>. Least-volatile first, most-volatile last: that's why your daily project edits rebuild in seconds. And "changed" means <b>bytes</b>, not metadata — the cache checksums content, so a <span class="inlinecode">touch</span> busts nothing.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>We-do 1 of 2</span></div>
+</section>
+
+<!-- 6 · WE DO C·2 · READ THE IMAGE + STANDALONE RUN -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">We do · together · Part 1</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num warm">WE DO · 2</span><div><div class="title">Run the image with nothing mounted, and read what got baked</div><div class="lead">The self-contained proof: the project shows up because it's <b>inside the image</b>, with no <span class="inlinecode">./projects</span> mount and no scan call.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix t">1</div><div class="tx">Run the image on a spare port with <b>no bind mounts</b>, detached (<span class="inlinecode">-d</span>) so your terminal stays free. A gateway boot takes ~30 to 60 s — start it now and carry on with the next steps while it comes up.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx">Follow the boot with <span class="inlinecode">docker logs -f demo</span>. Once it prints <i>"Starting project: example-project"</i>, open <span class="inlinecode">http://localhost:9088</span> → <b>example-project is there.</b> Ctrl-C only leaves the logs; when you're done, <span class="inlinecode">docker stop demo</span> stops it and <span class="inlinecode">--rm</span> cleans up.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx">Meanwhile: see what <span class="inlinecode">.dockerignore</span> kept out. Your build output already measured it: the <span class="inlinecode">transferring context: ~60 MB</span> line, versus <span class="inlinecode">du -sh .</span> ≈ 130 MB on disk. The gap — mostly <span class="inlinecode">.git</span> — never reached Docker.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx">Explore what actually got baked: <b>read the image, not the repo</b>. Open the image in Docker Desktop (<i>Images → cicd-lab-05-ignition → Files</i>) — or whatever image browser you prefer — and find all four <span class="inlinecode">COPY</span>ed artifacts. Three live under <span class="inlinecode">/usr/local/bin/ignition/data/</span>: <span class="inlinecode">projects/</span>, <span class="inlinecode">config/</span> and <span class="inlinecode">modules.json</span>; the fourth is <span class="inlinecode">/third-party-modules</span> at the root. Note what's <b>not</b> there: <span class="inlinecode">README.md</span>, <span class="inlinecode">docs/</span>, <span class="inlinecode">.env</span>.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># step 1: the self-contained proof (-d = detached)</span>
+docker run -d --rm --name demo -p 9088:8088 \
+  -e ACCEPT_IGNITION_EULA=Y -e IGNITION_EDITION=standard \
+  -e GATEWAY_ADMIN_USERNAME=admin \
+  -e GATEWAY_ADMIN_PASSWORD=password \
+  cicd-lab-05-ignition:local \
+  -n demo -- -Dignition.allowunsignedmodules=true
+
+<span class="cm"># step 2: follow the boot (Ctrl-C leaves the logs,
+#         the gateway keeps running)</span>
+docker logs -f demo
+
+<span class="cm"># step 3: check .git folder size</span>
+du -sh .git
+
+<span class="cm"># done exploring? stop it (--rm removes it)</span>
+docker stop demo</pre></div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>We-do 2 of 2 → now go solo</span></div>
+</section>
+
+<!-- 7 · PART 2 DIVIDER -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">Solo · Part 2</div>
+  </div>
+  <div class="body">
+    <div class="eyebrow">Part 2 · solo · 40 min · exercises/lab.md</div>
+    <div class="title" style="color:#fff;max-width:26ch">Deploy your image to the test gateway by replacing the container</div>
+    <p class="lead">The deploy you learned in the teaching, done for real on your machine: recreate the container from a new image, verify, then roll back. No registry involved: your local image store plays that role today.</p>
+    <ul class="checks" style="margin-top:22px;max-width:920px">
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 2.1:</b> deploy your local image to the test gateway (10 min).</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 2.2:</b> ship a change end-to-end: edit → commit → rebuild → redeploy (15 min).</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Part 2.3:</b> roll back to the previous build's tag, and check what survived (10 min).</span></li>
+    </ul>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2 · Parts 2.1 → 2.3</span></div>
+</section>
+
+<!-- 8 · WHY LOCAL, NOT GITHUB -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 2 · read first</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num phase2">2 · READ FIRST</span><div><div class="title">Why we deploy locally today, and what GitHub Actions would do instead</div><div class="lead"><b>Nothing to type on this slide</b> — it only explains the plan. In a real setup this part is automated by <b>the same Actions you built in Lab 04</b>; today you type the workflow's commands yourself, starting on the next slide (Part 2.1).</div></div></div>
+    <div class="cols2">
+      <ul class="checks">
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Same triggers as Lab 04.</b> A merge to <span class="inlinecode">main</span> would fire <span class="inlinecode">lab05-deploy.yml</span>, a tag would fire <span class="inlinecode">lab05-release.yml</span>. Only the steps <b>inside</b> the jobs change: build + push + pull + recreate, instead of copy + scan.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Why not do that now?</b> The gateway image is <b>~2 GB</b>. Between GitHub's datacenter and a registry that upload is seconds; from ten course laptops, it's your whole hour. The transport isn't the lesson.</span></li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>So today, you are the pipeline.</b> Every command in Parts 2.1 to 2.3 is a line the workflow would run. Type them once by hand and the automation never feels like magic again.</span></li>
+      </ul>
+      <div>
+        <div class="code"><pre><span class="cm"># FOR REFERENCE ONLY — do NOT run this. It's what
+# a CI deploy job would run, pulling from a registry:
+#
+#   docker pull ghcr.io/&lt;you&gt;/&lt;repo&gt;:sha-&lt;short&gt;
+#   IGNITION_TEST_IMAGE=ghcr.io/&lt;you&gt;/&lt;repo&gt;:sha-&lt;short&gt; \
+#     docker compose up -d ignition-test</span>
+
+<span class="cm"># YOUR deploy, in Part 2.1 (next slide) — local
+# image, no registry, so no pull:</span>
+IGNITION_TEST_IMAGE=cicd-lab-05-ignition:local \
+  docker compose up -d ignition-test</pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">Same deploy</span>
+          <p>Your version drops only the <span class="inlinecode">docker pull</span> line: your image store already holds the build. Everything else is <b>identical</b> to what the workflow runs. Want to run the real thing, registry included? That's the <b>stretch slide at the end</b> — not now.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Same Actions, same commands, no transport</span></div>
+</section>
+
+<!-- 9 · PART 2.1 · DEPLOY TO TEST -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 2.1</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num phase2">PART 2.1</span><div><div class="title">Deploy your image to the test gateway, command by command</div><div class="lead">No script today: you type the deploy yourself so you see there's nothing to it. No <span class="inlinecode">docker cp</span>, no scan call: the container is <b>replaced</b>.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix p">1</div><div class="tx">Confirm test is on the <b>base</b> image (an empty gateway).</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx">The deploy is <b>one command</b>: point the compose variable at your image and bring the service up. Compose sees a new image and recreates the container.</div></div>
+        <div class="step"><div class="ix p">3</div><div class="tx">Wait for the gateway to come back: poll <span class="inlinecode">/StatusPing</span> until it says <b>RUNNING</b> (a fresh-image boot re-commissions, so give it a few minutes).</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx">Verify: open <span class="inlinecode">http://localhost:8089/app/home/perspective/session-launcher</span> and launch <b>example-project</b>: the baked project is live. Then inspect: which image does test run now?</div></div>
+        <div class="step"><div class="ix p">5</div><div class="tx">Note what <b>persisted</b>: the historian data in TimescaleDB is untouched. The container died; the data that matters didn't live in it.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># 1: before, the base image</span>
+docker inspect -f '{{.Config.Image}}' lab05-ignition-test
+
+<span class="cm"># 2: THE deploy</span>
+IGNITION_TEST_IMAGE=cicd-lab-05-ignition:local \
+  docker compose up -d ignition-test
+
+<span class="cm"># 3: wait for RUNNING</span>
+curl -s localhost:8089/StatusPing
+<span class="cm"># repeat until it prints RUNNING</span>
+
+<span class="cm"># 4: after, your image</span>
+docker inspect -f '{{.Config.Image}}' lab05-ignition-test
+
+<span class="cm"># and launch the baked project live:
+# :8089/app/home/perspective/session-launcher</span></pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">Under the hood</span>
+          <p><span class="inlinecode">docker-compose.yaml</span> interpolates <span class="inlinecode">IGNITION_TEST_IMAGE</span> into the test service's <span class="inlinecode">image:</span>. New image → compose recreates the container. That's the whole deploy; in production the only extra ingredient is a <span class="inlinecode">docker pull</span> first.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2.1 · 10 min</span></div>
+</section>
+
+<!-- 10 · PART 2.2 · SHIP A CHANGE END TO END -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 2.2</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num phase2">PART 2.2</span><div><div class="title">Ship a change end-to-end: edit, commit, rebuild, redeploy</div><div class="lead">The full loop, exactly what a pipeline would automate. Commit before you build, so each build gets its own immutable <span class="inlinecode">:sha</span> tag: that's your rollback point in Part 2.3.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix p">1</div><div class="tx">Note the current build's tag: <span class="inlinecode">docker images cicd-lab-05-ignition</span>. Write down the <span class="inlinecode">:sha-&lt;short&gt;</span>: this is the version you'll roll back <b>to</b>.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx">Edit a Perspective view under <span class="inlinecode">projects/example-project/…/views/</span>: make it visibly different (a title text works well).</div></div>
+        <div class="step"><div class="ix p">3</div><div class="tx"><b>Commit the change</b> on a feature branch and merge it to <span class="inlinecode">main</span> (GitHub flow, like every lab). The commit is what gives the next build a <b>new</b> <span class="inlinecode">:sha</span> tag.</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx">Rebuild, then redeploy with the same one-liner from Part 2.1: <span class="inlinecode">scripts/build-image.sh</span>, then compose up with the new build.</div></div>
+        <div class="step"><div class="ix p">5</div><div class="tx">Verify at :8089: your view change is live. <span class="inlinecode">docker images</span> now shows <b>two</b> <span class="inlinecode">:sha-…</span> tags: two deployable versions, both still on your machine.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># 1: your rollback point</span>
+docker images cicd-lab-05-ignition
+<span class="cm"># note the current :sha-&lt;short&gt; tag</span>
+
+<span class="cm"># 3: commit so the next build gets a new sha</span>
+git checkout -b feature/tweak-view
+<span class="cm"># edit the view.json, then:</span>
+git add -A &amp;&amp; git commit -m "Change overview title"
+git checkout main &amp;&amp; git merge feature/tweak-view
+
+<span class="cm"># 4: rebuild + redeploy</span>
+scripts/build-image.sh
+IGNITION_TEST_IMAGE=cicd-lab-05-ignition:local \
+  docker compose up -d ignition-test</pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">This is the pipeline</span>
+          <p>Steps 2-5 are exactly what a deploy workflow automates on merge: <b>build → tag → run</b>. You're doing the pipeline's job by hand once, so the automation never feels like magic.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2.2 · 15 min</span></div>
+</section>
+
+<!-- 11 · PART 2.3 · ROLLBACK -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 2.3</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num phase2">PART 2.3</span><div><div class="title">Roll back by running the previous build's tag</div><div class="lead">The image-based rollback: point the container at yesterday's name. No git surgery, no re-copying files, nothing rebuilt.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix p">1</div><div class="tx">Pretend Part 2.2's change broke something on test. You need the previous version back, <b>now</b>.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx">Deploy the <b>old</b> <span class="inlinecode">:sha-&lt;short&gt;</span> tag you wrote down in Part 2.2: the same one-liner, older name. The old image never went away; it's a name in your image store.</div></div>
+        <div class="step"><div class="ix p">3</div><div class="tx">Verify at :8089: the view is back to its previous state.</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx">Count the irreversible steps you just took. (It's zero: both versions still exist, and you can flip between them all afternoon.)</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># 2: rollback = the same deploy, older tag</span>
+IGNITION_TEST_IMAGE=cicd-lab-05-ignition:sha-<span class="cmd2">&lt;old-sha&gt;</span> \
+  docker compose up -d ignition-test
+
+<span class="cm"># 3: confirm what test runs now</span>
+docker inspect -f '{{.Config.Image}}' lab05-ignition-test</pre></div>
+        <div class="goal" style="margin-top:18px">
+          <span class="badge">Compare</span>
+          <p>File-based rollback (Lab 04) meant re-running the pipeline on an older tag: it works, but it re-copies and re-scans. Here the previous version <b>already exists as an artifact</b>: rollback is just running it. That difference is the whole reason teams keep versioned images around.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2.3 · 10 min</span></div>
+</section>
+
+<!-- 12 · PART 2 DEFINITION OF DONE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 2 · the gate</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num phase2">2 · DONE?</span><div><div class="title">Part 2 definition of done</div><div class="lead">All six, before the debrief — the rollback is the one we'll ask you about.</div></div></div>
+    <ul class="checks" style="max-width:960px">
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>The test gateway (:8089) runs <b>your</b> image, and you proved it with <span class="inlinecode">docker inspect</span>.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You shipped a view change end-to-end: edit → commit → rebuild → redeploy → visible on test.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Your image store holds <b>two immutable <span class="inlinecode">:sha</span> tags</b>, one per build, each traceable to its commit.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You rolled test back to the older tag and verified the old view is live again.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You checked that the <b>historian data survived</b> both deploys, and can say why.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You can name the two steps a production pipeline adds between your build and your run (push + pull), and why we skipped them today.</span></li>
+    </ul>
+    <div class="cols2" style="margin-top:auto">
+      <div class="goal warn-g" style="margin-top:0">
+        <span class="badge">Fresh gateway alert</span>
+        <p>Each deploy gave test a <b>brand-new gateway</b>: new internal DB, new trial clock, gone are any UI-made edits. If that surprised you, good: that's the "fresh gateway" disadvantage from the teaching, first-hand. <b>Done early?</b> Run the real pipeline through GitHub Actions (next slide), or see <span class="inlinecode">lab.md</span> for deeper image forensics and a first taste of Lab 06.</p>
+      </div>
+      <div class="goal" style="margin-top:0">
+        <span class="badge">Debrief · 10 min</span>
+        <p>· File-based vs image-based, having now run both: which would you pick for <b>your</b> plant?<br>
+           · The rollback took <b>one command</b> — what made it that cheap?<br>
+           · Which state at your plant could <b>not</b> survive a fresh gateway, and where would you move it?<br>
+           · Put a registry in the middle: what changes, and what stays exactly the same?</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>All checked? → debrief</span></div>
+</section>
+
+<!-- 13 · STRETCH · RUN THE REAL PIPELINE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Stretch · optional</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num warm">STRETCH</span><div><div class="title">Let GitHub build the image, then deploy it by hand</div><div class="lead">In part 2 you built locally and deployed by hand. This moves the <b>build</b> half to CI — merge to <span class="inlinecode">main</span> builds and pushes, a <span class="inlinecode">lab05-v*</span> tag promotes. The deploy half stays yours. Needs your fork; a good take-home if the venue Wi-Fi hates 2 GB pulls.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix">1</div><div class="tx"><b>First, trigger <span class="inlinecode">lab05-deploy.yml</span>:</b> open a PR with a small project change (<span class="inlinecode">lab05-ci.yml</span> validates it, including a no-push image build) and <b>merge it to <span class="inlinecode">main</span></b>. The merge fires <span class="inlinecode">lab05-deploy.yml</span>, which builds on a free hosted runner and pushes to <b>your</b> GHCR namespace. <b>Wait until that run is green</b> — there is no image to pull before it finishes.</div></div>
+        <div class="step"><div class="ix">2</div><div class="tx"><b>Then deploy it yourself:</b> open the deploy run's <b>summary page</b> — it prints the image name it just built. Pull that tag and point test at it. Same two commands as part 2; only the image name got longer.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Release to production:</b> push a <span class="inlinecode">lab05-v*</span> tag → <span class="inlinecode">lab05-release.yml</span> re-tags <span class="inlinecode">:test</span> to <span class="inlinecode">:v0.1.0</span> (prefix stripped) + <span class="inlinecode">:production</span> — <b>no rebuild</b>. When that run is green, deploy it to :8090 the same way, with <span class="inlinecode">IGNITION_PRODUCTION_IMAGE</span>.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx"><b>The payoff:</b> inspect both containers like you did all lab — but with <span class="inlinecode">{{.Image}}</span>, the sha256 of the image the container runs. Identical on test and production → production runs the exact bytes test validated. And notice what stayed manual: you typed an image name twice. That last mile is what Labs 06 and 07 automate.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># 1: PR → merge to main → lab05-deploy.yml builds + pushes
+#    (Actions tab: wait for the green check)</span>
+
+<span class="cm"># 2: copy the tag from the run summary, deploy it</span>
+docker pull ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:sha-&lt;short&gt;
+IGNITION_TEST_IMAGE=ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:sha-&lt;short&gt; \
+  docker compose up -d ignition-test
+
+<span class="cm"># 3: release (promote, no rebuild), then deploy to :8090</span>
+git tag lab05-v0.1.0 &amp;&amp; git push origin lab05-v0.1.0
+IGNITION_PRODUCTION_IMAGE=ghcr.io/&lt;you&gt;/cicd-lab-05-ignition:v0.1.0 \
+  docker compose up -d ignition-production
+
+<span class="cm"># 4: the digest-equality proof</span>
+docker inspect -f '{{.Image}}' lab05-ignition-test
+docker inspect -f '{{.Image}}' lab05-ignition-production
+<span class="cm"># identical sha256 → production runs the bytes the test gateway tested</span></pre></div>
+        <div class="goal good-g" style="margin-top:18px">
+          <span class="badge">Build-once, promote-many</span>
+          <p>The release <b>never rebuilds</b>: it re-tags the image test validated, so production runs those exact bytes. That digest-equality check is the whole philosophy of image-based deploy in one command pair.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stretch · fork required</span></div>
+</section>
+
+<!-- 14 · DONE -->
+<section class="slide dark">
+  <div class="topbar">
+    <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
+    <div class="stage on-dark">The assignment → Wrap-up</div>
+  </div>
+  <div class="body">
+    <div class="eyebrow">Nicely done</div>
+    <div class="title" style="color:#fff;max-width:26ch">You built the gateway as an image and deployed it by replacing the container.</div>
+    <ul class="checks" style="max-width:940px;margin-top:22px">
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You baked <b>project, config and modules</b> into a versioned image and proved it self-contained: no mounts, no scan.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You shipped a change end-to-end by hand: <b>edit → commit → build → tag → recreate the container</b>. That loop is what a pipeline automates.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You rolled test back by <b>running the previous build's tag</b>, and saw why versioned artifacts make that cheap.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Bring one <b>surprise</b> and one <b>question</b> to the debrief.</span></li>
+    </ul>
+    <div class="goal" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14);border-left-color:var(--peri2)">
+      <span class="badge" style="background:var(--peri2);color:var(--navy)">Next</span>
+      <p style="color:#c4cfde">Debrief: file-based vs image-based trade-offs now that you've run both, and what you'd pick for your own plant. Then: <b style="color:#fff">Lab 06: secrets, database migrations, JAR files and third-party modules</b>.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Lab 05 complete</span></div>
+</section>
+
+</div>
+
+<div class="hud"><div class="bar" id="bar"></div></div>
+<div class="pager" id="pager">01 / 14</div>
+<div class="hint" id="hint">↑ ↓ / scroll to navigate</div>
+
+<script>
+const deck=document.getElementById('deck');
+const slides=[...document.querySelectorAll('.slide')];
+const bar=document.getElementById('bar');
+const pager=document.getElementById('pager');
+const hint=document.getElementById('hint');
+function pad(n){return String(n).padStart(2,'0')}
+const POS_KEY='deckpos:'+location.pathname;
+function update(){
+  const i=Math.round(deck.scrollTop/window.innerHeight);
+  bar.style.width=((i)/(slides.length-1)*100)+'%';
+  pager.textContent=pad(i+1)+' / '+pad(slides.length);
+  const dark=slides[i]&&slides[i].classList.contains('dark');
+  pager.classList.toggle('on-dark',dark);
+  hint.classList.toggle('on-dark',dark);
+  try{localStorage.setItem(POS_KEY,String(i))}catch(e){}
+}
+// On a reload (Live Server save, or manual F5), jump back to the slide you were
+// on. A fresh open (new tab / typed URL) is nav type 'navigate' → starts at 1.
+(function restorePos(){
+  try{
+    const nav=performance.getEntriesByType('navigation')[0];
+    if(!nav||nav.type!=='reload')return;
+    const saved=parseInt(localStorage.getItem(POS_KEY)||'0',10);
+    if(saved>0)deck.scrollTop=saved*window.innerHeight;
+  }catch(e){}
+})();
+deck.addEventListener('scroll',()=>{requestAnimationFrame(update)});
+window.addEventListener('keydown',e=>{
+  const i=Math.round(deck.scrollTop/window.innerHeight);
+  if(e.key==='ArrowDown'||e.key==='PageDown'||e.key===' '){e.preventDefault();deck.scrollTo({top:(i+1)*window.innerHeight})}
+  if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();deck.scrollTo({top:(i-1)*window.innerHeight})}
+  if(e.key==='Home'){deck.scrollTo({top:0})}
+  if(e.key==='End'){deck.scrollTo({top:slides.length*window.innerHeight})}
+});
+update();
+setTimeout(()=>{hint.style.transition='opacity .6s';hint.style.opacity='0'},4200);
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# yamllint configuration for the lab.
+# Built up during Part 1 — we disable line-length because Compose files
+# often have legitimately long environment lines that don't benefit from wrapping.
+
+extends: default
+
+# The lab's tool venv (see Setup) lives in the lab folder and contains
+# third-party YAML we don't own — keep the linter out of it.
+ignore: |
+  .venv/
+
+rules:
+  # Compose files have legitimately long `environment:` lines (image tags, DB URLs,
+  # JVM flags) that gain nothing from wrapping — enforcing line-length here would
+  # noise-flood the report with false positives, so we disable it for this project.
+  line-length: disable
+  # Compose files use the shorthand "key: value" style; document-start is noise here.
+  document-start: disable
+  # Allow trailing newlines (some editors strip them; this is a lab, not a kernel).
+  empty-lines:
+    max-end: 1
+  # GitHub Actions workflows use `on:` as a key; without this, yamllint flags every workflow
+  # because `on` is a YAML truthy value. This is a well-known annoyance.
+  truthy:
+    check-keys: false

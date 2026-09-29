@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Repo-wide post-checkout dispatcher: runs each lab's own post-checkout hook
+# from inside that lab's folder, passing git's arguments through.
+#
+# On a branch switch only labs whose files differ between the two commits are
+# visited, so switching branches in Lab 01 never wakes Lab 06's hooks. A fresh
+# clone (previous HEAD is the null sha) visits every lab.
+#
+# Installed by scripts/install-git-config.sh (core.hooksPath=scripts/git-hooks).
+set -uo pipefail
+
+prev="${1:-}"; new="${2:-}"; branch_switch="${3:-0}"
+top="$(git rev-parse --show-toplevel)"
+
+changed=""
+if [ "$branch_switch" = "1" ] && [ -n "$prev" ] && [ "$prev" != "0000000000000000000000000000000000000000" ]; then
+    changed="$(git diff --name-only "$prev" "$new" 2>/dev/null || true)"
+    [ -n "$changed" ] || exit 0
+fi
+
+for lab_dir in "$top"/labs/*/; do
+    lab="labs/$(basename "$lab_dir")"
+    [ "$lab" = "labs/07-multi-gateway-deploy" ] && continue
+    [ -x "$lab_dir/scripts/git-hooks/post-checkout" ] || continue
+    if [ -n "$changed" ]; then
+        printf '%s\n' "$changed" | grep -q "^$lab/" || continue
+    fi
+    (cd "$lab_dir" && ./scripts/git-hooks/post-checkout "$@") || true
+done
+exit 0

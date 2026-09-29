@@ -1,0 +1,139 @@
+# Validation — runs on every pull request into main. That PR run is THE gate:
+# once a commit merges, lab04-deploy.yml (push to main) and lab04-release.yml (tag) ship
+# it without re-validating — the same commit already passed here.
+#
+# GitHub Flow has one long-lived branch, so we validate PRs into it:
+#   main  ← feature/* branches merge here via PR. A push to main then ships to
+#           the test gateway (lab04-deploy.yml); a tag on main ships to production (lab04-release.yml).
+#
+# Purpose: catch the cheap stuff before a deploy gets near it. We DON'T spin
+# up Ignition here; that's left to the deploy workflow on its self-hosted
+# runner. The linters below mirror the ones Lab 03 introduced (yamllint,
+# actionlint, shellcheck, ign-lint) plus this lab's own JSON / .deployignore
+# checks, and they all run free on ubuntu-latest.
+
+name: Lab 04 · CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "labs/04-ignition-file-based-deploy/**"
+      - ".github/workflows/lab04-ci.yml"
+
+# Cancel any in-flight CI run for this PR when a new commit lands.
+concurrency:
+  group: lab04-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege default.
+permissions:
+  contents: read
+
+# Every run step works inside the lab folder; `with:` inputs do not.
+defaults:
+  run:
+    working-directory: labs/04-ignition-file-based-deploy
+
+jobs:
+  # Job ids double as the status-check names branch protection matches on
+  # (Lab 03: a job's check name is its id unless you override it with `name:`).
+  # Keep them stable — renaming silently orphans required checks configured on
+  # main.
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python tools
+        run: pip install yamllint==1.35.1 ign-lint==0.6.1
+
+      - name: yamllint
+        run: yamllint -c .yamllint.yml . ../../.github/workflows/lab04-*.yml
+
+      - name: actionlint
+        uses: raven-actions/actionlint@v2
+        with:
+          # Only this lab's workflows, with this lab's runner labels.
+          files: .github/workflows/lab04-*.yml
+          flags: -config-file labs/04-ignition-file-based-deploy/.github/actionlint.yaml
+
+      - name: shellcheck
+        # -x follows the sourced lib.sh; source resolution comes from .shellcheckrc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends shellcheck
+          shellcheck -x scripts/*.sh
+
+      - name: ignition-lint (Perspective views)
+        run: ign-lint --config rule_config.json --files "projects/**/view.json"
+
+      - name: docker compose config
+        run: docker compose config -q
+
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JSON validity sweep
+        # Walks every *.json under projects/ and services/ and confirms it
+        # parses. Failures surface as PR annotations via the ::error syntax.
+        run: |
+          set +e
+          fail=0
+          while IFS= read -r f; do
+            if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
+              echo "::error file=$f::Invalid JSON"
+              fail=1
+            fi
+          done < <(find projects services -type f -name '*.json' 2>/dev/null)
+          if [ "$fail" -eq 0 ]; then
+            echo "All JSON files parse cleanly."
+          fi
+          exit $fail
+
+      - name: .deployignore syntax
+        # Patterns must be relative (no leading /). Other shapes are fine —
+        # the prune step is forgiving.
+        run: |
+          set +e
+          [ -f .deployignore ] || { echo "No .deployignore — nothing to validate"; exit 0; }
+          fail=0
+          n=0
+          while IFS= read -r line || [ -n "$line" ]; do
+            n=$((n+1))
+            [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+            if [[ "$line" =~ ^/ ]]; then
+              echo "::error file=.deployignore,line=$n::Pattern must be relative, not absolute: $line"
+              fail=1
+            fi
+          done < .deployignore
+          if [ "$fail" -eq 0 ]; then
+            echo ".deployignore patterns look fine."
+          fi
+          exit $fail
+
+      - name: security-properties names a deployable identity
+        # This file is tracked, so whatever it names must exist on every gateway
+        # that reads it. Commissioning rewrites it to a throwaway temp_N profile
+        # when it runs with identity files that outlived their data volume, and
+        # that profile exists on exactly one machine. Cheap check, because the
+        # failure mode is a locked-out gateway.
+        run: |
+          set -euo pipefail
+          f=services/config/resources/core/ignition/security-properties/config.json
+          [ -f "$f" ] || { echo "No $f — nothing to validate"; exit 0; }
+          bad="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(" ".join(sorted({v for k,v in d.items() if k in ("systemAuthProfile","systemIdentityProvider") and str(v).startswith("temp")})))' "$f")"
+          if [ -n "$bad" ]; then
+            echo "::error file=$f::Points at a throwaway identity ($bad). Restore it (git checkout -- $f), remove services/config/resources/core/ignition/{user-source,identity-provider}/temp*, or re-run scripts/setup.sh"
+            exit 1
+          fi
+          echo "security-properties names a deployable identity."

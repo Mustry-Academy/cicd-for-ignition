@@ -1,0 +1,50 @@
+#!/bin/bash
+# Auto-apply skip-worktree to the tracked machine-local Ignition config file.
+# The gateway rewrites local-system-properties/config.json with values that
+# belong to this specific box (system UID, trial state); without skip-worktree
+# it pollutes every developer's git status.
+#
+# Everything else the gateway touches (resource.json manifests) stays visible
+# to git on purpose: real edits must show up. Volatile-only rewrites
+# (timestamps, signatures) are undone with scripts/clean-ignition-resource-churn.sh
+# and hidden from diffs by the textconv driver setup.sh configures.
+#
+# Run by the post-checkout hook (via the repo-root dispatcher), and once directly by scripts/setup.sh (a fresh
+# clone has no skip-worktree bits, and hooks are not cloned, so post-checkout
+# cannot fire on clone). Git preserves the bit across merge, rebase, amend,
+# reset --hard and stash; it is only lost when the file leaves the index and
+# comes back, so checkout is the only event worth hooking.
+#
+# To intentionally update the machine-local seed file:
+#   git update-index --no-skip-worktree <path>
+#   <edit, commit, push>
+#   (next pull re-applies skip-worktree)
+
+set -e
+
+# Work from this lab's folder: git ls-files then lists (and prints paths
+# relative to) this lab only, so the hook never touches other labs' files.
+LAB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$LAB_ROOT"
+git rev-parse --git-dir >/dev/null 2>&1 || exit 0
+
+# Self-heal: earlier versions of this hook skipped every resource.json,
+# config.json and config-mode.json. Clear those stale flags so the files
+# show up in git status / git diff again.
+git ls-files -v \
+  | sed -n 's/^S //p' \
+  | while IFS= read -r f; do
+        case "$f" in
+            */local-system-properties/config.json) ;;
+            *) git update-index --no-skip-worktree -- "$f" 2>/dev/null || true ;;
+        esac
+    done
+
+git ls-files -- \
+    'services/config/resources/**/local-system-properties/config.json' \
+  | while IFS= read -r f; do
+        # Only skip if not already skipped (avoids redundant index writes)
+        if ! git ls-files -v -- "$f" 2>/dev/null | grep -q '^S'; then
+            git update-index --skip-worktree -- "$f" 2>/dev/null || true
+        fi
+    done

@@ -1,0 +1,45 @@
+# pre-commit configuration for the lab.
+# Part 1 stretch target — wires Part 1's linters into a pre-commit hook
+# so bad commits are blocked locally before they ever reach CI.
+#
+# Setup:
+#   pip install pre-commit
+#   scripts/setup.sh   # sets core.hooksPath once for the whole repo
+#
+# The repo's pre-commit dispatcher (scripts/git-hooks/pre-commit at the repo
+# root) runs this file FROM THE REPO ROOT whenever you commit a change under
+# labs/03-github-actions/. So every `files:` regex and every path in `args:`
+# is repo-root-relative.
+#
+# Run all hooks on the whole lab (works from the lab folder):
+#   pre-commit run --all-files --config .pre-commit-config.yaml
+
+repos:
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        files: ^(labs/03-github-actions/|\.github/workflows/lab03-)
+        args: ["-c", "labs/03-github-actions/.yamllint.yml"]
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        files: ^labs/03-github-actions/.*\.sh$
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.1
+    hooks:
+      - id: actionlint
+        files: ^\.github/workflows/lab03-
+        args: ["-config-file", "labs/03-github-actions/.github/actionlint.yaml"]
+
+  # Ignition-native linter for Perspective views (naming, polling, scripts...).
+  # The hook only fires on staged view.json files; --config points it at ours.
+  - repo: https://github.com/bw-design-group/ignition-lint
+    rev: v0.6.1
+    hooks:
+      - id: ign-lint
+        files: ^labs/03-github-actions/.*view\.json$
+        args: ["--config=labs/03-github-actions/rule_config.json"]

@@ -1,0 +1,30 @@
+# The Part 3 self-hosted-runner demo. It does NOT run on GitHub-hosted infra:
+# `runs-on` matches the labels of the ephemeral Docker runner you register
+# locally (see labs/03-github-actions/docs/self-hosted-runners.md), so it only
+# executes once your runner is up and listening. Trigger it by hand:
+#
+#   gh workflow run lab03-runner-demo.yml   # then watch the docker logs terminal
+#
+# Manual-only — no push/PR trigger — so it never blocks a merge and never runs
+# until you deliberately dispatch it. Deliberately a single echo: the proof is
+# the hostname in the log — your container's, not a GitHub machine's.
+#
+# No `defaults.run.working-directory` here, unlike lab03-ci.yml: the job never
+# checks out the repo, so labs/03-github-actions doesn't exist on the runner.
+
+name: Lab 03 · runner-demo
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hello:
+    # These labels must match the runner's LABELS env var exactly, or the job
+    # sits queued forever waiting for a runner that never claims it.
+    runs-on: [self-hosted, local-lab03]
+    timeout-minutes: 5
+    steps:
+      - run: echo "ran on $(hostname)"

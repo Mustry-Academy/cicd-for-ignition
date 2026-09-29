@@ -1,0 +1,103 @@
+# .dockerignore — what NOT to send to the Docker build context.
+#
+# This is the image-based analogue of Lab 04's .deployignore. The build context
+# is everything Docker tars up and hands to the daemon before running the
+# Dockerfile. Anything matched here:
+#   - never enters the build context (faster builds, smaller upload)
+#   - can never be COPY-ed into the image by accident (smaller, cleaner image)
+#   - keeps secrets and lab tooling out of a published artifact
+#
+# Format: same glob rules as .gitignore. One pattern per line.
+#
+# Rule of thumb: the only things the Dockerfile actually COPYs are projects/,
+# services/config/, services/modules.json, and third-party-modules/. Everything
+# else is noise in the build context — exclude it.
+
+# Version control + git internals
+.git/
+.gitignore
+.gitattributes
+
+# Secrets and local env (NEVER bake these into a published image)
+.env
+.env.example
+
+# Lab teaching material — has nothing to do with the gateway runtime
+README.md
+LICENSE
+docs/
+exercises/
+scripts/
+slides/
+tests/
+
+# CI / compose / test-only files
+.github/
+docker-compose.yaml
+Dockerfile
+.dockerignore
+
+# Database bootstrap (runs in the TimescaleDB sidecar, not the gateway image)
+db-init/
+
+# Per-instance identity — belongs to ONE gateway, never bake it into a shared
+# image. Same rule as Lab 04's .deployignore, excluded BY NAME:
+#   - config/local + config/resources/local: UUID, gateway-network keystore,
+#     OPC-UA keystores, machine-local system props
+#   - the INTERNAL identity trio: users.json carries the LOCAL gateway's admin
+#     password hash; baking it ships your admin login to every gateway running
+#     the image — instant lockout. Identity resources you add yourself
+#     (database/AD user sources, SAML/OIDC providers) hold no password data
+#     and ARE baked like any other config.
+# These dirs are gitignored too; the patterns here protect local builds
+# (scripts/build-image.sh) run from a working tree where the local gateway
+# has written them.
+services/config/local/
+services/config/resources/local/
+services/config/resources/core/ignition/user-source/default/
+services/config/resources/core/ignition/user-source/opcua-module/
+services/config/resources/core/ignition/identity-provider/default/
+
+# The scan-API token: generated per clone (scripts/generate-api-keys.sh), one
+# key PER GATEWAY, never committed — and never baked: the image is a published
+# artifact shared test→production, so a baked token would (a) publish the
+# local gateway's auth config and (b) make one key open every gateway running
+# the image. Deploys reinstall the target gateway's own token into the fresh
+# container instead (scripts/install-api-token.sh, run by deploy-image.sh).
+services/config/resources/core/ignition/api-token/
+
+# security-properties points systemAuthProfile at `default` — the internal
+# user source excluded above. An image-based gateway re-commissions on every
+# container recreate, and commissioning that finds a security-properties file
+# WITHOUT its matching user source plays safe: it creates a temp_N identity
+# and rewrites the file to point at it. Keep the file out of the image and
+# commissioning instead creates the clean `default` identity from the
+# container's GATEWAY_ADMIN_* env vars — the same end state Lab 04's test/production
+# gateways reach. (A production image CAN bake it when systemAuthProfile
+# names a deployable user source, e.g. an AD/database one, instead of the
+# gateway-owned internal one.)
+services/config/resources/core/ignition/security-properties/
+
+# Per-instance keystores and secrets. The actual keystore files are gitignored
+# (regenerated per gateway), so they're never in the build context — these
+# patterns are belt-and-suspenders so a stray keystore can't get baked into a
+# shared image.
+**/keystore/*.jks
+**/keystore/*.p12
+**/*.idb
+
+# Ignition operational state + content-addressed blob noise — never bake these
+**/.resources/
+**/migration-log-*.md
+**/data/db/
+**/data/users.idb
+**/data/temp/
+**/data/logs/
+**/data/.metadata/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

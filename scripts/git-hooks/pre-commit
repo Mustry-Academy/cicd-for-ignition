@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Repo-wide pre-commit dispatcher.
+#
+# Git allows one pre-commit hook per clone, but several labs bring their own.
+# For every lab with staged changes this runs, from inside that lab's folder:
+#   1. labs/<lab>/scripts/git-hooks/pre-commit, if present
+#   2. the pre-commit framework against labs/<lab>/.pre-commit-config.yaml,
+#      if present and `pre-commit` is installed
+# Labs without staged changes are skipped, so work in Lab 04 never waits on
+# Lab 06's linters.
+#
+# Installed by scripts/install-git-config.sh (core.hooksPath=scripts/git-hooks).
+# Lab 07 is skipped: it runs from its own cohort repo, not from here.
+set -uo pipefail
+
+top="$(git rev-parse --show-toplevel)"
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+[ -n "$staged" ] || exit 0
+
+status=0
+for lab_dir in "$top"/labs/*/; do
+    lab="labs/$(basename "$lab_dir")"
+    [ "$lab" = "labs/07-multi-gateway-deploy" ] && continue
+    # A lab's own folder, or its workflows at the root (.github/workflows/labNN-*)
+    num="$(basename "$lab_dir" | cut -d- -f1)"
+    printf '%s\n' "$staged" | grep -qE "^($lab/|\.github/workflows/lab$num-)" || continue
+
+    if [ -x "$lab_dir/scripts/git-hooks/pre-commit" ]; then
+        (cd "$lab_dir" && ./scripts/git-hooks/pre-commit) || status=1
+    fi
+
+    if [ -f "$lab_dir/.pre-commit-config.yaml" ]; then
+        if command -v pre-commit >/dev/null 2>&1; then
+            pre-commit run --config "$lab/.pre-commit-config.yaml" || status=1
+        else
+            echo "pre-commit is not installed: skipping $lab linters (pip install pre-commit)"
+        fi
+    fi
+done
+exit "$status"
