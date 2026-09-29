@@ -310,13 +310,14 @@ sudo apt install shellcheck python3-venv python3-pip
 <span class="cm">#    actionlint has no apt package: release binary →</span>
 <span class="cm">#    /usr/local/bin · one-liner in lab.md § Setup</span>
 
-<span class="cm"># 2b: install a supported Python (ign-lint needs >=3.10,&lt;3.14)</span>
-sudo add-apt-repository ppa:deadsnakes/ppa
-sudo apt update &amp;&amp; sudo apt install python3.13 python3.13-venv
+<span class="cm"># 2b: ign-lint needs Python >=3.10,&lt;3.14</span>
+python3 --version       <span class="cm"># Debian 12, Ubuntu 22.04/24.04: fine</span>
+<span class="cm">#    below 3.10? Ubuntu: deadsnakes PPA → python3.12,</span>
+<span class="cm">#    then use python3.12 instead of python3 below</span>
 
 <span class="cm"># 2c: venv on that Python, then the pinned tools</span>
-python3.13 -m venv .venv &amp;&amp; source .venv/bin/activate
-python --version        <span class="cm"># verify it's 3.13 inside the venv</span>
+python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+python --version        <span class="cm"># verify it's 3.10+ inside the venv</span>
 pip install --upgrade pip
 pip install yamllint==1.35.1 ign-lint==0.6.1</pre></div>
         <div class="code ospane" data-os="mac"><pre><span class="cm"># 2: linters — macOS (Homebrew)</span>
@@ -391,7 +392,7 @@ scripts/validate.sh         <span class="cm"># JSON + code.py parses</span></pre
     <div class="sechead"><span class="num">PART 1 · 3-6</span><div><div class="title">Fix everything, then make the config your own</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix">3</div><div class="tx"><b>Fix every finding.</b> For each, record: <i>what the tool flagged</i> · <i>why your fix is correct</i> · <i>what class of production bug it would catch</i>.</div></div>
+        <div class="step"><div class="ix">3</div><div class="tx"><b>Fix every finding.</b> For each, record: <i>what the tool flagged</i> · <i>why your fix is correct</i> · <i>what class of production bug it would catch</i>. That includes the seeded <span class="inlinecode">lab03-example.yml</span>: bump it to <span class="inlinecode">actions/checkout@v4</span>, don't delete it.</div></div>
         <div class="step"><div class="ix">4</div><div class="tx"><b>Re-run every linter</b> until each is silent and <span class="inlinecode">scripts/validate.sh</span> exits 0.</div></div>
         <div class="step"><div class="ix">5</div><div class="tx"><b>Read the config decision — a finding you <i>configure away</i>, not fix.</b> Part 1's real skill is deciding, per finding, whether to <i>fix</i> it, <i>mute the rule</i>, or <i>ignore</i> it. Open <span class="inlinecode">.yamllint.yml</span> and read the comment on <span class="inlinecode">line-length: disable</span>: Compose files have legitimately long <span class="inlinecode">environment:</span> lines, so we mute that rule <i>on purpose</i> — and document <i>why</i>, so the next reviewer sees judgment, not laziness. Nothing to change here; just see how a deliberate mute is recorded.</div></div>
         <div class="step"><div class="ix">6</div><div class="tx"><b>Commit.</b> End state: a clean tree, every linter silent, validate green.</div></div>
@@ -444,16 +445,15 @@ scripts/validate.sh         <span class="cm"># JSON + code.py parses</span></pre
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix p">0</div><div class="tx"><b>Run <span class="inlinecode">scripts/prepare-part2.sh</span>.</b> It announces each step as it does two mechanical things: sets the shipped answer aside (<span class="inlinecode">git mv lab03-ci.yml → .github/ci-reference.yml</span>, your reference for step 4) and drops a bare two-job skeleton into <span class="inlinecode">.github/workflows/lab03-ci.yml</span> at the <b>repo root</b>: GitHub only runs workflows from there.</div></div>
-        <div class="step"><div class="ix p">0</div><div class="tx"><b>Open that skeleton</b> (at right): a <span class="inlinecode">validate</span> job and a <span class="inlinecode">lint</span> job, each just <span class="inlinecode">checkout</span> + <b>TODOs</b>. The structure is given; the real steps are yours to type across steps 1-2.</div></div>
-        <div class="step"><div class="ix p">0</div><div class="tx">Rather do it by hand? The script only runs the <span class="inlinecode">git mv</span> and writes the file below — skip it and type both yourself if you prefer.</div></div>
+        <div class="step"><div class="ix p">0</div><div class="tx"><b>Open that skeleton</b> (at right): a <span class="inlinecode">validate</span> job and a <span class="inlinecode">lint</span> job, each just <span class="inlinecode">checkout</span> + <b>TODOs</b>. The structure is given; you fill in the real steps on the next slide, then refine them in steps 1-2.</div></div>
+        <div class="step"><div class="ix p">0</div><div class="tx"><b>Commit</b> the result. (By hand instead? Do the <span class="inlinecode">git mv</span> and type the file at right yourself.)</div></div>
       </div>
       <div>
-        <div class="code"><pre>scripts/prepare-part2.sh    <span class="cm"># set answer aside, scaffold</span>
-<span class="cm"># what it drops into .github/workflows/lab03-ci.yml:</span>
-name: Lab 03 · CI
+        <div class="code"><pre>scripts/prepare-part2.sh &amp;&amp; git add -A &amp;&amp; git commit -m <span class="cmd2">"chore: scaffold lab03-ci.yml"</span>
+name: Lab 03 · CI             <span class="cm"># ← what it writes to .github/workflows/lab03-ci.yml</span>
 on:
   pull_request:
-    paths:                    <span class="cm"># TODO 1: narrow + push backstop</span>
+    paths:                    <span class="cm"># TODO (step 1): narrow + push backstop</span>
       - <span class="cmd2">"labs/03-github-actions/**"</span>
       - <span class="cmd2">".github/workflows/lab03-*.yml"</span>
 permissions:
@@ -466,25 +466,74 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      <span class="cm"># TODO: run scripts/validate.sh</span>
+      <span class="cm"># TODO (step 0): run scripts/validate.sh</span>
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      <span class="cm"># TODO 0: setup-python 3.12 + pip install pins</span>
-      <span class="cm"># TODO: yamllint·actionlint·shellcheck·ign-lint</span>
-      <span class="cm"># TODO 2: docker compose config -q</span></pre></div>
+      <span class="cm"># TODO (step 0): set up Python 3.12, then install the pinned tools</span>
+      <span class="cm"># TODO (step 0): run each linter — yamllint, actionlint, shellcheck, ign-lint</span>
+      <span class="cm"># TODO (step 2): add `docker compose config -q` as the final lint step</span></pre></div>
         <div class="goal" style="margin-top:16px">
           <span class="badge">Why scaffold, not copy?</span>
-          <p>The boilerplate (job names, <span class="inlinecode">checkout</span>) is noise; the <b>checks</b> are the lesson. You still write every linter step by hand — <span class="inlinecode">ci-reference.yml</span> is the answer key you earn, then check against in step 4.</p>
+          <p>The boilerplate is noise; the <b>checks</b> are the lesson. <span class="inlinecode">ci-reference.yml</span> is the answer key you check against in step 4.</p>
         </div>
       </div>
     </div>
   </div>
-  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2 · step 0 · skeleton → refine next</span></div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2 · step 0 · skeleton → fill the jobs next</span></div>
 </section>
 
-<!-- 10 · PART 2 · STEPS 1-2 · REFINE -->
+<!-- 10 · PART 2 · STEP 0 · FILL THE JOBS -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 2 · step 0 · fill the jobs</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num phase2">PART 2 · 0</span><div><div class="title">Fill the jobs: the Part 1 checks, in CI</div><div class="lead">The same tools you ran by hand, with the same pins. Type them in; the reference stays set aside until step 4.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix p">0</div><div class="tx"><b>validate:</b> one step, <span class="inlinecode">run: scripts/validate.sh</span>. Every <span class="inlinecode">run:</span> step starts in the lab folder, thanks to <span class="inlinecode">defaults.run.working-directory</span>.</div></div>
+        <div class="step"><div class="ix p">0</div><div class="tx"><b>lint:</b> <span class="inlinecode">setup-python</span> 3.12 (ign-lint needs 3.10+), the <b>same pip pins</b> as your venv, then one step per linter: yamllint, actionlint, shellcheck, ign-lint.</div></div>
+        <div class="step"><div class="ix p">0</div><div class="tx"><b>actionlint is a <span class="inlinecode">uses:</span> step</b>, not <span class="inlinecode">run:</span>: it isn't installed on <span class="inlinecode">ubuntu-latest</span>, so <span class="inlinecode">run: actionlint</span> fails with <i>command not found</i>. <span class="inlinecode">uses:</span> steps ignore <span class="inlinecode">working-directory</span>, so its paths are <b>repo-root-relative</b>.</div></div>
+        <div class="step"><div class="ix p">0</div><div class="tx">Commit. Stuck on a step? <span class="inlinecode">exercises/lab.md</span> § Part 2 walks through each one.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre>  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/validate.sh
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: <span class="cmd2">"3.12"</span>
+      - run: pip install yamllint==1.35.1 ign-lint==0.6.1
+      - run: yamllint -c .yamllint.yml . ../../.github/workflows/lab03-*.yml
+      - uses: raven-actions/actionlint@v2
+        with:                  <span class="cm"># repo-root-relative</span>
+          files: <span class="cmd2">".github/workflows/lab03-*.yml"</span>
+          flags: <span class="cmd2">"-config-file labs/03-github-actions/.github/actionlint.yaml"</span>
+      - run: sudo apt-get update &amp;&amp; sudo apt-get install -y --no-install-recommends shellcheck
+      - run: shellcheck scripts/*.sh
+      - run: ign-lint --config rule_config.json --files <span class="cmd2">"projects/**/view.json"</span></pre></div>
+        <div class="goal" style="margin-top:16px">
+          <span class="badge">Job ids are check names</span>
+          <p>Branch protection (step 3) matches required checks by name, and a job's name <b>is</b> its id: <span class="inlinecode">lint</span>, <span class="inlinecode">validate</span>. Rename a job later and the required check waits forever.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2 · step 0 · fill the jobs → refine next</span></div>
+</section>
+
+<!-- 11 · PART 2 · STEPS 1-2 · REFINE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -495,8 +544,9 @@ jobs:
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix p">1</div><div class="tx">Narrow the <span class="inlinecode">paths:</span> filter to what the checks read, plus a <span class="inlinecode">push: branches: [main]</span> backstop trigger (see code block). Paths are always <b>repo-root-relative</b>.</div></div>
-        <div class="step"><div class="ix p">1</div><div class="tx"><b>Prove it works:</b> open a PR that touches <b>only</b> the lab's <span class="inlinecode">README.md</span> → the workflow must be <b>skipped</b>, not run-and-passed. Check the PR's checks panel.</div></div>
         <div class="step"><div class="ix p">2</div><div class="tx">Add <span class="inlinecode">docker compose config -q</span> as a final step of the <b>lint</b> job. It catches Compose-level issues yamllint can't see: undefined services, port-string typos, malformed env maps.</div></div>
+        <div class="step"><div class="ix p">1-2</div><div class="tx"><b>Commit and push to <span class="inlinecode">main</span></b> (it isn't protected yet). The push backstop runs <span class="inlinecode">lint</span> + <span class="inlinecode">validate</span> once, and that's what lets you pick them as required checks in step 3.</div></div>
+        <div class="step"><div class="ix p">1-2</div><div class="tx"><b>Prove the filter:</b> branch off the pushed <span class="inlinecode">main</span>, change <b>only</b> the lab's <span class="inlinecode">README.md</span>, open a PR → the workflow must be <b>skipped</b>, not run-and-passed. Check the checks panel, then close the PR.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 1: refine the trigger — paths + push backstop</span>
@@ -509,6 +559,7 @@ on:
       - <span class="cmd2">".github/workflows/lab03-*.yml"</span>
       - <span class="cmd2">"labs/03-github-actions/.yamllint.yml"</span>
       - <span class="cmd2">"labs/03-github-actions/rule_config.json"</span>
+      - <span class="cmd2">"labs/03-github-actions/.github/**"</span>
   push:
     branches: [main]
     paths:
@@ -516,10 +567,17 @@ on:
       - <span class="cmd2">".github/workflows/lab03-*.yml"</span>
 
 <span class="cm"># 2: lint job, final step:</span>
-      - run: docker compose config -q</pre></div>
+      - run: docker compose config -q
+<span class="cm"># ship it, then prove the filter</span>
+git add -A &amp;&amp; git commit -m <span class="cmd2">"ci: lab03 workflow"</span>
+git push origin main        <span class="cm"># backstop runs lint + validate</span>
+git switch -c docs/readme-only   <span class="cm"># edit README.md only</span>
+git commit -am <span class="cmd2">"docs: readme tweak"</span> &amp;&amp; git push -u origin docs/readme-only
+gh pr create --fill         <span class="cm"># checks panel: skipped</span>
+gh pr close --delete-branch &amp;&amp; git switch main</pre></div>
         <div class="goal warn-g" style="margin-top:16px">
           <span class="badge">Filter discipline</span>
-          <p>Too narrow → view changes sneak past CI. Too broad (<span class="inlinecode">"**"</span>) → the filter is pointless. Include the <b>configs</b> the checks read, <span class="inlinecode">rule_config.json</span> too.</p>
+          <p>Too narrow → changes sneak past CI. Too broad (<span class="inlinecode">"**"</span>) → pointless. Include the <b>configs</b> the checks read: <span class="inlinecode">rule_config.json</span>, the lab's <span class="inlinecode">.github/</span>.</p>
         </div>
       </div>
     </div>
@@ -527,21 +585,19 @@ on:
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2 · steps 1-2 of 4</span></div>
 </section>
 
-<!-- 11 · PART 2 · STEPS 3-4 -->
+<!-- 12 · PART 2 · STEP 3 · THE GATE -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
-    <div class="stage">Part 2 · steps 3-4 · the gate</div>
+    <div class="stage">Part 2 · step 3 · the gate</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num phase2">PART 2 · 3-4</span><div><div class="title">Protect <span class="mono" style="font-size:30px">main</span>, then try to break in</div></div></div>
+    <div class="sechead"><span class="num phase2">PART 2 · 3</span><div><div class="title">Protect <span class="mono" style="font-size:30px">main</span>, then try to break in</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix p">3</div><div class="tx"><b>Protect <span class="inlinecode">main</span></b>: Settings → Branches → add a rule with the <b>four ticks</b> in the block. Grant <b>no bypass</b>: it's your repo, and a wall you can step over teaches you nothing. <b>Delete the rule when you finish Lab 03</b>: every lab shares this <span class="inlinecode">main</span>, and other labs' PRs would wait forever on <span class="inlinecode">lint</span> + <span class="inlinecode">validate</span>.</div></div>
-        <div class="step"><div class="ix p">3</div><div class="tx"><b>Try the forbidden route:</b> commit straight to <span class="inlinecode">main</span> and push (see code block). <b>GitHub rejects the push.</b> Direct commits to <span class="inlinecode">main</span> are dead.</div></div>
-        <div class="step"><div class="ix p">3</div><div class="tx"><b>Now the proper route:</b> the same change on a branch, open a PR, wait for <b><span class="inlinecode">lint</span></b> and <b><span class="inlinecode">validate</span></b> to go green, merge. The merge button is now the only door in.</div></div>
-        <div class="step"><div class="ix p">3</div><div class="tx"><b>Break it on purpose:</b> re-run <span class="inlinecode">scripts/seed.sh</span> (or just set the Clock to <span class="inlinecode">now(250)</span> by hand), commit on a branch, open a PR → <b>confirm GitHub blocks the merge</b>. Fix <i>forward</i> (e.g. <span class="inlinecode">now(1500)</span>, not an exact revert — an empty diff re-triggers nothing), re-push, watch it go green.</div></div>
-        <div class="step"><div class="ix p">4</div><div class="tx"><b>Sanity check:</b> your workflow should structurally match the reference you set aside, <span class="inlinecode">.github/ci-reference.yml</span>.</div></div>
+        <div class="step"><div class="ix p">3a</div><div class="tx"><b>Protect <span class="inlinecode">main</span></b>: Settings → Branches → add a rule with the <b>four ticks</b> in the block. Grant <b>no bypass</b>: it's your repo, and a wall you can step over teaches you nothing. <b>Delete the rule when you finish Lab 03</b>: every lab shares this <span class="inlinecode">main</span>, and other labs' PRs would wait forever on <span class="inlinecode">lint</span> + <span class="inlinecode">validate</span>.</div></div>
+        <div class="step"><div class="ix p">3b</div><div class="tx"><b>Try the forbidden route:</b> commit straight to <span class="inlinecode">main</span> and push (see code block). <b>GitHub rejects the push.</b> Direct commits to <span class="inlinecode">main</span> are dead. Then drop that rejected commit, or every later branch carries it.</div></div>
+        <div class="step"><div class="ix p">3c</div><div class="tx"><b>Now the proper route:</b> a <b>real</b> change on a branch (an empty commit matches no <span class="inlinecode">paths:</span> filter, so CI would never report), open a PR, wait for <b><span class="inlinecode">lint</span></b> and <b><span class="inlinecode">validate</span></b> to go green, merge. The merge button is now the only door in.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 3a · protect main — Settings → Branches (UI)</span>
@@ -554,20 +610,52 @@ on:
 git switch main
 git commit --allow-empty -m <span class="cmd2">"test: direct to main"</span>
 git push                    <span class="bad"># → rejected: protected</span>
+git reset --hard origin/main   <span class="cm"># drop the rejected commit</span>
 
 <span class="cm"># 3c · proper route → PR → green → merge</span>
 git switch -c fix/proper-route
-git commit --allow-empty -m <span class="cmd2">"test: proper route"</span>
+<span class="cm">#   a real change under a filtered path, e.g. reword</span>
+<span class="cm">#   the Overview Subtitle's text in its view.json</span>
+git commit -am <span class="cmd2">"feat: reword overview subtitle"</span>
 git push -u origin fix/proper-route
 gh pr create --fill         <span class="cm"># base = your fork · main</span>
-gh pr merge --merge         <span class="cm"># unlocks once green</span>
+gh pr checks --watch &amp;&amp; gh pr merge --merge
+git switch main &amp;&amp; git pull</pre></div>
+        <div class="goal warn-g" style="margin-top:16px">
+          <span class="badge">The trap you just set</span>
+          <p>Required checks and <span class="inlinecode">paths:</span> filters clash. A docs-only PR is <b>skipped</b>, so its required checks never report: it sits on <b>"Expected — waiting for status" forever</b>. The fix, a twin no-op workflow with the same job names, is in <span class="inlinecode">exercises/lab.md</span> § Part 2.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2 · step 3 of 4 · the gate</span></div>
+</section>
 
-<span class="cm"># 3d · break it on purpose, then fix FORWARD</span>
-git switch -c fix/regression   <span class="cm"># then set Clock → now(250)</span>
+<!-- 13 · PART 2 · STEPS 3D-4 · BREAK IT, THEN COMPARE -->
+<section class="slide">
+  <div class="topbar">
+    <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
+    <div class="stage">Part 2 · steps 3-4 · break it</div>
+  </div>
+  <div class="body">
+    <div class="sechead"><span class="num phase2">PART 2 · 3-4</span><div><div class="title">Break it on purpose, then compare</div><div class="lead">A red PR the merge button refuses: the gate doing its job.</div></div></div>
+    <div class="cols2">
+      <div class="steps">
+        <div class="step"><div class="ix p">3d</div><div class="tx"><b>Break it on purpose:</b> on a branch, set the Clock's poll to <span class="inlinecode">now(250)</span> by hand, commit, open a PR → <b>confirm GitHub blocks the merge</b>.</div></div>
+        <div class="step"><div class="ix p">3d</div><div class="tx"><b>Fix <i>forward</i>:</b> edit the Clock to <span class="inlinecode">now(1500)</span>, not back to the exact original: an empty net diff re-triggers nothing. Commit, push, watch it go green, merge.</div></div>
+        <div class="step"><div class="ix p">4</div><div class="tx"><b>Sanity check:</b> your workflow should structurally match the reference you set aside, <span class="inlinecode">.github/ci-reference.yml</span>.</div></div>
+      </div>
+      <div>
+        <div class="code"><pre><span class="cm"># 3d · break it on purpose, then fix FORWARD</span>
+git switch -c fix/regression
+<span class="cm">#   edit the Clock binding → now(250), then:</span>
 git commit -am <span class="cmd2">"test: reintroduce a bug"</span>
 git push -u origin fix/regression
 gh pr create --fill         <span class="bad"># → merge blocked: red</span>
-git commit -am <span class="cmd2">"fix: now(1500)"</span> &amp;&amp; git push   <span class="cm"># → green</span>
+<span class="cm">#   edit the Clock binding → now(1500), then:</span>
+git commit -am <span class="cmd2">"fix: poll the clock at 1500 ms"</span> &amp;&amp; git push
+gh pr checks --watch &amp;&amp; gh pr merge --merge   <span class="cm"># → green</span>
+git switch main &amp;&amp; git pull
 
 <span class="cm"># 4 · sanity: diff vs the reference you set aside</span>
 git diff --no-index \
@@ -582,7 +670,7 @@ git diff --no-index \
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 2 · steps 3-4 of 4</span></div>
 </section>
 
-<!-- 12 · PART 3 · CONCEPT + DISCUSSION -->
+<!-- 14 · PART 3 · CONCEPT + DISCUSSION -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>
@@ -605,7 +693,7 @@ git diff --no-index \
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 3 · concept + discussion → optional hands-on</span></div>
 </section>
 
-<!-- 13 · PART 3 · OPTIONAL HANDS-ON 1 · REGISTER -->
+<!-- 15 · PART 3 · OPTIONAL HANDS-ON 1 · REGISTER -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -640,7 +728,7 @@ docker run -d --rm --name lab03-runner \
 docker logs -f lab03-runner</pre></div>
         <div class="goal warn-g" style="margin-top:16px">
           <span class="badge">Go / no-go</span>
-          <p><b>Safe here</b> because the runner is ephemeral, the job is <span class="inlinecode">workflow_dispatch</span> (no fork PR can trigger it), it's your throwaway fork, and you tear it down on slide 3. <b>Never</b> run this on a repo you care about.</p>
+          <p><b>Safe here</b> because the runner is ephemeral, the job is <span class="inlinecode">workflow_dispatch</span> (no fork PR can trigger it), it's your throwaway fork, and you tear it down in hands-on 3. <b>Never</b> run this on a repo you care about.</p>
         </div>
       </div>
     </div>
@@ -648,7 +736,7 @@ docker logs -f lab03-runner</pre></div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 3 · optional hands-on 1 of 3 · register</span></div>
 </section>
 
-<!-- 14 · PART 3 · OPTIONAL HANDS-ON 2 · ROUTE & RUN -->
+<!-- 16 · PART 3 · OPTIONAL HANDS-ON 2 · ROUTE & RUN -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -686,7 +774,7 @@ gh workflow run lab03-runner-demo.yml</pre></div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 3 · optional hands-on 2 of 3 · route + run</span></div>
 </section>
 
-<!-- 15 · PART 3 · OPTIONAL HANDS-ON 3 · CLEANUP -->
+<!-- 17 · PART 3 · OPTIONAL HANDS-ON 3 · CLEANUP -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -719,7 +807,7 @@ docker rm -f lab03-runner   <span class="cm"># no-op if it already exited</span>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Part 3 · optional hands-on 3 of 3 · cleanup → stretch or wrap-up</span></div>
 </section>
 
-<!-- 16 · STRETCH 1 · PRE-COMMIT -->
+<!-- 18 · STRETCH 1 · PRE-COMMIT -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -731,7 +819,7 @@ docker rm -f lab03-runner   <span class="cm"># no-op if it already exited</span>
       <div class="steps">
         <div class="step"><div class="ix t">1</div><div class="tx">Install the tool: <span class="inlinecode">pip install pre-commit</span>. No <span class="inlinecode">pre-commit install</span>: <span class="inlinecode">scripts/setup.sh</span> already pointed git at the repo's hook dispatcher, which runs this lab's config on any commit that touches the lab.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx">Baseline run over the whole lab: <span class="inlinecode">pre-commit run --all-files --config .pre-commit-config.yaml</span>, which should be clean after Part 1.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Prove it works:</b> make a bad change (for example break one of the shell scripts), try to commit, and <b>ign-lint blocks the commit</b>.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Prove it works:</b> make a bad change (set the Clock binding to <span class="inlinecode">now(250)</span>), try to commit, and <b>the ign-lint hook blocks the commit</b>.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx">Undo the bad change. If the commit went through anyway: is <span class="inlinecode">pre-commit</span> on your PATH? Does <span class="inlinecode">git config core.hooksPath</span> print <span class="inlinecode">scripts/git-hooks</span>? If not, re-run <span class="inlinecode">scripts/setup.sh</span>.</div></div>
       </div>
       <div>
@@ -753,7 +841,7 @@ git commit -am <span class="cmd2">"test: should be blocked"</span>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stretch 1 of 2 · optional</span></div>
 </section>
 
-<!-- 17 · STRETCH 2 · DISPATCH + SECRET MASKING + CONCURRENCY -->
+<!-- 19 · STRETCH 2 · DISPATCH + SECRET MASKING + CONCURRENCY -->
 <section class="slide">
   <div class="topbar">
     <div class="brandrow"><img class="logo-img" src="logos/OriginalDark.png" alt="Mustry Solutions"></div>
@@ -794,7 +882,7 @@ concurrency:
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>Stretch 2 of 2 · optional · pick any</span></div>
 </section>
 
-<!-- 18 · DONE -->
+<!-- 20 · DONE -->
 <section class="slide dark">
   <div class="topbar">
     <div class="on-dark brandrow"><img class="logo-img" src="logos/OriginalLight.png" alt="Mustry Solutions"></div>

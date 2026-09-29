@@ -65,7 +65,9 @@ pip install yamllint==1.35.1 ign-lint==0.6.1            # ign-lint needs Python 
 > `No matching distribution found for ign-lint` (pip filters it out by `requires-python`,
 > reporting `from versions: none`). macOS's system `python3` is **3.9**, which triggers
 > exactly this — name `python3.12` explicitly. On Debian/Ubuntu/WSL the system `python3`
-> is already 3.10+, so plain `python3` is fine. Confirm with `python -V` after activating.
+> is already 3.10+ on Debian 12 and Ubuntu 22.04/24.04, so plain `python3` is fine; only an
+> older release (Ubuntu 20.04 ships 3.8) needs `python3.12` from the deadsnakes PPA.
+> Confirm with `python -V` after activating.
 > CI runs the same pins on Python 3.12.
 
 > **Why the venv?** A bare `pip install` on Homebrew or Ubuntu 24.04+ Python fails with
@@ -196,10 +198,12 @@ match the assignment slides.)
    (the Kiln tile), plus a poll-rate finding and a naming finding. Work out *why*
    each rule exists before fixing anything.
 4. Fix every finding. For each, record: *what the tool flagged*, *why your fix is correct*,
-   and *what class of production bug it would catch*.
+   and *what class of production bug it would catch*. That includes the seeded
+   `lab03-example.yml`: bump it to `actions/checkout@v4`, don't delete it.
 5. Re-run every linter until each is silent and `scripts/validate.sh` exits 0.
-6. Open `.yamllint.yml`. We disabled `line-length` for the project — **extend the comment**
-   explaining *why* (hint: long compose environment lines).
+6. Open `.yamllint.yml` and read the comment on `line-length: disable`: a finding you
+   configure away rather than fix, with the reason written down so the next reviewer sees
+   judgment, not laziness. Nothing to change here.
 7. Commit. Your end state should be a clean tree: every linter silent, `scripts/validate.sh`
    exits 0.
 
@@ -382,6 +386,7 @@ on:
       - ".github/workflows/lab03-*.yml"
       - "labs/03-github-actions/.yamllint.yml"
       - "labs/03-github-actions/rule_config.json"
+      - "labs/03-github-actions/.github/**"
   push:
     branches: [main]
     paths:
@@ -390,8 +395,9 @@ on:
 ```
 
 `paths:` patterns are always relative to the **repo root**; `working-directory` doesn't
-change that. Open a PR that touches **only** `labs/03-github-actions/README.md` and confirm
-the workflow is **skipped** (not just passed). Hold that thought — it collides with required checks in step 3.
+change that. Include every config the checks read: `.yamllint.yml`, `rule_config.json`,
+and the lab's `.github/` (actionlint's config, and `ci-reference.yml` once you've set it
+aside).
 
 **2 — Compose validation.** Add a final step to the lint job:
 
@@ -401,6 +407,23 @@ the workflow is **skipped** (not just passed). Hold that thought — it collides
 
 This catches Compose-level issues yamllint can't see — undefined services, port-string
 typos, malformed environment maps.
+
+**Ship both, then prove the filter.** Commit and push to `main` (it isn't protected yet).
+The push backstop runs `lint` and `validate` once — and a check has to have run recently
+before step 3's branch protection lets you pick it. Then branch off the pushed `main`, touch
+**only** `labs/03-github-actions/README.md`, and open a PR: the workflow must be
+**skipped** (not just passed). Hold that thought — it collides with required checks in
+step 3. Close that PR afterwards.
+
+```bash
+git add -A && git commit -m "ci: lab03 workflow"
+git push origin main                  # the push backstop runs lint + validate
+git switch -c docs/readme-only        # edit README.md only, then:
+git commit -am "docs: readme tweak"
+git push -u origin docs/readme-only
+gh pr create --fill                   # checks panel: the workflow is skipped
+gh pr close --delete-branch && git switch main
+```
 
 **3 — Protect `main`.** In repo settings, add a branch protection rule for `main` with four
 things enabled — and grant yourself no bypass, or the rules won't apply to you as the
@@ -425,12 +448,26 @@ Now prove the wall exists, from both sides:
 
 1. **The forbidden route.** Commit straight to `main`
    (`git commit --allow-empty -m "test: direct to main"`) and push. GitHub rejects the
-   push — direct commits to `main` are dead.
-2. **The proper route.** Make a change on a branch, open a PR, wait for `lint` and
-   `validate` to go green, and merge. The merge button is now the only door in.
-3. **Break it on purpose.** Run `scripts/seed.sh` to plant the broken state (or just set the
-   Clock's poll to `now(250)` by hand), commit on a branch, and open a PR. Confirm GitHub
-   blocks the merge. Then fix and re-push — but fix *forward* (e.g. `now(1500)`), don't
+   push — direct commits to `main` are dead. Then drop the rejected commit, or every
+   branch you cut from `main` carries it: `git reset --hard origin/main`.
+2. **The proper route.** Make a **real** change on a branch — an empty commit matches no
+   `paths:` filter, so CI would never report and the merge would never unlock. Reword the
+   Overview's `Subtitle` text in its `view.json`, for example. Open a PR, wait for `lint`
+   and `validate` to go green, and merge. The merge button is now the only door in.
+
+   ```bash
+   git switch -c fix/proper-route
+   # reword the Overview Subtitle's text in its view.json, then:
+   git commit -am "feat: reword overview subtitle"
+   git push -u origin fix/proper-route
+   gh pr create --fill
+   gh pr checks --watch && gh pr merge --merge   # merging waits for green checks
+   git switch main && git pull
+   ```
+3. **Break it on purpose.** On a branch, set the Clock's poll to `now(250)` by hand, commit,
+   and open a PR. Confirm GitHub blocks the merge. (Don't re-run `scripts/seed.sh` for this:
+   it plants all seven bugs, and fixing the Clock alone leaves the PR red.) Then edit the
+   Clock again and re-push — but fix *forward* (e.g. `now(1500)`), don't
    revert to the exact original value: a PR whose net diff against `main` is empty matches
    no `paths:` filter, so CI never re-reports and the required checks sit on "Expected"
    forever — the step-1 trap in a second costume. (If you did revert exactly, push any real

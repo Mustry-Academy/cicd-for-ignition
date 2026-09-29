@@ -62,7 +62,7 @@ git mv "$WORKFLOW" "$REFERENCE"
 # --- step 2: write the starter skeleton ---
 say "Step 2/2 — write a starter skeleton to $WORKFLOW_SHOWN"
 note "A bare two-job skeleton (validate + lint) with TODOs — the real steps are"
-note "yours to type across steps 0-3. Nothing here does the exercise for you."
+note "yours to type across steps 0-2. Nothing here does the exercise for you."
 cat > "$WORKFLOW" <<'YAML'
 name: Lab 03 · CI
 
@@ -92,7 +92,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # TODO: run scripts/validate.sh
+      # TODO (step 0): run scripts/validate.sh
 
   lint:
     runs-on: ubuntu-latest
@@ -100,11 +100,11 @@ jobs:
       - uses: actions/checkout@v4
       # TODO (step 0): set up Python 3.12, then install the pinned tools
       #                (pip install yamllint==1.35.1 ign-lint==0.6.1)
-      # TODO: run each linter — yamllint, actionlint, shellcheck, ign-lint
+      # TODO (step 0): run each linter — yamllint, actionlint, shellcheck, ign-lint
       # TODO (step 2): add `docker compose config -q` as the final lint step
 YAML
 
 say "Done."
 note "Answer key : $REFERENCE_SHOWN"
 note "Your file  : $WORKFLOW_SHOWN  (repo root; starter skeleton — flesh out the TODOs)"
-note "Next: open $WORKFLOW_SHOWN and work through Part 2, steps 1-3."
+note "Next: commit, then fill in the jobs (Part 2, step 0) and work through steps 1-4."
