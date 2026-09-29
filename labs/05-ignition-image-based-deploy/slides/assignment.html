@@ -166,7 +166,7 @@ body{
   <div class="cover">
     <div class="eyebrow">The assignment · breakout rooms · 2 × 40 min</div>
     <div class="big">Build the gateway image locally, then deploy it by <em>replacing the container</em></div>
-    <div class="sub">Everything on your own machine. Together we build the gateway image and prove it's self-contained: no bind mounts, no scan call. Then you deploy that image to the local test gateway by recreating the container, ship a change end-to-end, and roll back by running the previous build's tag. No registry, no uploads, no GitHub setup needed.</div>
+    <div class="sub">Everything on your own machine. Together we build the gateway image and prove it's self-contained: no bind mounts, no scan call. Then you deploy that image to the local test gateway by recreating the container, ship a change end-to-end, and roll back by running the previous build's tag. No registry, no uploads, no PAT needed.</div>
     <div class="for">
       <span>Floating to help</span>
       <span class="pill"><b>Sam</b></span>
@@ -239,27 +239,27 @@ body{
     <div class="sechead"><span class="num warm">SETUP</span><div><div class="title">First: your course fork, this lab's folder, bring the stack up</div><div class="lead">Everything runs locally today, so strictly speaking a plain clone would do — but work in your fork anyway, <b>like every previous lab</b>: the whole course lives in your own account, and the CI legs (<span class="inlinecode">lab05-deploy.yml</span> / <span class="inlinecode">lab05-release.yml</span>) are ready if you want them later.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix t">1</div><div class="tx">Go to your course clone <span class="inlinecode">~/mustry-academy/cicd-for-ignition/</span> — every lab is a folder under <span class="inlinecode">labs/</span>; this one is <span class="inlinecode">labs/05-ignition-image-based-deploy</span>. <b>On WSL2, clone into your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>: the gateways' bind mounts are far slower and line endings get messy across the Windows boundary.</div></div>
-        <div class="step"><div class="ix t">2</div><div class="tx"><b>Fork &amp; clone — once for the whole course.</b> Already did it for an earlier lab? Skip this. Otherwise <span class="inlinecode">gh repo fork … --clone</span> forks the course repo to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. No need to enable Actions today — nothing in the assignment triggers a workflow.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and — unlike Lab 04 — <b>change nothing</b>: the admin logins work as shipped, and <span class="inlinecode">setup.sh</span> generates a unique API key per gateway into <span class="inlinecode">.env</span> (no key ever lives in the repo or the image). No PAT, no fork, no GitHub account needed today.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx"><b>Check the remotes and set the default:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b> — then <span class="inlinecode">gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition</span> so <span class="inlinecode">gh</span> targets <b>your fork</b>, not the course repo (once per clone; already done if you set it in an earlier lab — the stretch goal's PRs need it). Then <span class="inlinecode">code .</span> to open VS Code.</div></div>
+        <div class="step"><div class="ix t">1</div><div class="tx"><b>Fork &amp; clone — once for the whole course.</b> Already did it for an earlier lab? Skip this. Otherwise <span class="inlinecode">gh repo fork … --clone</span> forks the course repo to <i>your</i> account and clones your fork in one go. Prefer the website? Press <b>Fork</b> on github.com, then <span class="inlinecode">git clone</span> your fork. Nothing in the assignment triggers a workflow; only the stretch needs Actions.</div></div>
+        <div class="step"><div class="ix t">2</div><div class="tx">Go to this lab's folder in your course clone: <span class="inlinecode">~/mustry-academy/cicd-for-ignition/labs/05-ignition-image-based-deploy</span>. <b>On WSL2, the clone lives in your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>: the gateways' bind mounts are far slower and line endings get messy across the Windows boundary.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp .env.example .env</span> and — unlike Lab 04 — <b>change nothing</b>: the admin logins work as shipped, and <span class="inlinecode">setup.sh</span> generates a unique API key per gateway into <span class="inlinecode">.env</span> (no key ever lives in the repo or the image). No PAT needed today.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Check the remotes and set the default:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b> — then <span class="inlinecode">gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition</span> so <span class="inlinecode">gh</span> targets <b>your fork</b>, not the course repo. Only the stretch needs this (its PRs); it's once per clone and probably done in an earlier lab. Then <span class="inlinecode">code .</span> to open VS Code.</div></div>
         <div class="step"><div class="ix t">5</div><div class="tx"><span class="inlinecode">scripts/setup.sh</span> brings up the stack: the <b>local</b> authoring gateway (:8088, bind-mounted), <b>test</b> (:8089) and <b>production</b> (:8090) — both empty until their first image deploy — plus TimescaleDB. Four containers, no runner: today <b>you</b> are the last mile of the pipeline.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># 1–2: once per course: fork to your account + clone your fork</span>
+        <div class="code"><pre><span class="cm"># 1: once per course: fork to your account + clone your fork</span>
 mkdir -p ~/mustry-academy &amp;&amp; cd ~/mustry-academy
 gh repo fork Mustry-Academy/cicd-for-ignition --clone
 <span class="cm">#    …or press "Fork" on github.com, then clone YOUR fork:</span>
 <span class="cm">#    git clone git@github.com:&lt;your-username&gt;/cicd-for-ignition.git</span>
 
-<span class="cm">#      then this lab's folder (stop the previous lab's stack first:</span>
-<span class="cm">#      docker compose down in its folder)</span>
+<span class="cm"># 2: this lab's folder (stop the previous lab's stack first:</span>
+<span class="cm">#    docker compose down in its folder)</span>
 cd ~/mustry-academy/cicd-for-ignition/labs/05-ignition-image-based-deploy
 
 <span class="cm"># 3: copy the env file — change NOTHING today</span>
 cp .env.example .env
 
-<span class="cm"># 4: origin → YOUR username? good. Then point gh at your fork</span>
+<span class="cm"># 4: origin → YOUR username? good. Point gh at your fork (stretch)</span>
 git remote -v
 gh repo set-default <span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition
 
@@ -290,7 +290,7 @@ scripts/setup.sh          <span class="cm"># 3 gateways + TimescaleDB</span></pr
         <div class="step"><div class="ix t">2</div><div class="tx"><span class="inlinecode">docker history</span> shows the baked layers, newest on top. Which layer has the biggest size?</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx">Read the <b>revision label</b> back and confirm it matches the last commit. That's how you trace any container to its commit.</div></div>
         <div class="step"><div class="ix t">4</div><div class="tx">Change a project file (e.g. change the perspective view size) and rebuild. Docker <b>checksums the content</b> of each <span class="inlinecode">COPY</span>'s inputs: the changed bytes bust the <span class="inlinecode">projects/</span> layer, but every layer above it stays <b>CACHED</b>, so the rebuild takes seconds.</div></div>
-        <div class="step"><div class="ix t">5</div><div class="tx">Now drop a dummy file into <span class="inlinecode">third-party-modules/</span> and rebuild. That <span class="inlinecode">COPY</span> sits <b>higher</b> in the Dockerfile, and a busted layer rebuilds <b>everything after it</b>: modules, config <i>and</i> projects all re-copy. Delete the dummy afterwards — or it ships in every future build.</div></div>
+        <div class="step"><div class="ix t">5</div><div class="tx">Now drop a dummy file into <span class="inlinecode">third-party-modules/</span> and rebuild. That <span class="inlinecode">COPY</span> sits <b>higher</b> in the Dockerfile, and a busted layer rebuilds <b>everything after it</b>: modules, config <i>and</i> projects all re-copy. Then <b>clean up and rebuild</b>: delete the dummy and undo the view edit, so the image you deploy next is traceable to a commit. (Build with uncommitted changes and <span class="inlinecode">build-image.sh</span> tags it <span class="inlinecode">:sha-…-dirty</span>.)</div></div>
       </div>
       <div>
         <div class="code"><pre>scripts/build-image.sh
@@ -308,7 +308,10 @@ scripts/build-image.sh
 <span class="cm"># step 5: a new file higher up busts much more</span>
 echo test &gt; third-party-modules/dummy.txt
 scripts/build-image.sh
-rm third-party-modules/dummy.txt</pre></div>
+
+<span class="cm"># clean up, then rebuild from the commit</span>
+rm third-party-modules/dummy.txt &amp;&amp; git checkout -- projects/
+scripts/build-image.sh</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Layer order</span>
           <p>A busted layer busts <b>everything after it</b>. Least-volatile first, most-volatile last: that's why your daily project edits rebuild in seconds. And "changed" means <b>bytes</b>, not metadata — the cache checksums content, so a <span class="inlinecode">touch</span> busts nothing.</p>
@@ -331,8 +334,8 @@ rm third-party-modules/dummy.txt</pre></div>
       <div class="steps">
         <div class="step"><div class="ix t">1</div><div class="tx">Run the image on a spare port with <b>no bind mounts</b>, detached (<span class="inlinecode">-d</span>) so your terminal stays free. A gateway boot takes ~30 to 60 s — start it now and carry on with the next steps while it comes up.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx">Follow the boot with <span class="inlinecode">docker logs -f demo</span>. Once it prints <i>"Starting project: example-project"</i>, open <span class="inlinecode">http://localhost:9088</span> → <b>example-project is there.</b> Ctrl-C only leaves the logs; when you're done, <span class="inlinecode">docker stop demo</span> stops it and <span class="inlinecode">--rm</span> cleans up.</div></div>
-        <div class="step"><div class="ix t">3</div><div class="tx">Meanwhile: see what <span class="inlinecode">.dockerignore</span> kept out. Your build output already measured it: the <span class="inlinecode">transferring context: ~60 MB</span> line, versus <span class="inlinecode">du -sh .</span> ≈ 130 MB on disk. The gap — mostly <span class="inlinecode">.git</span> — never reached Docker.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx">Explore what actually got baked: <b>read the image, not the repo</b>. Open the image in Docker Desktop (<i>Images → cicd-lab-05-ignition → Files</i>) — or whatever image browser you prefer — and find all four <span class="inlinecode">COPY</span>ed artifacts. Three live under <span class="inlinecode">/usr/local/bin/ignition/data/</span>: <span class="inlinecode">projects/</span>, <span class="inlinecode">config/</span> and <span class="inlinecode">modules.json</span>; the fourth is <span class="inlinecode">/third-party-modules</span> at the root. Note what's <b>not</b> there: <span class="inlinecode">README.md</span>, <span class="inlinecode">docs/</span>, <span class="inlinecode">.env</span>.</div></div>
+        <div class="step"><div class="ix t">3</div><div class="tx">Meanwhile: see what <span class="inlinecode">.dockerignore</span> kept out. Your build output already measured it: compare its <span class="inlinecode">transferring context</span> line (about 5 MB) with <span class="inlinecode">du -sh .</span> (about 10 MB on disk). <span class="inlinecode">slides/</span>, <span class="inlinecode">docs/</span>, <span class="inlinecode">scripts/</span> and friends never reached Docker. And <span class="inlinecode">.git</span> isn't even in this folder: it sits at the repo root (<span class="inlinecode">../../.git</span>), outside the build context.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx">Explore what actually got baked: <b>read the image, not the repo</b>. Open the image in Docker Desktop (<i>Images → cicd-lab-05-ignition → Files</i>) — or whatever image browser you prefer — and find all four <span class="inlinecode">COPY</span>ed artifacts. Three live under <span class="inlinecode">/usr/local/bin/ignition/data/</span>: <span class="inlinecode">projects/</span>, <span class="inlinecode">config/</span> and <span class="inlinecode">modules.json</span>; the fourth is <span class="inlinecode">/third-party-modules</span> at the root. Note what's <b>not</b> there: <span class="inlinecode">README.md</span>, <span class="inlinecode">docs/</span>, <span class="inlinecode">.env</span>, and the internal <span class="inlinecode">user-source/opcua-module</span>, which is why the demo logs <i>User Source "opcua-module" not found</i>. No Docker Desktop? <span class="inlinecode">docker run --rm --entrypoint find cicd-lab-05-ignition:local /usr/local/bin/ignition/data -maxdepth 1</span>.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># step 1: the self-contained proof (-d = detached)</span>
@@ -347,8 +350,8 @@ docker run -d --rm --name demo -p 9088:8088 \
 #         the gateway keeps running)</span>
 docker logs -f demo
 
-<span class="cm"># step 3: check .git folder size</span>
-du -sh .git
+<span class="cm"># step 3: what's on disk vs what reached Docker</span>
+du -sh . slides docs scripts third-party-modules
 
 <span class="cm"># done exploring? stop it (--rm removes it)</span>
 docker stop demo</pre></div>
@@ -427,7 +430,7 @@ IGNITION_TEST_IMAGE=cicd-lab-05-ignition:local \
         <div class="step"><div class="ix p">2</div><div class="tx">The deploy is <b>one command</b>: point the compose variable at your image and bring the service up. Compose sees a new image and recreates the container.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx">Wait for the gateway to come back: poll <span class="inlinecode">/StatusPing</span> until it says <b>RUNNING</b> (a fresh-image boot re-commissions, so give it a few minutes).</div></div>
         <div class="step"><div class="ix p">4</div><div class="tx">Verify: open <span class="inlinecode">http://localhost:8089/app/home/perspective/session-launcher</span> and launch <b>example-project</b>: the baked project is live. Then inspect: which image does test run now?</div></div>
-        <div class="step"><div class="ix p">5</div><div class="tx">Note what <b>persisted</b>: the historian data in TimescaleDB is untouched. The container died; the data that matters didn't live in it.</div></div>
+        <div class="step"><div class="ix p">5</div><div class="tx">Note what <b>persisted</b>: the historian's tables in TimescaleDB (<span class="inlinecode">ignition_test</span>) are untouched. The container died; the data that matters didn't live in it. Check with the <span class="inlinecode">psql</span> line in the code block, before and after each deploy.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 1: before, the base image</span>
@@ -445,7 +448,9 @@ curl -s localhost:8089/StatusPing
 docker inspect -f '{{.Config.Image}}' lab05-ignition-test
 
 <span class="cm"># and launch the baked project live:
-# :8089/app/home/perspective/session-launcher</span></pre></div>
+# :8089/app/home/perspective/session-launcher</span>
+<span class="cm"># 5: the historian's tables live in TimescaleDB, not the container</span>
+docker exec lab05-timescaledb psql -U ignition -d ignition_test -c '\dt'</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Under the hood</span>
           <p><span class="inlinecode">docker-compose.yaml</span> interpolates <span class="inlinecode">IGNITION_TEST_IMAGE</span> into the test service's <span class="inlinecode">image:</span>. New image → compose recreates the container. That's the whole deploy; in production the only extra ingredient is a <span class="inlinecode">docker pull</span> first.</p>
@@ -480,7 +485,7 @@ docker images cicd-lab-05-ignition
 <span class="cm"># 3: commit so the next build gets a new sha</span>
 git checkout -b feature/tweak-view
 <span class="cm"># edit the view.json, then:</span>
-git add -A &amp;&amp; git commit -m "Change overview title"
+git add projects/ &amp;&amp; git commit -m "Change overview title"
 git checkout main &amp;&amp; git merge feature/tweak-view
 
 <span class="cm"># 4: rebuild + redeploy</span>
@@ -542,7 +547,7 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-test</pre></div>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You shipped a view change end-to-end: edit → commit → rebuild → redeploy → visible on test.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>Your image store holds <b>two immutable <span class="inlinecode">:sha</span> tags</b>, one per build, each traceable to its commit.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You rolled test back to the older tag and verified the old view is live again.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You checked that the <b>historian data survived</b> both deploys, and can say why.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You checked that the <b>historian's tables survived</b> both deploys (<span class="inlinecode">psql … -d ignition_test -c '\dt'</span>), and can say why.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>You can name the two steps a production pipeline adds between your build and your run (push + pull), and why we skipped them today.</span></li>
     </ul>
     <div class="cols2" style="margin-top:auto">
@@ -572,13 +577,16 @@ docker inspect -f '{{.Config.Image}}' lab05-ignition-test</pre></div>
     <div class="sechead"><span class="num warm">STRETCH</span><div><div class="title">Let GitHub build the image, then deploy it by hand</div><div class="lead">In part 2 you built locally and deployed by hand. This moves the <b>build</b> half to CI — merge to <span class="inlinecode">main</span> builds and pushes, a <span class="inlinecode">lab05-v*</span> tag promotes. The deploy half stays yours. Needs your fork; a good take-home if the venue Wi-Fi hates 2 GB pulls.</div></div></div>
     <div class="cols2">
       <div class="steps">
+        <div class="step"><div class="ix">0</div><div class="tx"><b>Two prerequisites.</b> Actions enabled on your fork (<span class="inlinecode">course-setup.sh</span> did it; check your fork's Actions tab lists the workflows). And <span class="inlinecode">docker login ghcr.io</span> with a token that has <span class="inlinecode">read:packages</span>: the package is <b>private</b> by default, so the pull in step 2 says <i>denied</i> without it.</div></div>
         <div class="step"><div class="ix">1</div><div class="tx"><b>First, trigger <span class="inlinecode">lab05-deploy.yml</span>:</b> open a PR with a small project change (<span class="inlinecode">lab05-ci.yml</span> validates it, including a no-push image build) and <b>merge it to <span class="inlinecode">main</span></b>. The merge fires <span class="inlinecode">lab05-deploy.yml</span>, which builds on a free hosted runner and pushes to <b>your</b> GHCR namespace. <b>Wait until that run is green</b> — there is no image to pull before it finishes.</div></div>
         <div class="step"><div class="ix">2</div><div class="tx"><b>Then deploy it yourself:</b> open the deploy run's <b>summary page</b> — it prints the image name it just built. Pull that tag and point test at it. Same two commands as part 2; only the image name got longer.</div></div>
         <div class="step"><div class="ix">3</div><div class="tx"><b>Release to production:</b> push a <span class="inlinecode">lab05-v*</span> tag → <span class="inlinecode">lab05-release.yml</span> re-tags <span class="inlinecode">:test</span> to <span class="inlinecode">:v0.1.0</span> (prefix stripped) + <span class="inlinecode">:production</span> — <b>no rebuild</b>. When that run is green, deploy it to :8090 the same way, with <span class="inlinecode">IGNITION_PRODUCTION_IMAGE</span>.</div></div>
         <div class="step"><div class="ix">4</div><div class="tx"><b>The payoff:</b> inspect both containers like you did all lab — but with <span class="inlinecode">{{.Image}}</span>, the sha256 of the image the container runs. Identical on test and production → production runs the exact bytes test validated. And notice what stayed manual: you typed an image name twice. That last mile is what Labs 06 and 07 automate.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># 1: PR → merge to main → lab05-deploy.yml builds + pushes
+        <div class="code"><pre><span class="cm"># 0: once: log in to GHCR (token with read:packages)</span>
+docker login ghcr.io -u &lt;you&gt;
+<span class="cm"># 1: PR → merge to main → lab05-deploy.yml builds + pushes
 #    (Actions tab: wait for the green check)</span>
 
 <span class="cm"># 2: copy the tag from the run summary, deploy it</span>

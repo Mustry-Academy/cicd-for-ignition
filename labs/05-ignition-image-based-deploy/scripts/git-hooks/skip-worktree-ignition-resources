@@ -1,8 +1,8 @@
 #!/bin/bash
-# Auto-apply skip-worktree to the tracked machine-local Ignition config file.
+# Auto-apply skip-worktree to the tracked machine-local Ignition config files.
 # The gateway rewrites local-system-properties/config.json with values that
-# belong to this specific box (system UID, trial state); without skip-worktree
-# it pollutes every developer's git status.
+# belong to this specific box (system UID, trial state), and its resource.json
+# on every boot; without skip-worktree they pollute every developer's git status.
 #
 # Everything else the gateway touches (resource.json manifests) stays visible
 # to git on purpose: real edits must show up. Volatile-only rewrites
@@ -36,13 +36,14 @@ git ls-files -v \
   | sed -n 's/^S //p' \
   | while IFS= read -r f; do
         case "$f" in
-            */local-system-properties/config.json) ;;
+            */local-system-properties/config.json|*/local-system-properties/resource.json) ;;
             *) git update-index --no-skip-worktree -- "$f" 2>/dev/null || true ;;
         esac
     done
 
 git ls-files -- \
     'services/config/resources/**/local-system-properties/config.json' \
+    'services/config/resources/**/local-system-properties/resource.json' \
   | while IFS= read -r f; do
         # Only skip if not already skipped (avoids redundant index writes)
         if ! git ls-files -v -- "$f" 2>/dev/null | grep -q '^S'; then

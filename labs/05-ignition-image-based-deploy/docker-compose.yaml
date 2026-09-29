@@ -7,7 +7,7 @@
 #   ignition-test     http://localhost:8089   runs the IMAGE built by lab05-deploy.yml
 #                                            (push to main → build → recreate)
 #   ignition-production    http://localhost:8090   runs the IMAGE promoted by lab05-release.yml
-#                                            (tag push v* → re-tag → recreate)
+#                                            (tag push lab05-v* → re-tag → recreate)
 #
 #   timescaledb      localhost:5432          databases: ignition_local_development, ignition_test,
 #                                                       ignition_production (one per env)

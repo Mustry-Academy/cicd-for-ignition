@@ -5,6 +5,8 @@
 # modules.json, and third-party-modules. Tags it two ways, exactly like CI:
 #   <repo>:sha-<short>   immutable, traceable to the commit
 #   <repo>:local         a moving "latest local build" pointer
+# With uncommitted changes in this lab, the sha tag becomes sha-<short>-dirty:
+# the image holds bytes no commit has, so it must not pass for that commit.
 #
 # This is the same `docker build` that .github/workflows/lab05-deploy.yml runs on a
 # GitHub-hosted runner — running it here lets you inspect the image, run it, and
@@ -38,6 +40,14 @@ command -v docker >/dev/null || { echo -e "${RED}docker not installed${NC}" >&2;
 
 REPO="$(image_repo)"
 SHA="$(git rev-parse --short HEAD 2>/dev/null || echo nogit)"
+if [ "$SHA" != nogit ] && [ -n "$(git status --porcelain -- . 2>/dev/null)" ]; then
+  SHA="${SHA}-dirty"
+  echo -e "${YELLOW}Uncommitted changes in this lab: tagging :sha-${SHA}.${NC}"
+  echo "  The image will contain them, so it is not traceable to any commit:"
+  git status --short -- . | sed 's/^/    /' | head -10
+  echo "  Commit (or undo) them and rebuild for a clean :sha tag."
+  echo ""
+fi
 SOURCE_URL="$(git remote get-url origin 2>/dev/null || echo 'local')"
 
 TAGS=(-t "${REPO}:sha-${SHA}" -t "${REPO}:local")
@@ -66,5 +76,5 @@ echo "    -e GATEWAY_ADMIN_USERNAME=admin -e GATEWAY_ADMIN_PASSWORD=password \\"
 echo "    ${REPO}:sha-${SHA} -n demo -- -Dignition.allowunsignedmodules=true"
 echo "  # then open http://localhost:9088"
 echo ""
-echo "Or deploy it to the test gateway:"
-echo "  scripts/deploy-image.sh test ${REPO}:sha-${SHA}"
+echo "Or deploy it to the test gateway (compose recreates the container):"
+echo "  IGNITION_TEST_IMAGE=${REPO}:sha-${SHA} docker compose up -d ignition-test"

@@ -101,3 +101,10 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Lint and editor config: used by CI and your editor, never by the gateway
+.yamllint.yml
+.shellcheckrc
+rule_config.json
+flint.config.json
+.flint/
