@@ -155,6 +155,8 @@ Three workflows under [`.github/workflows/`](../../.github/workflows/) at the re
 | [`lab05-deploy.yml`](../../.github/workflows/lab05-deploy.yml) | Push to `main` (build paths), manual | `ubuntu-latest` | Build + push the image to GHCR (`:sha-<short>`, `:test`) and print the tag in the run summary. |
 | [`lab05-release.yml`](../../.github/workflows/lab05-release.yml) | Tag `lab05-v*` (on `main`), manual | `ubuntu-latest` | Re-tag the **`:test`** image (what the test gateway is running) to `:vX.Y.Z` + `:production` (**no rebuild**) and print the tag. |
 
+> The deploy and release jobs carry `if: github.repository != 'Mustry-Academy/cicd-for-ignition'`. They push to the fork owner's GHCR, so they only run in your fork and skip on the course repo itself. CI (`lab05-ci.yml`) runs in both.
+
 **Every workflow runs on a free GitHub-hosted runner** — this lab stands up no self-hosted runner at all. Notice what that means: CI can build and promote images, but it cannot *deploy* one, because deploying means touching a machine that owns a gateway container. So in this lab **you deploy by hand**: take the image name the workflow printed, put it in `IGNITION_TEST_IMAGE`, and run `docker compose up -d ignition-test` yourself.
 
 That division is the point. The build half is portable and cheap; the last mile needs a privileged runner sitting next to the gateway. Labs 06 and 07 add that runner — here you play its part manually, so you can see exactly what it will be doing for you.

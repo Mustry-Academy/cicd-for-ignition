@@ -119,6 +119,8 @@ GitHub only runs workflows from the repo root, so this lab's three live in the c
 | [`lab06-deploy.yml`](../../.github/workflows/lab06-deploy.yml) | Push to `main` (deploy paths only); manual dispatch with `target: test\|production` | `[self-hosted, lab06]` | File-based deploy via `docker cp` + hot scan. Ships secret files (once your 1C step materializes them) and the module manifest (restarting the gateway only when it changed). |
 | [`lab06-release.yml`](../../.github/workflows/lab06-release.yml) | `lab06-v*` tag on `main` | `[self-hosted, lab06]` | The Lab 04 routing: the tag ships to **production**. A thin caller that runs `lab06-deploy.yml` with `target: production` — one pipeline, so your 1C/2B steps ship to both gateways. |
 
+> The deploy and release jobs carry `if: github.repository != 'Mustry-Academy/cicd-for-ignition'`. They deploy to gateways on your machine, so they only run in your fork and skip on the course repo itself. CI (`lab06-ci.yml`) runs in both.
+
 Both deploy targets need:
 
 - The bundled self-hosted runner (`github-runner` service in `docker-compose.yaml`) registered against your fork with the `lab06` label — it auto-registers using the `repo`-scope PAT in `RUNNER_GITHUB_PAT` (see `.env`; reuse your Lab 04 token).

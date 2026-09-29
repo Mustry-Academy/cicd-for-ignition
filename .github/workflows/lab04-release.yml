@@ -63,6 +63,9 @@ jobs:
   # ships; only tag commits that came through a PR.
   release:
     name: Release to production gateway
+    # Fork-only: this job deploys to your own gateways (or your own GHCR), so it
+    # skips on the course repo Mustry-Academy/cicd-for-ignition itself.
+    if: github.repository != 'Mustry-Academy/cicd-for-ignition'
     runs-on: [self-hosted, lab04]
     environment: lab04-gateway-production
     env:
