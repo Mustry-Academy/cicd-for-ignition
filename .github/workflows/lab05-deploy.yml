@@ -62,6 +62,9 @@ jobs:
   # main skips validation, which is why main only moves via PRs.
   build:
     name: Build and push image
+    # Fork-only: this job deploys to your own gateways (or your own GHCR), so it
+    # skips on the course repo Mustry-Academy/cicd-for-ignition itself.
+    if: github.repository != 'Mustry-Academy/cicd-for-ignition'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

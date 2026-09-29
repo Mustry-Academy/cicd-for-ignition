@@ -56,6 +56,9 @@ jobs:
   # tag commits that came through a PR.
   promote:
     name: Promote tested image to production tag
+    # Fork-only: this job deploys to your own gateways (or your own GHCR), so it
+    # skips on the course repo Mustry-Academy/cicd-for-ignition itself.
+    if: github.repository != 'Mustry-Academy/cicd-for-ignition'
     runs-on: ubuntu-latest
     steps:
       # No checkout needed — the promote job only re-tags images in the registry.

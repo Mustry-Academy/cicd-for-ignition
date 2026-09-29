@@ -152,6 +152,8 @@ Three workflows under the repo root's [`.github/workflows/`](../../.github/workf
 
 > `lab04-deploy.yml` has a `paths:` filter (this lab's `projects/**`, `services/config/**`, `.deployignore`, `scripts/scan.sh`, `scripts/lib.sh`, plus `.github/workflows/lab04-deploy.yml`), so a push to `main` that only touches docs or the README does **not** trigger a deploy — edit project or config content to see it fire.
 
+> The deploy and release jobs carry `if: github.repository != 'Mustry-Academy/cicd-for-ignition'`. They deploy to gateways on your machine, so they only run in your fork and skip on the course repo itself. CI (`lab04-ci.yml`) runs in both.
+
 Both deploy workflows need:
 
 - The bundled self-hosted runner (`github-runner` service in `docker-compose.yaml`) registered against your fork with the `lab04` label. It auto-registers using the `repo`-scope PAT in `RUNNER_GITHUB_PAT` (see `.env`), and shares the host's Docker daemon (mounted `/var/run/docker.sock`) so the workflows can `docker cp` files into the test/production gateway containers. If you'd rather use your own runner instead, set `runner.labels` to include `lab04` and skip the bundled service.
