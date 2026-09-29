@@ -266,7 +266,7 @@ body{
         <div class="step"><div class="ix t">1</div><div class="tx">Go to this lab's folder in your course fork: <span class="inlinecode">~/mustry-academy/cicd-for-ignition/labs/06-secrets-db-and-modules</span> — every lab lives in that one repo, which you forked and cloned once (<span class="inlinecode">gh repo fork Mustry-Academy/cicd-for-ignition --clone</span>). <b>On WSL2 that clone lives in your Linux home</b> (<span class="inlinecode">~/…</span>), never <span class="inlinecode">/mnt/c/…</span>.</div></div>
         <div class="step"><div class="ix t">2</div><div class="tx"><b>One lab stack at a time.</b> Every Docker lab uses the same ports and container names, so stop the previous one first: <span class="inlinecode">docker compose down</span> in its folder. Grab your <b>Lab 04 <span class="inlinecode">repo</span>-scope PAT</b> — the runner needs it again here (make one at <span class="inlinecode">github.com/settings/tokens</span> if you skipped Lab 04).</div></div>
         <div class="step"><div class="ix t">3</div><div class="tx"><b>Enable Actions</b> (once per fork — skip if you did it for Lab 04). Open your fork's <b>Actions</b> tab and click "<i>I understand my workflows, enable them</i>". Skip this and nothing will ever deploy — not the warm-up, not your Part 1 fix.</div></div>
-        <div class="step"><div class="ix t">4</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">cp -n .env.example .env</span> and change <b>two lines</b>: point <span class="inlinecode">RUNNER_REPO_URL</span> at <b>your fork</b>, and paste your Lab 04 token into <span class="inlinecode">RUNNER_GITHUB_PAT</span> (the repo root's <span class="inlinecode">course-setup.sh</span> already did both if you ran it). Leave everything else as shipped — the logins, the API keys, <i>and the database passwords</i>: they match the committed <span class="inlinecode">secrets/*.example</span> values that Part 1 builds on.</div></div>
+        <div class="step"><div class="ix t">4</div><div class="tx"><b>Copy the env file</b> with <span class="inlinecode">[ -f .env ] || cp .env.example .env</span> and change <b>two lines</b>: point <span class="inlinecode">RUNNER_REPO_URL</span> at <b>your fork</b>, and paste your Lab 04 token into <span class="inlinecode">RUNNER_GITHUB_PAT</span> (the repo root's <span class="inlinecode">course-setup.sh</span> already did both if you ran it). Leave everything else as shipped — the logins, the API keys, <i>and the database passwords</i>: they match the committed <span class="inlinecode">secrets/*.example</span> values that Part 1 builds on.</div></div>
         <div class="step"><div class="ix t">5</div><div class="tx"><b>Check the remotes and set the default:</b> <span class="inlinecode">git remote -v</span> — <span class="inlinecode">origin</span> must show <b>your username</b> — and <span class="inlinecode">gh repo set-default --view</span> must print <span class="inlinecode"><span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition</span> so <span class="inlinecode">gh</span> targets <b>your fork</b> (set once per clone — the warm-up's <span class="inlinecode">gh secret set</span> needs it). Then <span class="inlinecode">code .</span> to open VS Code, and <span class="inlinecode">./scripts/setup.sh</span> brings up the stack (three gateways + TimescaleDB + the runner).</div></div>
       </div>
       <div>
@@ -279,7 +279,7 @@ cd ~/mustry-academy/cicd-for-ignition/labs/06-secrets-db-and-modules
 <span class="cm"># 3: Actions enabled on your fork? (github.com, once)</span>
 
 <span class="cm"># 4: copy the env file, change TWO lines only</span>
-cp -n .env.example .env
+[ -f .env ] || cp .env.example .env
 <span class="cm">#    RUNNER_REPO_URL=https://github.com/<span class="cmd2">&lt;you&gt;</span>/cicd-for-ignition</span>
 <span class="cm">#    RUNNER_GITHUB_PAT=<span class="cmd2">ghp_your_lab04_token</span></span>
 
@@ -316,7 +316,7 @@ code .
 ./scripts/validate.sh
 
 <span class="cm"># the deploy run says:</span>
-<span class="grn">✅ validate   ✅ ship files   ✅ scan   ✅ verify</span>
+<span class="grn">✅ ship secrets  ✅ ship modules  ✅ ship files  ✅ scan  ✅ verify</span>
 
 <span class="cm"># 2: environments + key, from the CLI (or click it
 #    together in Settings → Environments)</span>
@@ -362,7 +362,7 @@ TimescaleDB_Reports   <span class="red">Faulted</span></pre></div>
     <div class="stage">Part 1 · A</div>
   </div>
   <div class="body">
-    <div class="sechead"><span class="num">1A</span><div><div class="title">Turn the Postgres passwords into secret files: one per database user</div><div class="lead">Two connections, same database server, different users: <span class="inlinecode">TimescaleDB</span> logs in as <span class="inlinecode">ignition</span>, <span class="inlinecode">TimescaleDB_Reports</span> as the read-only <span class="inlinecode">reporting</span> user. Each password goes from an env var anyone can <span class="inlinecode">docker inspect</span> to a read-only file.</div></div></div>
+    <div class="sechead"><span class="num">1A</span><div><div class="title">Turn the Postgres passwords into secret files: one per database user</div><div class="lead">Two connections, same database server, different users: <span class="inlinecode">TimescaleDB</span> logs in as <span class="inlinecode">ignition</span>, <span class="inlinecode">TimescaleDB_Reports</span> as the read-only <span class="inlinecode">reporting</span> user. Each password goes from an env var anyone can <span class="inlinecode">docker inspect</span> to a file mounted into the container.</div></div></div>
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix">1</div><div class="tx">See the leak first: <span class="inlinecode">docker inspect lab06-timescaledb | grep PASSWORD</span> → both values in plaintext.</div></div>
@@ -395,7 +395,7 @@ services:
 
 <span class="cm"># 4: recreate, then the proof</span>
 docker compose up -d
-docker inspect lab06-timescaledb | grep PASSWORD   <span class="cm"># → nothing</span>
+docker inspect lab06-timescaledb | grep PASSWORD   <span class="cm"># → only the *_FILE paths, no values</span>
 docker exec lab06-gateway-local-development ls -l /run/secrets/</pre></div>
         <div class="goal warn-g" style="margin-top:18px">
           <span class="badge">Same value</span>
@@ -609,7 +609,7 @@ docker exec lab06-timescaledb psql -U ignition \
     <div class="cols2">
       <div class="steps">
         <div class="step"><div class="ix p">1</div><div class="tx">Add the <b>Migrate database</b> step to <span class="inlinecode">.github/workflows/lab06-deploy.yml</span> (repo root) exactly at the marked <span class="inlinecode"># Part 2B: add your "Migrate database" step HERE</span> comment: <b>above</b> <span class="inlinecode">Prune working tree per .deployignore</span>, which deletes <span class="inlinecode">scripts/</span> and <span class="inlinecode">db-migration/</span> from the checkout (a migrate step below it fails with "No such file or directory"), and <b>before</b> <span class="inlinecode">Ship projects and config into gateway container</span>, so no screen lands ahead of its table. <b>Derive the database from the deploy target</b> (<span class="inlinecode">$DEPLOY_TARGET</span> is already in the job's env): a production deploy must migrate <span class="inlinecode">ignition_production</span>, not test.</div></div>
-        <div class="step"><div class="ix p">2</div><div class="tx">Branch, add the screen that reads <span class="inlinecode">downtime_log</span> — a <b>Table</b> on the <span class="inlinecode">packaging</span> view with <span class="inlinecode">props.data</span> bound to a <b>Query</b> binding on <span class="inlinecode">TimescaleDB</span> (<span class="inlinecode">SELECT line, started_at, ended_at, reason FROM downtime_log …</span>; the ready-made component JSON is in <span class="inlinecode">exercises/lab.md</span> if you prefer the file to the Designer) — and open a PR with <b>both</b> the migration and the screen: schema and screens travel in the same PR. The binding runs on the gateway, against that gateway's own database, which is why the table has to exist first.</div></div>
+        <div class="step"><div class="ix p">2</div><div class="tx">Branch, add the screen that reads <span class="inlinecode">downtime_log</span> — a <b>Table</b> on the <span class="inlinecode">packaging</span> view with <span class="inlinecode">props.data</span> bound to a <b>Query</b> binding on <span class="inlinecode">TimescaleDB</span> (<span class="inlinecode">SELECT reason, minutes, area FROM downtime_log ORDER BY id DESC</span>; the ready-made component JSON is in <span class="inlinecode">exercises/lab.md</span> if you prefer the file to the Designer) — and open a PR with <b>both</b> the migration and the screen: schema and screens travel in the same PR. The binding runs on the gateway, against that gateway's own database, which is why the table has to exist first.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx">Merge and watch the run: secret files → <b>migrate test DB</b> → ship projects and config → scan → verify.</div></div>
         <div class="step"><div class="ix p">4</div><div class="tx">Prove it was the pipeline, not you: query test's <span class="inlinecode">schema_migrations</span>: version 2, applied during the run.</div></div>
       </div>
@@ -672,9 +672,9 @@ docker exec lab06-timescaledb psql -U ignition \
         <div class="step"><div class="ix">1</div><div class="tx"><b>Look first.</b> Open <span class="inlinecode">http://localhost:8088</span> → <i>Config → Modules</i> (the platform-modules page): <b>Periscope</b>, <b>Charts</b> and the <b>TimescaleDB Historian</b> are not in the list, even though their <span class="inlinecode">.modl</span> files sit in <span class="inlinecode">third-party-modules/</span>. No manifest entry, no env acceptance → the gateway ignores them.</div></div>
         <div class="step"><div class="ix">2</div><div class="tx"><b>Accept them in the env vars:</b> in <span class="inlinecode">docker-compose.yaml</span>, add the three module IDs (given on the right — you can't guess those) to <b>all three lists</b>: <span class="inlinecode">GATEWAY_MODULES_ENABLED</span> (may load), <span class="inlinecode">ACCEPT_MODULE_LICENSES</span> and <span class="inlinecode">ACCEPT_MODULE_CERTS</span> (headless license + certificate acceptance).</div></div>
         <div class="step"><div class="ix">3</div><div class="tx"><b>Add the manifest entries:</b> all three in <span class="inlinecode">services/modules.json</span>, two lines each: <span class="inlinecode">"filename"</span> and <span class="inlinecode">"onStartup": "enabled"</span>. You do <b>not</b> type the fingerprint or hash: you don't know them yet.</div></div>
-        <div class="step"><div class="ix">4</div><div class="tx"><span class="inlinecode">docker compose up -d</span> — the env lists are a shared anchor, so this recreates all three gateways; on the local gateway's boot it accepts the licenses from the env vars and <b>writes <span class="inlinecode">certFingerprint</span> + <span class="inlinecode">licenseAgreementHash</span> back into <span class="inlinecode">modules.json</span></b> for all three. <span class="inlinecode">git diff</span> shows exactly what it added — commit that. The platform-modules page now shows all three <b>Running</b>.</div></div>
+        <div class="step"><div class="ix">4</div><div class="tx"><span class="inlinecode">docker compose up -d</span> — the env lists are a shared anchor, so this recreates all three gateways; on the local gateway's boot it accepts the licenses from the env vars and <b>writes <span class="inlinecode">certFingerprint</span> + <span class="inlinecode">licenseAgreementHash</span> back into <span class="inlinecode">modules.json</span></b> for all three. <span class="inlinecode">git diff</span> shows exactly what it added — commit that. The platform-modules page now shows all three <b>Running</b>. Heads-up: the recreate also wiped test's and production's <span class="inlinecode">/run/secrets</span> (the deploy writes them into the container, and a new container starts without them), so their DB connections show <b>Faulted</b> until step 5's deploy ships the secrets again.</div></div>
         <div class="step"><div class="ix">5</div><div class="tx">Ship them through the pipeline (PR → merge → deploy run). Because the manifest changed, the deploy <b>restarts</b> the gateway: modules only load at boot. Verify on test at <span class="inlinecode">http://localhost:8089</span>: <i>Config → Modules</i> shows all three <b>Running</b>. Nobody clicked an install dialog.</div></div>
-        <div class="step"><div class="ix">6</div><div class="tx">Negative test on <b>one</b> of them, on your own local gateway and <b>last</b> (not in a second checkout — it would fight this one for the ports and the compose project): delete its two derived lines <b>and</b> drop it from the <span class="inlinecode">ACCEPT_MODULE_*</span> env vars, wipe the local volume, boot — the gateway parks at commissioning (<span class="inlinecode">"details":"COMMISSIONING"</span>). Recovering takes three commands, and the wiped volume also cost you the API-token permissions: the recipe is in <span class="inlinecode">exercises/lab.md</span>.</div></div>
+        <div class="step"><div class="ix">6</div><div class="tx">Negative test on <b>one</b> of them, on your own local gateway and <b>last</b> (not in a second checkout — it would fight this one for the ports and the compose project): delete its two derived lines <b>and</b> drop it from the <span class="inlinecode">ACCEPT_MODULE_*</span> env vars, wipe the local volume, boot — the gateway parks at commissioning (<span class="inlinecode">"details":"COMMISSIONING"</span>). Recovering means putting the acceptance back first, and the wiped volume also cost you the API-token permissions: the recipe is in <span class="inlinecode">exercises/lab.md</span>.</div></div>
       </div>
       <div>
         <div class="code"><pre><span class="cm"># 2: docker-compose.yaml — add the 3 ids to ALL THREE lists
@@ -720,7 +720,7 @@ docker exec lab06-timescaledb psql -U ignition \
     </div>
     <div class="goal warn-g" style="margin-top:22px">
       <span class="badge">Debrief fuel</span>
-      <p>Bring answers: why must the migrate step never be <span class="inlinecode">continueOnError</span>? · what breaks first on a fresh gateway if license acceptance lives in someone's memory instead of config? · which of the seven stations of your 1D deploy would you automate away at your plant, and which one needs a human?</p>
+      <p>Bring answers: why must the migrate step never be <span class="inlinecode">continueOnError</span>? · what breaks first on a fresh gateway if license acceptance lives in someone's memory instead of config? · which of the eight stations of your 1D deploy would you automate away at your plant, and which one needs a human?</p>
     </div>
   </div>
   <div class="foot"><span>Mustry Academy · CI/CD for Ignition</span><span>The gate → stretch or debrief</span></div>
@@ -742,14 +742,19 @@ docker exec lab06-timescaledb psql -U ignition \
         <div class="step"><div class="ix t">4</div><div class="tx"><b>Ship a library JAR through the pipeline and use it on a screen.</b> The second kind of JAR from the teaching, done for real: get <span class="inlinecode">jar-files/jar/commons-csv-1.14.1.jar</span> onto the gateway classpath via <span class="inlinecode">lab06-deploy.yml</span>, and prove it with a text field whose label shows the typed CSV line split into fields. Full steps on the next slide.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># stretch 3: lab06-ci.yml secret-scan job</span>
-secret-scan:
+        <div class="code"><pre><span class="cm"># stretch 3: a NEW job in lab06-ci.yml. secret-scan
+#   already exists, but only checks the tip for secret
+#   files and the known lab passwords; gitleaks reads
+#   the whole history for any key-shaped string</span>
+gitleaks:
   runs-on: ubuntu-latest
   steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: <span class="cmd2">0</span>
-    - uses: gitleaks/gitleaks-action@v2</pre></div>
+    - uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}</pre></div>
         <div class="goal" style="margin-top:18px">
           <span class="badge">Two philosophies</span>
           <p>Stretch 1 and Part 1 are <b>competing answers to the same problem</b>: references + files, or gateway-encrypted ciphertexts + shared keys. Both are defensible; know what each makes easy and what each makes dangerous.</p>

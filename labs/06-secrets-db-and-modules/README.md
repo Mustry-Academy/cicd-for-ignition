@@ -60,7 +60,7 @@ The lab is a warm-up plus three parts — [`exercises/lab.md`](./exercises/lab.m
 | Warm-up | Deploy to test and production; find both db-connections **Faulted** while the pipeline is green | the diagnosis question |
 | 1 (±30 min) | Passwords → secret files → file-type secret provider → **referenced secrets**; fix test through a full PR → pipeline deploy | both connections Valid on test, fixed by the pipeline |
 | 2 (±20 min) | A schema change as a golang-migrate `0002` up/down pair; `lab06-deploy.yml` migrates test **before** it ships | green run: migrate → ship → scan → verify |
-| 3 (±10 min) | A spare `.modl` deployed with headless license/cert acceptance in `services/modules.json` | module **Running** on test, hands-free |
+| 3 (±10 min) | Three spare `.modl` files deployed with headless license/cert acceptance in `services/modules.json` | all three modules **Running** on test, hands-free |
 
 Reference reading: [`docs/secrets-management.md`](./docs/secrets-management.md) and [`db-migration/MIGRATIONS.md`](./db-migration/MIGRATIONS.md).
 
@@ -92,8 +92,8 @@ labs/06-secrets-db-and-modules/
 ├── services/
 │   ├── config/                         ← gateway config; the two db-connections live under
 │   │                                      resources/{core,local-development,test,production}/ignition/database-connection/
-│   └── modules.json                    ← module enablement manifest (Part 3 adds the spare)
-├── third-party-modules/                ← bundled .modl binaries — incl. the spare one Part 3 deploys
+│   └── modules.json                    ← module enablement manifest (Part 3 adds the three spares)
+├── third-party-modules/                ← bundled .modl binaries — incl. the three spares Part 3 deploys
 └── jar-files/jar/                      ← library JARs for the gateway classpath (Stretch S4 ships
                                            commons-csv through the pipeline)
 ```

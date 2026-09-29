@@ -38,7 +38,7 @@ You should leave this lab able to:
 
 ```bash
 cd ~/mustry-academy/cicd-for-ignition/labs/06-secrets-db-and-modules
-cp -n .env.example .env   # -n keeps the .env course-setup.sh may have made
+[ -f .env ] || cp .env.example .env   # keeps the .env course-setup.sh may have made
 scripts/setup.sh          # idempotent — safe if the stack is already up
 scripts/validate.sh       # green before you start
 ```
@@ -224,7 +224,7 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   Designer: open `projects/packaging-site` → the `pages/packaging` view → drop a
   **Table** component in, then bind `props.data` → **Query** → database
   `TimescaleDB`, query
-  `SELECT line, started_at, ended_at, reason FROM downtime_log ORDER BY started_at DESC`.
+  `SELECT reason, minutes, area FROM downtime_log ORDER BY id DESC`.
   No Designer? Paste this component into the view's `root.children` list in
   `projects/packaging-site/com.inductiveautomation.perspective/views/pages/packaging/view.json`
   — the JSON *is* the screen, which is the whole reason it deploys as a file:
@@ -240,7 +240,7 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
             "database": "TimescaleDB",
             "fallbackDelay": 2.5,
             "polling": { "enabled": false },
-            "queryString": "SELECT line, started_at, ended_at, reason FROM downtime_log ORDER BY started_at DESC",
+            "queryString": "SELECT reason, minutes, area FROM downtime_log ORDER BY id DESC",
             "returnFormat": "dataset"
           },
           "type": "query"
@@ -332,17 +332,25 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   a server nobody is sitting at means the gateway is simply down. That is why
   acceptance has to be data in the repo.
 
-  **Recovering costs three commands, and it is worth understanding why.** That
+  **Recovering takes two stages, and it is worth understanding why.** That
   fresh volume re-ran commissioning, and commissioning found the committed
   `security-properties` policy but no internal identity on disk. So it played
   safe: it created a `temp` user source + identity provider and rewrote
   `security-properties` to point at them, dropping the `APIToken` read/write
-  permissions your scan API needs. Put the acceptance back, then undo that:
+  permissions your scan API needs. First put the acceptance back and let the
+  gateway finish booting: until then the `temp` identity doesn't exist yet, so
+  there is nothing to undo and the scan still 403s. Then undo it:
 
   ```bash
+  # 1: the acceptance back (your committed manifest + env lists), boot to RUNNING
+  git checkout -- docker-compose.yaml services/modules.json
+  docker compose up -d gateway-local-development
+  until curl -fsS http://localhost:8088/StatusPing | grep -qx '{"state":"RUNNING"}'; do sleep 5; done
+  # 2: undo what commissioning did to the identity policy, then restart
   git checkout -- services/config/resources/core/ignition/security-properties/
   rm -rf services/config/resources/core/ignition/{user-source,identity-provider}/temp
   docker restart lab06-gateway-local-development
+  until curl -fsS http://localhost:8088/StatusPing | grep -qx '{"state":"RUNNING"}'; do sleep 5; done
   ./scripts/scan.sh    # HTTP 200 again = the API token permissions are back
   ```
 
