@@ -12,6 +12,22 @@ are one of the first three.
 - **Port already in use.** 8088/8089/8090 (gateways) or 5432 (TimescaleDB). Stop the other process or
   change the host port mappings.
 
+## Every tag reads null on the local gateway
+
+The views load, but every tag-bound value shows `null` and *Connections → OPC Connections*
+lists **Ignition OPC UA Server** as **FAULTED**. The gateway log says why:
+
+```bash
+docker logs lab05-ignition-local 2>&1 | grep 'opcua-module'
+# Authentication failed: User Source "opcua-module" not found.
+```
+
+Every tag reads through that loopback connection, and it logs in against the
+`opcua-module` user source. That user source holds a password hash, so it is gitignored and
+never in a fresh clone; `scripts/setup.sh` has the OPC UA module create it on the next boot.
+Re-run `scripts/setup.sh`: it prints `opcua-module user source created` and the connection
+turns CONNECTED within a minute.
+
 ## A gateway never reaches RUNNING
 
 - Give it time — a cold JVM start is 60–120 s per gateway, and an **image-based** boot re-commissions
