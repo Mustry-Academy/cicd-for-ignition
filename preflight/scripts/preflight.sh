@@ -975,11 +975,14 @@ fi
 
 # --- Bind mounts (required) ------------------------------------------------
 # Every lab bind-mounts ./projects and ./services/config into the gateway,
-# and the Ignition image runs as uid 2003. Docker Desktop on macOS/Windows
-# maps that to you transparently; native Linux and WSL2 bind mounts keep real
-# permissions, so a directory you own with mode 755 is read-only to the
-# gateway and the Designer can't save a project. SELinux (Fedora) blocks it
-# too. Test the real thing: the real image, a real mount from this directory.
+# and the Ignition image runs as uid 2003. Native Linux and WSL2 bind mounts
+# keep real permissions, so a directory you own with mode 755 is read-only to
+# uid 2003. The labs handle that themselves: their setup.sh makes the mounted
+# dirs group-writable + setgid, and their compose files run the gateway as
+# 2003:0 with your primary group added (group_add: LAB_GID). Test exactly that
+# with the real image and a real mount from this directory, so the check only
+# fails where the labs would too (SELinux on Fedora/RHEL, rootless Docker,
+# filesystems that drop permission bits).
 section "Bind mounts"
 if ! docker_ready; then
   log_warn "Skipping bind-mount check (Docker not available)" "Fix Docker first, then re-run"
@@ -989,12 +992,14 @@ else
   bind_mount_cleanup
   trap 'bind_mount_cleanup' EXIT
   if mkdir -p "$BIND_MOUNT_DIR" 2>/dev/null \
-     && docker run --rm -v "$BIND_MOUNT_DIR:/preflight-mount" --entrypoint sh "$IGNITION_IMAGE" \
+     && chmod g+w,g+s "$BIND_MOUNT_DIR" 2>/dev/null \
+     && docker run --rm --user 2003:0 --group-add "$(id -g)" \
+          -v "$BIND_MOUNT_DIR:/preflight-mount" --entrypoint sh "$IGNITION_IMAGE" \
           -c 'touch /preflight-mount/.written' >/dev/null 2>&1 \
      && [ -e "$BIND_MOUNT_DIR/.written" ]; then
-    log_pass "The gateway container (uid 2003) can write to a directory mounted from here"
+    log_pass "The gateway container (uid 2003, with your group) can write to a directory mounted from here"
   else
-    log_missing "$REQUIRED" "The gateway container (uid 2003) cannot write to a directory mounted from $PREFLIGHT_DIR" "On Linux/WSL2 the lab's ./projects and ./services/config need to be writable by uid 2003 — see troubleshooting.md → 'The gateway container cannot write to a directory mounted from here'"
+    log_missing "$REQUIRED" "The gateway container (uid 2003, with your group) cannot write to a directory mounted from $PREFLIGHT_DIR" "The labs' ./projects and ./services/config must be writable by the gateway — see troubleshooting.md → 'The gateway container cannot write to a directory mounted from here'"
   fi
   bind_mount_cleanup
 fi
