@@ -534,7 +534,7 @@ body{
     </div>
     <div class="callout">
       <div class="lab">Where to get them</div>
-      <p><span class="mono">pip install yamllint ign-lint</span> · <span class="mono">brew install shellcheck actionlint</span> (or <span class="mono">apt</span> on Linux). The last two need <b>no install</b>: <span class="mono">validate.sh</span> ships in the repo, <span class="mono">docker compose</span> you already have. All finish in <b>milliseconds to seconds</b>, fast enough to run on every save.</p>
+      <p><span class="mono">pip install yamllint ign-lint</span> · <span class="mono">brew install shellcheck actionlint</span> (on Linux: <span class="mono">apt install shellcheck</span>, and actionlint's release binary, as it has no apt package). The last two need <b>no install</b>: <span class="mono">validate.sh</span> ships in the repo, <span class="mono">docker compose</span> you already have. All finish in <b>milliseconds to seconds</b>, fast enough to run on every save.</p>
     </div>
   </div>
 
@@ -903,6 +903,7 @@ on:
       - <span class="cmd2">".github/workflows/lab03-*.yml"</span>
       - <span class="cmd2">"labs/03-github-actions/.yamllint.yml"</span>
       - <span class="cmd2">"labs/03-github-actions/rule_config.json"</span>
+      - <span class="cmd2">"labs/03-github-actions/.github/**"</span>
   push:
     branches: [main]     <span class="cm"># backstop after merge</span>
     paths: [<span class="cmd2">"labs/03-github-actions/**"</span>, …]</pre></div>
@@ -956,7 +957,7 @@ on:
         <div class="die reveal" data-step="3">job ends → VM destroyed. Nothing survives.</div>
       </div>
     </div>
-    <p style="text-align:center;font-size:13px;color:#8fa0b6;line-height:1.5;margin:0">None of this is CI-only: the same linters run on your laptop. <span class="mono">pip install yamllint ign-lint</span>; <span class="mono">brew</span>/<span class="mono">apt</span> install <span class="mono">shellcheck</span> and <span class="mono">actionlint</span>. CI just makes sure they <b style="color:#c4cfde">always</b> run.</p>
+    <p style="text-align:center;font-size:13px;color:#8fa0b6;line-height:1.5;margin:0">None of this is CI-only: the same linters run on your laptop. <span class="mono">pip install yamllint ign-lint</span>; <span class="mono">brew</span>/<span class="mono">apt</span> install <span class="mono">shellcheck</span>, plus <span class="mono">actionlint</span> (brew, or its release binary on Linux). CI just makes sure they <b style="color:#c4cfde">always</b> run.</p>
   </div>
 
   <div class="controls">

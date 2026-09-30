@@ -48,7 +48,7 @@ Once setup finishes you have three Ignition gateways:
 
 Login to any of them with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_TEST/_PRODUCTION`, default `admin / password`).
 
-> **Trial mode:** each gateway runs in 2-hour trial mode. Reset via *Gateway → Config → Licensing → Reset Trial* — unlimited and entirely legal for development. You'll do this **three times** if you keep all three gateways up long enough.
+> **Trial mode:** each gateway runs in 2-hour trial mode. Reset via *Platform → Licensing → Reset Trial* — unlimited and entirely legal for development. You'll do this **three times** if you keep all three gateways up long enough.
 
 > **Stuck?** See [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) for the common stack / runner / deploy failures and their fixes. Before opening a PR, run `scripts/validate.sh` (the quick JSON / `.deployignore` checks) and, if you have `pre-commit` installed, the yamllint / shellcheck / actionlint / ign-lint suite CI runs — it fires on every commit that touches this lab, or run it by hand from the repo root: `pre-commit run --all-files --config labs/04-ignition-file-based-deploy/.pre-commit-config.yaml`.
 

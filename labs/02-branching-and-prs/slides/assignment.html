@@ -479,13 +479,16 @@ scripts/validate.sh       <span class="cm"># → ✓ all project files valid</sp
     <div class="sechead"><span class="num">STEP 1</span><div><div class="title">Mark a tag for production</div><div class="lead">One long-lived branch and a tag marking what's in production. This is the graph the scenario runs on.</div></div></div>
     <div class="cols2">
       <div class="steps">
-        <div class="step"><div class="ix p">1</div><div class="tx">GitHub Flow needs just <b>one long-lived branch: <span class="inlinecode">main</span></b>. Every branch you cut starts there and returns there through a PR.</div></div>
+        <div class="step"><div class="ix p">1</div><div class="tx">GitHub Flow needs just <b>one long-lived branch: <span class="inlinecode">main</span></b>. Every branch you cut starts there and returns there through a PR. <b>Start it clean:</b> Lab 01's practice commits still sit on your local <span class="inlinecode">main</span>, unpushed, and would ride along in every PR today. Park them on a branch, then match your fork.</div></div>
         <div class="step"><div class="ix p">2</div><div class="tx"><b>Tag what's live: <span class="inlinecode">lab02-v1.2.0</span> on <span class="inlinecode">main</span>.</b> This is "production" (v1.2), the thing the P1 bug is running against. In GitHub Flow, <b>tags carry the release history</b>. The <span class="inlinecode">lab02-</span> prefix keeps this lab's tags apart from the other labs' in your fork. Make it <b>annotated</b> (<span class="inlinecode">-a</span>), as Lab 01 taught for releases.</div></div>
         <div class="step"><div class="ix p">3</div><div class="tx"><b>Push the tag</b> to your fork — your first real <span class="inlinecode">git push</span> of the course, named this morning, used now. The world matches the teaching-deck diagram.</div></div>
       </div>
       <div>
-        <div class="code"><pre><span class="cm"># one long-lived branch: main is it</span>
+        <div class="code"><pre><span class="cm"># one long-lived branch: main is it, same as your fork's</span>
 git switch main
+git branch lab01-practice          <span class="cm"># park Lab 01's local commits</span>
+git fetch origin
+git reset --hard origin/main       <span class="cm"># main = your fork's main</span>
 
 <span class="cm"># mark what's live in production</span>
 git tag -a lab02-v1.2.0 -m "Release 1.2.0"

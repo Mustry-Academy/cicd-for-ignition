@@ -194,7 +194,8 @@ body{
 .pnode rect.card{fill:rgba(246,241,227,.05);stroke:var(--oat-gold);stroke-width:1.8}
 .pnode text.nl{fill:#fff;font-family:'Libre Franklin';font-weight:700;font-size:16px}
 .pnode text.ns{fill:#d8c9a0;font-family:'Libre Franklin';font-weight:500;font-size:12px}
-.pnode text.nm{fill:#d8c9a0;font-family:'IBM Plex Mono';font-size:11px}
+svg text.nm{font-family:'IBM Plex Mono';font-size:11px}
+svg text.nm:not([fill]){fill:#d8c9a0}
 .envchip rect{fill:rgba(126,148,97,.14);stroke:#a9bd8f;stroke-width:1.6}
 .envchip text{fill:#dfe8d4;font-family:'IBM Plex Mono';font-size:13px;font-weight:600;text-anchor:middle;dominant-baseline:central}
 .envchip.production rect{fill:rgba(200,144,47,.18);stroke:var(--oat-gold-l)}
@@ -208,7 +209,8 @@ body{
 .slbl{fill:#cfd8c3;font-family:'IBM Plex Mono';font-size:11.5px}
 .slbl.red{fill:#f8a3a3}
 .minig .lane{stroke:rgba(246,241,227,.22);stroke-width:1.6}
-.minig .lname{fill:#bcC8ad;font-family:'IBM Plex Mono';font-size:10.5px}
+svg text.lname{font-family:'IBM Plex Mono';font-size:10.5px}
+svg text.lname:not([fill]){fill:#bcC8ad}
 .minig circle{fill:#101d14;stroke-width:2}
 .gwbkchip rect{fill:rgba(148,162,180,.12);stroke:#94a2b4;stroke-width:1.4}
 .gwbkchip text{fill:#b9c3d1;font-family:'IBM Plex Mono';font-size:10.5px}
@@ -952,7 +954,7 @@ function buildWorld(mountId){
   const lanes=[['main',272],['fix/null-reading',312],['feature/v2.0',352]];
   lanes.forEach(L=>{
     el('line',{class:'lane',x1:90,y1:L[1],x2:260,y2:L[1]},mg);
-    txt({class:'lname',x:90,y:L[1]-7},mg,L[0]);
+    txt({class:'lname',x:90,y:L[1]-9},mg,L[0]);
   });
   [[120,272],[160,272],[130,312],[185,312],[150,352],[205,352],[245,352]].forEach(p=>{
     el('circle',{cx:p[0],cy:p[1],r:5,stroke:p[1]===352?'#f0b765':'#4ade80'},mg);
@@ -961,7 +963,7 @@ function buildWorld(mountId){
   const hf=el('g',{class:'vshow'},svg);
   el('path',{d:'M166,268 C190,246 216,246 240,266',stroke:'#4ade80','stroke-width':2,fill:'none','marker-end':AF},hf);
   el('circle',{cx:245,cy:272,r:5,fill:'#101d14',stroke:'#4ade80','stroke-width':2},hf);
-  txt({class:'lname',x:203,y:250,'text-anchor':'middle',fill:'#86efac'},hf,'fix · v1.2.1');
+  txt({class:'lname',x:290,y:262,fill:'#86efac'},hf,'fix · v1.2.1');
   parts.hotfix=hf;
 
   /* green check pulse on the repo (day 2 payoff) */
@@ -1017,7 +1019,7 @@ function buildWorld(mountId){
   [[170,263],[315,408],[460,553]].forEach(p=>{
     el('line',{class:'link',x1:555,y1:p[0],x2:555,y2:p[1]-2,'marker-end':AG},lad);
   });
-  el('line',{class:'link',x1:282,y1:650,x2:487,y2:588,'marker-end':AG},lad);
+  el('line',{class:'link',x1:262,y1:613,x2:487,y2:588,'marker-end':AG},lad);
   parts.ladder=lad;
   const va=el('g',{class:'pnode vpop'},svg);
   el('rect',{class:'card',x:470,y:635,width:170,height:58,rx:10},va);
@@ -1027,10 +1029,12 @@ function buildWorld(mountId){
   parts.vault=va;
 
   /* fan-out from production to all 8 sites */
+  // drawn behind the site cards, so the lines to the top row pass under the bottom row
   const fan=el('g',{class:'vshow'},svg);
+  svg.insertBefore(fan,parts.sites[0].parentNode);
   for(let n=1;n<=8;n++){
     const c=siteCenter(n);
-    const ty=n<=4?c.y+123:c.y-83;
+    const ty=n<=4?c.y+81:c.y-81;
     el('line',{class:'fanl',x1:622,y1:580,x2:c.x,y2:ty,'marker-end':AF},fan);
   }
   parts.fan=fan;
@@ -1041,7 +1045,7 @@ function buildWorld(mountId){
   P.h2=el('path',{d:'M780,195 C850,148 900,148 965,188',fill:'none',stroke:'none'},svg);
   P.h3=el('path',{d:'M1005,195 C1070,148 1130,148 1190,188',fill:'none',stroke:'none'},svg);
   P.h4=el('path',{d:'M1230,195 C1290,148 1350,148 1415,188',fill:'none',stroke:'none'},svg);
-  P.dep=el('path',{d:'M285,655 C500,720 660,340 745,215',fill:'none',stroke:'none'},svg);
+  P.dep=el('path',{d:'M285,655 C500,720 640,340 690,200',fill:'none',stroke:'none'},svg);
   P.jrn=el('path',{d:'M175,240 L175,600 L300,650 L470,600 L556,560',fill:'none',stroke:'none'},svg);
   const guy=el('g',{class:'guy vshow',transform:'translate(-60,-60)'},svg);
   el('circle',{cx:0,cy:-16,r:7},guy);

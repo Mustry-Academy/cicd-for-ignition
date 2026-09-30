@@ -312,7 +312,53 @@ restore_secprops_after_commissioning() {
     wait_for_gateway local
 }
 
+# ---- OPC UA loopback: re-create the opcua-module user source -------------
+# The OPC UA server authenticates its own loopback connection ("Ignition OPC
+# UA Server", which every tag reads through) against an `opcua-module` user
+# source. That user source holds a password hash, so it is gitignored and a
+# fresh clone never has it. The OPC UA module creates it on first start, but
+# only while its one-time/config.json says defaultAuthProfileCreated=false,
+# and the repo ships that file set to true. Without this, the local gateway
+# logs 'User Source "opcua-module" not found', the loopback connection is
+# FAULTED and every tag in the projects reads null. So: flip the flag for
+# one boot, let the module create the profile (it flips the flag back
+# itself), then restore the committed files.
+OPCUA_ONETIME_DIR="$PROJECT_ROOT/services/config/resources/core/com.inductiveautomation.opcua/one-time"
+OPCUA_REARMED=""
+
+rearm_opcua_auth_profile() {
+    [ -d "$IDENTITY_DIR/user-source/opcua-module" ] && return 0
+    [ -f "$OPCUA_ONETIME_DIR/config.json" ] || return 0
+    python3 - "$OPCUA_ONETIME_DIR/config.json" <<'PYEOF'
+import json, sys
+p = sys.argv[1]
+d = json.load(open(p))
+d["defaultAuthProfileCreated"] = False
+open(p, "w").write(json.dumps(d, indent=2) + "\n")
+PYEOF
+    OPCUA_REARMED=1
+    echo -e "${YELLOW}No opcua-module user source on disk: letting the local gateway's OPC UA${NC}"
+    echo -e "${YELLOW}module create it on this boot (its tags read through that login).${NC}"
+}
+
+finish_opcua_auth_profile() {
+    [ -n "$OPCUA_REARMED" ] || return 0
+    # A stack that was already running did not boot, so it never saw the flag.
+    if [ ! -d "$IDENTITY_DIR/user-source/opcua-module" ]; then
+        docker restart "$(gateway_container local)" >/dev/null
+        wait_for_gateway local
+    fi
+    git -C "$PROJECT_ROOT" checkout -- "$OPCUA_ONETIME_DIR" 2>/dev/null || true
+    if [ -d "$IDENTITY_DIR/user-source/opcua-module" ]; then
+        echo -e "${GREEN}opcua-module user source created: the OPC UA loopback connection can log in.${NC}"
+    else
+        echo -e "${RED}The local gateway did not create the opcua-module user source; tags will read null.${NC}" >&2
+        echo "  See docs/TROUBLESHOOTING.md → 'Every tag reads null'." >&2
+    fi
+}
+
 stash_secprops_for_commissioning
+rearm_opcua_auth_profile
 
 # ---- Start the stack ------------------------------------------------------
 existing_id="$(docker compose ps -q ignition-local 2>/dev/null || true)"
@@ -364,6 +410,7 @@ restore_secprops_after_commissioning
 # Runs unconditionally: it repairs a temp identity this run never created, left
 # by an earlier boot (or by an older setup.sh that skipped the stash).
 heal_temp_identity
+finish_opcua_auth_profile
 
 # ---- API-permission repair (first boot only) ------------------------------
 # On the FIRST boot of a fresh gateway container, Ignition's auto-commissioning

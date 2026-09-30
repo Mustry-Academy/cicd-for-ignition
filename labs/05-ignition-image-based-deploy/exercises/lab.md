@@ -320,7 +320,7 @@ Three directions, pick by appetite:
    production image from the teaching does:
    - **A third-party module:** enable an unused `.modl` from
      `third-party-modules/` in `services/modules.json`, rebuild, deploy to test,
-     find it under Config → Modules.
+     find it under Platform → Modules.
    - **A migrations folder:** create
      `db-migrations/0001_create_downtime_log.up.sql` with a simple
      `CREATE TABLE`, add a `COPY db-migrations/ /db-migrations/` layer, rebuild,

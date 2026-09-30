@@ -58,6 +58,14 @@
     "filename": "/usr/local/bin/ignition/user-lib/modules/DNP3-Driver.modl",
     "onStartup": "disabled"
   },
+  "com.inductiveautomation.opcua.drivers.dnp3v2": {
+    "filename": "/usr/local/bin/ignition/user-lib/modules/DNP3-Driver-v2.modl",
+    "onStartup": "disabled"
+  },
+  "com.inductiveautomation.opcua.drivers.iec61850": {
+    "filename": "/usr/local/bin/ignition/user-lib/modules/IEC 61850 Driver-module.modl",
+    "onStartup": "disabled"
+  },
   "com.inductiveautomation.opcua.drivers.logix": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Logix Driver-module.modl",
     "onStartup": "disabled"
@@ -96,6 +104,10 @@
     "filename": "/usr/local/bin/ignition/user-lib/modules/Perspective-module.modl",
     "onStartup": "enabled",
     "certFingerprint": "88338069eb9c3f2d46a4baf701e4fa71bf073293"
+  },
+  "com.inductiveautomation.phone-notification": {
+    "filename": "/usr/local/bin/ignition/user-lib/modules/Voice Notification-module.modl",
+    "onStartup": "disabled"
   },
   "com.inductiveautomation.reporting": {
     "filename": "/usr/local/bin/ignition/user-lib/modules/Reporting-module.modl",

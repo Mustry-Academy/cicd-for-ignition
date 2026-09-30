@@ -39,7 +39,7 @@ Before you start the deploy part, get these in place (they take a few minutes an
   2. Give it a name (e.g. `cicd-course-runner`) and tick the **`repo`** scope.
   3. Click **Generate token** and copy the `ghp_...` value (you can't read it back later).
   4. Paste it into `.env` as `RUNNER_GITHUB_PAT=ghp_...`. It stays in `.env` and is never committed.
-- **An Ignition API key per gateway you want to scan.** You already have these: `scripts/setup.sh` generated a key per gateway into `.env` (`IGNITION_API_KEY_LOCAL` / `_TEST` / `_PRODUCTION`), unique to your clone, and installed the matching token on each gateway. Nothing key-related is in git — a committed key would be a working credential in every fork. (In the gateway UI you'd do the same by hand: *Config → Security → API Keys → New*, scoped to `Project Scan` and `Config Scan`.)
+- **An Ignition API key per gateway you want to scan.** You already have these: `scripts/setup.sh` generated a key per gateway into `.env` (`IGNITION_API_KEY_LOCAL` / `_TEST` / `_PRODUCTION`), unique to your clone, and installed the matching token on each gateway. Nothing key-related is in git — a committed key would be a working credential in every fork. (In the gateway UI you'd do the same by hand: *Platform → Security → API Keys → Create API Key*. 8.3 has no scan-only scope: a key gets a security level, and the scan API needs that level in *Gateway Write Permissions*, as in Lab 02.)
 - **GitHub Environments** for the deploy workflows: `lab04-gateway-test` for `lab04-deploy.yml`, `lab04-gateway-production` for `lab04-release.yml`. Each needs a secret `IGNITION_API_KEY` (the matching `_TEST` / `_PRODUCTION` value from your `.env`).
 
 Read-ahead: [`docs/ignition-file-structure.md`](../docs/ignition-file-structure.md) and [`docs/file-based-deploy-pattern.md`](../docs/file-based-deploy-pattern.md).
@@ -91,13 +91,13 @@ The marker trick: set a timestamp marker, make the change in the UI, then ask `f
    ```bash
    docker exec lab04-ignition-local touch /tmp/marker
    ```
-3. In the gateway UI, go to **Config → Networking → Web Server**. Change the *Idle Timeout* to something different (default is 300). Save.
+3. In the gateway UI, go to **Platform → Gateway Settings** (the *Edit Notes* link on the Home page lands there too). Change the *Welcome Screen Notes* text in the General section. Save.
 4. Find the file that changed on disk:
    ```bash
    docker exec lab04-ignition-local find /usr/local/bin/ignition/data/config -newer /tmp/marker -type f 2>/dev/null
    ```
-5. Open that file with `docker exec lab04-ignition-local cat <path>`. Notice what's in there — it'll be a `config.json` (plus the gateway rewriting a sibling `resource.json`).
-6. In the gateway UI, **Config → Databases → Connections → New**. Add a Postgres datasource. In 8.3.8 the create form takes a single **Connect URL**: `jdbc:postgresql://timescaledb:5432/ignition_local_development`, user/password from your `.env` (`POSTGRES_USER` / `POSTGRES_PASSWORD`, default `ignition` / `ignition`). Save. The hostname `timescaledb` is the compose service name — the local gateway resolves it on the lab's docker network.
+5. Open that file with `docker exec lab04-ignition-local cat <path>`. Notice what's in there — it'll be a `config.json` (plus the gateway rewriting a sibling `resource.json`). Look at the scope in its path, too: the page's *Deployment Modes* selector was on `local-development`, so that is the definition you just edited.
+6. In the gateway UI, **Connections → Databases → Connections → Create Database Connection**. Add a Postgres datasource. In 8.3.8 the create form takes a single **Connect URL**: `jdbc:postgresql://timescaledb:5432/ignition_local_development`, user/password from your `.env` (`POSTGRES_USER` / `POSTGRES_PASSWORD`, default `ignition` / `ignition`). Save. The hostname `timescaledb` is the compose service name — the local gateway resolves it on the lab's docker network.
 7. Repeat step 4 (re-touch the marker first) — find the new files. The connection lands at `config/resources/<scope>/ignition/database-connection/<name>/config.json`. Gateway-level or project-level? Because `local` bind-mounts `./services/config/`, it also just appeared **in your repo on the host** — run `git status`.
 
 ## "Everything is a file in git" (guided)
@@ -140,10 +140,10 @@ Pick three changes from this list (or invent your own). For each note:
 Suggested changes:
 
 1. Add a **Perspective view** to one of the two projects. No Designer? Simulate on disk: create `projects/packaging-site/com.inductiveautomation.perspective/views/pages/<Name>/{view.json, resource.json}` with the minimal 8.3 content from [`docs/ignition-file-structure.md`](../docs/ignition-file-structure.md). Note the `resource.json` manifest is **required** in 8.3, and that this lands under *one* project only, unlike a gateway resource.
-2. Change the **gateway timezone** (Config → System → Time)
-3. Add a **new user** to the gateway (Config → Security → Users)
-4. Add a **new tag provider** (Config → Tags → Realtime Tag Providers)
-5. Enable a **new module** (toggle a module in Config → Modules)
+2. Add a **device connection** (Connections → Devices → Connections, e.g. a Simulator)
+3. Add a **new user** to the gateway (Platform → Security → User Sources → ⋮ on `default` → Manage Users)
+4. Add a **new tag provider** (Services → Tags → Create Tag Provider)
+5. Enable a **new module** (toggle a module in Platform → Modules)
 
 Use the marker trick every time: re-touch before each change, `find -newer` after. One of the five lands somewhere that must **never** go in git. Which?
 
@@ -252,7 +252,7 @@ You **don't** need to set `IGNITION_URL` or `IGNITION_CONTAINER` variables unles
 
 ### Part 2.3 — Ship to test via `main` (15 min)
 
-1. Create a **new project named `sample-project`** on the local gateway, the way you always do in Ignition: Designer → New Project (or the gateway UI, Config → Projects). Because local bind-mounts `./projects/`, the project lands in your working tree the moment the gateway saves it — `git status` shows it as an untracked `projects/sample-project/` folder. That folder is your deployable: no export, no file editing.
+1. Create a **new project named `sample-project`** on the local gateway, the way you always do in Ignition: Designer → New Project (or the gateway UI, Platform → Projects). Because local bind-mounts `./projects/`, the project lands in your working tree the moment the gateway saves it — `git status` shows it as an untracked `projects/sample-project/` folder. That folder is your deployable: no export, no file editing.
 2. Create **one simple view** in that project in the Designer (any name — e.g. a label with your name on it) and save. That gives you something visible to recognize on the test gateway after the deploy.
 3. Branch off `main` and commit it — together with the still-uncommitted height tweak from the deploy-by-hand, so the repo matches what's already on the local gateway:
    ```bash
@@ -264,7 +264,7 @@ You **don't** need to set `IGNITION_URL` or `IGNITION_CONTAINER` variables unles
 4. On GitHub, open a PR **into `main`**. Watch [`lab04-ci.yml`](../../../.github/workflows/lab04-ci.yml) run on `ubuntu-latest` (free): yamllint, actionlint, shellcheck, ign-lint, `docker compose config`, JSON validity, `.deployignore` syntax, and the security-properties identity check.
 5. Merge the PR into `main`. [`lab04-deploy.yml`](../../../.github/workflows/lab04-deploy.yml) fires because of the `paths:` filter (and only on `main`). Validation already ran on the PR — that's the gate — so the deploy goes straight to shipping.
 6. Watch the workflow run. The interesting steps are **Ship projects and config into gateway container** (the `docker cp` half) and **Trigger gateway scan** (`POST /data/api/v1/scan/{projects,config}`). On the **first** deploy to a fresh gateway, the scan step restarts it once instead: the gateway booted before its `test` config mode was on disk, and Ignition picks its deployment mode at boot. Every later deploy scans hot, no restart.
-7. Verify in http://localhost:8089 — Config → Projects lists **`sample-project`**, and its view opens (the deploy-by-hand's height tweak is there too, now via the pipeline). Then verify from the **host**: `ls gateways/test/projects` shows the deployed tree (test's `projects/` and `config/` bind-mount to `./gateways/test/`), so you can `cat` the exact files CI just shipped.
+7. Verify in http://localhost:8089 — Platform → Projects lists **`sample-project`**, and its view opens (the deploy-by-hand's height tweak is there too, now via the pipeline). Then verify from the **host**: `ls gateways/test/projects` shows the deployed tree (test's `projects/` and `config/` bind-mount to `./gateways/test/`), so you can `cat` the exact files CI just shipped.
 8. **Multi-project check.** The deploy step copies `./projects/.` (the whole directory), so your single merge deployed `example-project`, `packaging-site` **and** `sample-project` at once. The unit of deploy is the `projects/` tree, not a single project.
 
 ### Part 2.4 — Release to production via `main` + tag (10 min)

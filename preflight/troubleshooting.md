@@ -440,46 +440,23 @@ your proxy or firewall:
 
 ## "The gateway container cannot write to a directory mounted from here"
 
-Every lab bind-mounts `./projects` and `./services/config` from the lab folder into the gateway
-container, and the Ignition image runs as **uid 2003**. Docker Desktop on macOS and Windows
-quietly maps that to your own user, so it just works there. On **native Linux and on WSL2**, bind
-mounts keep real file permissions: a folder you own with the default mode `755` is read-only to
-uid 2003, and the gateway can't save projects, write config or apply a deploy. On Fedora/RHEL,
-SELinux blocks it even when the permissions are fine.
+Every lab bind-mounts `./projects` (and, from Lab 04, `./services/config`) from the lab folder
+into the gateway container, and the Ignition image runs as **uid 2003**. On **native Linux and on
+WSL2**, bind mounts keep real file permissions, so a folder you own with the default mode `755` is
+read-only to uid 2003.
 
-**Recommended fix — run the gateway as *you*.** The official image accepts `IGNITION_UID` /
-`IGNITION_GID` when started as root and steps down to that user before launching the gateway.
-Create `docker-compose.override.yaml` next to the lab's `docker-compose.yaml` (compose picks it
-up automatically). Use the gateway service names from that lab's compose file — labs 04/05 call
-them `ignition-local`, `ignition-test`, `ignition-production`; lab 06 `gateway-local-development`,
-`gateway-test`, `gateway-production`; lab 07 `gateway`, `test-gateway`:
+**You don't need to fix that by hand: the labs already do.** Each lab's `scripts/setup.sh` makes
+the mounted folders group-writable with the setgid bit, and its compose file runs the gateway as
+`2003:0` with your own primary group added (`group_add: ${LAB_GID}`). The preflight tests exactly
+that combination, so when this check fails, something on your machine blocks it even then:
 
-```yaml
-# docker-compose.override.yaml — Linux/WSL2 only: run the gateways as my user
-# so the bind-mounted ./projects and ./services/config stay mine.
-x-as-me: &as-me
-  user: root                      # entrypoint needs root to remap, then drops to IGNITION_UID
-  environment:
-    IGNITION_UID: "1000"          # your uid:  id -u
-    IGNITION_GID: "1000"          # your gid:  id -g
-
-services:
-  ignition-local:      *as-me
-  ignition-test:       *as-me
-  ignition-production: *as-me
-```
-
-Fill in your real `id -u` / `id -g` (1000 is the first user on most distros). The `environment`
-block merges with the lab's own, so nothing else changes. Because the override file is only for
-your machine, don't commit it.
-
-**Quick-and-dirty alternative:** make the mounted folders writable by everyone —
-`chmod -R a+rwX ./projects ./services/config` in the lab folder. Files the gateway creates will
-then be owned by uid 2003 and you'll need `sudo` to delete them, which is why the override is
-the better option.
-
-**SELinux (Fedora/RHEL):** additionally add `:z` to each bind mount in the override, e.g.
-`- ./projects:/usr/local/bin/ignition/data/projects:z`, or `sudo chcon -Rt container_file_t ./projects ./services/config`.
+- **SELinux (Fedora/RHEL):** relabel the course repo once, then re-run the preflight:
+  `sudo chcon -Rt container_file_t ~/mustry-academy/cicd-for-ignition`.
+- **Rootless Docker or Podman:** uid 2003 and your group are remapped to sub-ids, so group
+  permissions never line up. Use the regular (rootful) Docker Engine for this course.
+- **The repo is on `/mnt/c` (WSL):** Windows drives drop permission bits. Move the clone to your
+  Linux home (the preflight checks this separately).
+- **Anything else:** paste `preflight/preflight-report.txt` in `#preflight-help`.
 
 ## "Gateway did not respond within 90s"
 
