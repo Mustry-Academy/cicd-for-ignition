@@ -57,7 +57,7 @@ Once setup finishes you have three Ignition gateways:
 
 Login with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_LOCAL/_TEST/_PRODUCTION`, default `admin / password`).
 
-> **Trial mode:** each gateway runs in 2-hour trial mode. Reset via *Gateway → Config → Licensing → Reset Trial* — unlimited and legal for development. Note: because test/production are recreated from a fresh image on each deploy, their trial clock resets every deploy too.
+> **Trial mode:** each gateway runs in 2-hour trial mode. Reset via *Platform → Licensing → Reset Trial* — unlimited and legal for development. Note: because test/production are recreated from a fresh image on each deploy, their trial clock resets every deploy too.
 
 > **Stuck?** See [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md). Before opening a PR, run `scripts/validate.sh` (mirrors CI) and `scripts/build-image.sh` (confirms the image builds).
 

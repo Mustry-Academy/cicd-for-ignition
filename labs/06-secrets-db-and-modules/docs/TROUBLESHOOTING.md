@@ -38,7 +38,7 @@ turns CONNECTED within a minute.
   docker logs --tail 200 lab06-gateway-local-development     # or -test / -production
   ```
 - **Trial expired.** Each gateway runs in 2-hour trial mode. After it lapses the gateway stops
-  serving. Reset via *Gateway → Config → Licensing → Reset Trial* (unlimited, legal for test).
+  serving. Reset via *Platform → Licensing → Reset Trial* (unlimited, legal for test).
 
 ## `git status` shows lots of `resource.json` changes
 

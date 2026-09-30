@@ -36,7 +36,7 @@ turns CONNECTED within a minute.
   ```bash
   docker logs --tail 200 lab05-ignition-test     # or -local / -production
   ```
-- **Trial expired.** Each gateway runs in 2-hour trial mode. Reset via *Gateway → Config → Licensing →
+- **Trial expired.** Each gateway runs in 2-hour trial mode. Reset via *Platform → Licensing →
   Reset Trial*. Note: recreating test/production from a fresh image resets their trial clock too.
 
 ## `docker build` / `scripts/build-image.sh` fails
