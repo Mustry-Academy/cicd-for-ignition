@@ -675,7 +675,7 @@ docker exec "$IGNITION_CONTAINER" sh -c '
   find $DATA/config/resources/core -mindepth 1 -maxdepth 1 \
     ! -name ignition -exec rm -rf {} +
   find $DATA/config/resources/core/ignition -mindepth 1 -maxdepth 1 \
-    ! -name user-source ! -name identity-provider -exec rm -rf {} +
+    ! -name user-source ! -name identity-provider ! -name api-token -exec rm -rf {} +
   <span class="cm"># inside those two: spare only the INTERNAL identity, by name</span>
   find $DATA/config/resources/core/ignition/user-source -mindepth 1 -maxdepth 1 \
     ! -name default ! -name opcua-module -exec rm -rf {} +
@@ -956,12 +956,15 @@ function bindControls(slideEl,ctrl){
     return g;
   }
   // a labelled flow arrow
-  function flow(x1,y1,x2,y2,label,color){
+  // a labelled flow arrow; lx/ly/anchor place the label clear of lines and boxes
+  // (the midpoint of a sloped line puts the text on the line itself)
+  function flow(x1,y1,x2,y2,label,color,lx,ly,anchor){
     const g=el('g',{class:'vdraw'},svg);
     el('line',{x1,y1,x2,y2,stroke:color,'stroke-width':3,'marker-end':'url(#arrow)'},g);
     if(label){
-      const mx=(x1+x2)/2, my=(y1+y2)/2;
-      el('text',{x:mx,y:my-14,'text-anchor':'middle',fill:color,'font-family':'IBM Plex Mono','font-weight':600,'font-size':15},g).textContent=label;
+      const x=lx!==undefined?lx:(x1+x2)/2, y=ly!==undefined?ly:(y1+y2)/2-14;
+      el('text',{x,y,'text-anchor':anchor||'middle',fill:color,'font-family':'IBM Plex Mono','font-weight':600,'font-size':15,
+        stroke:'#0f1c30','stroke-width':6,'stroke-linejoin':'round','paint-order':'stroke'},g).textContent=label;
     }
     return g;
   }
@@ -974,11 +977,11 @@ function bindControls(slideEl,ctrl){
   const test    = box(1200,380,380,140,'ignition-test  :8089','./gateways/test · fed by CI', peri);
   const production   = box(1200,610,380,140,'ignition-production  :8090','./gateways/production · fed by tags', amber);
 
-  const fBind = flow(440,270,1005,140,'bind mount · edit → scan',teal);
-  const fPushD= flow(440,400,517,485,'merge PR into main',peri);
-  const fShipD= flow(880,485,1005,410,'deploy.yml · docker cp + scan',peri);
-  const fTag  = flow(440,430,530,555,'tag lab04-vX.Y.Z on main',amber);
-  const fShipP= flow(880,560,1005,600,'release.yml · docker cp + scan',amber);
+  const fBind = flow(440,270,1005,140,'bind mount · edit → scan',teal,722,172);
+  const fPushD= flow(440,400,517,485,'merge PR into main',peri,450,472,'end');
+  const fShipD= flow(880,485,1005,410,'deploy.yml · docker cp + scan',peri,1000,396,'end');
+  const fTag  = flow(440,430,530,555,'tag lab04-vX.Y.Z on main',amber,500,545,'end');
+  const fShipP= flow(880,560,1005,600,'release.yml · docker cp + scan',amber,1000,642,'end');
 
   const lead=slides[10].querySelector('#promo-step');
   const steps=[
