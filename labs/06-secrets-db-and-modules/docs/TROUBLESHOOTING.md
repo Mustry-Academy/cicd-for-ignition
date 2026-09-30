@@ -65,6 +65,16 @@ git update-index --no-skip-worktree <path>
   **any** non-empty value (even `"false"`) as "enable ephemeral mode", which deregisters the runner
   after every job.
 
+## `AccessDeniedException: data/modules.json` (Linux / WSL)
+
+The gateway logs `Error writing module configuration to file` and no `certFingerprint` /
+`licenseAgreementHash` lines appear in `services/modules.json` after a boot (Part 3 step 4). The
+file is a single-file bind mount that git checks out as `0644`, and the gateway runs as uid 2003,
+so it can't write it back. `scripts/setup.sh` makes it group-writable (via
+`scripts/preflight.sh`); if you started the stack another way, run
+`chmod g+w services/modules.json` and restart the local gateway. Docker Desktop on macOS doesn't
+enforce the file mode, so this only shows up on Linux and WSL.
+
 ## The deploy 403s on the scan step
 
 The `IGNITION_API_KEY` secret on that GitHub environment (`lab06-gateway-test` /

@@ -205,9 +205,10 @@ jobs:
       # "labs/06-secrets-db-and-modules/jar-files/**" to the push.paths list
       # at the top of this file, or a JAR-only change never triggers a deploy.
 
-      # Part 2B: add your "Migrate database" step HERE — after the secret
-      # files are on the gateway (the migration needs the DB password) and
-      # BEFORE "Ship projects and config" below (old screens tolerate a new
+      # Part 2B: add your "Migrate database" step HERE — scripts/migrate.sh
+      # runs on the runner and reads the DB password there (the materialized
+      # secrets/postgres_password.txt, or POSTGRES_PASSWORD) — and BEFORE
+      # "Ship projects and config" below (old screens tolerate a new
       # table; new screens don't tolerate a missing one). NOT
       # continue-on-error: a failed migration must stop the run before any
       # screen ships. Derive the database from $DEPLOY_TARGET (env above):
