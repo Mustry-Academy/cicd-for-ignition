@@ -129,8 +129,17 @@ course, so this lab's tags carry a `lab02-` prefix: the release is v1.2, the tag
 `lab02-v1.2.0` (every lab tags `labNN-vX.Y.Z`). Use an **annotated** tag (`-a`), as
 Lab 01 taught for releases: it records who tagged, when, and why.
 
+First make your local `main` match your fork's. Lab 01's practice commits (the
+participant line, the notes, the rebased feature) are still on your local `main`,
+never pushed: branch off it now and every PR today carries them along, and the
+"just the fix" hotfix ships Lab 01's edits in v1.2.1. Park them on a branch instead
+of throwing them away, then reset `main` to your fork's:
+
 ```bash
 git switch main
+git branch lab01-practice         # park Lab 01's local commits (skip if you already have it)
+git fetch origin
+git reset --hard origin/main      # main = your fork's main; git status: "up to date"
 git tag -a lab02-v1.2.0 -m "Release 1.2.0"
 git push origin lab02-v1.2.0      # "production" is v1.2
 ```
