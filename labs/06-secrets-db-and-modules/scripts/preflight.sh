@@ -297,7 +297,9 @@ pf_prepare_bind_mounts() {
   # modules.json is a single-FILE bind mount: the gateway rewrites it (derived
   # module fields such as certFingerprint and licenseAgreementHash), so it
   # needs group write too. Git checks it out 0644.
-  [ -f services/modules.json ] && chmod g+w services/modules.json 2>/dev/null || true
+  if [ -f services/modules.json ]; then
+    chmod g+w services/modules.json 2>/dev/null || true
+  fi
   return 0
 }
 
