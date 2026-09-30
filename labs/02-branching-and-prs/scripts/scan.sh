@@ -9,10 +9,10 @@
 #
 # One-time setup: the scan API needs an API key whose security level has
 # gateway write permission. In the gateway UI (http://localhost:8088):
-#   1. Config → Security → Security Levels: add a custom level, e.g. "Scan"
-#   2. Config → Security → Security Settings: add that level to
+#   1. Platform → Security → Levels: add a custom level, e.g. "Scan"
+#   2. Platform → Security → General Settings: add that level to
 #      Gateway Write Permissions (the scan routes check write permission)
-#   3. Config → Security → API Keys → Create: grant the "Scan" level, and
+#   3. Platform → Security → API Keys → Create API Key: grant the "Scan" level, and
 #      disable "Require secure connections for API Keys" (this lab's gateway
 #      is plain http)
 #   4. Copy the generated key — it has the form <name>:<secret> — into .env as:

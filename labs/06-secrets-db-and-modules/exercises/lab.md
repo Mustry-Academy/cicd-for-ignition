@@ -117,7 +117,7 @@ gh secret set IGNITION_API_KEY --env lab06-gateway-production --body "$(grep '^I
 
 Now trigger `lab06-deploy.yml` (*Lab 06 · Deploy*) for test and
 for production from the Actions tab and watch both runs go green. Now open the test
-gateway, Config → Databases → Connections: both connections (`TimescaleDB` and
+gateway, Connections → Databases → Connections: both connections (`TimescaleDB` and
 `TimescaleDB_Reports`) are **Faulted**; production shows the same. Write the diagnosis
 question in `NOTES.local.md`: the pipeline is green and the gateway is broken —
 what can a config-only deploy never carry? (Answer lands in Part 1: the password
@@ -263,7 +263,7 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 
   The spare modules are **Embr Periscope**, **Embr Charts** and the **TimescaleDB Historian**. Their `.modl` files already sit in `third-party-modules/` — and that is *all* that ships: no `modules.json` entry, and their ids are absent from the compose module env vars. The gateway neither loads nor trusts them.
 
-  **Step 1 — look first.** Open `http://localhost:8088` → *Config → Modules* (the platform-modules page): none of the three is in the list. A `.modl` on disk does nothing on its own.
+  **Step 1 — look first.** Open `http://localhost:8088` → *Platform → Modules* (the platform-modules page): none of the three is in the list. A `.modl` on disk does nothing on its own.
 
   **Step 2 — accept them in the env vars.** In `docker-compose.yaml`, add the three module ids to **all three** lists in the shared env anchor: `GATEWAY_MODULES_ENABLED` (the gateway may load them), plus `ACCEPT_MODULE_LICENSES` and `ACCEPT_MODULE_CERTS` (headless license + certificate acceptance). The ids are hard to discover, so they are given:
 
@@ -306,7 +306,7 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   docker logs lab06-gateway-local-development 2>&1 | grep "Starting up module 'com.mussonindustrial"
   ```
 
-  A `Starting up module` line = installed and Running. In the UI it is *Config → Modules*: all three listed, all Running.
+  A `Starting up module` line = installed and Running. In the UI it is *Platform → Modules*: all three listed, all Running.
 
   **Step 6 — ship them.** PR → merge → deploy run. Because the module manifest changed, the deploy **restarts** the gateway: modules only load at boot, unlike projects and config, which reload hot.
 
@@ -358,7 +358,7 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   its config tree survives is exactly how you lock yourself out of a gateway.
   `scripts/setup.sh` choreographs the first boot to avoid it; a bare
   `docker compose up` on a wiped volume does not.
-- **Gate:** all three modules Running on test, hands-free — *Config → Modules* shows all three Running.
+- **Gate:** all three modules Running on test, hands-free — *Platform → Modules* shows all three Running.
 
 ### Stretch (optional)
 - **S1.** The internal secret provider, and where it breaks: create an **internal secret provider** on the local gateway, store `REPORTING_PASSWORD` in it (the gateway encrypts it and keeps the ciphertext in its own config) and point `TimescaleDB_Reports` at it. Locally it stays Valid; ship it and test faults — the ciphertext only decrypts on the gateway that created it. Explore `ignition-secrets-tool.sh` (shared root key + KEK under `data/config/ignition/keys/`) as the escape hatch, then revert to the referenced secret. What is "the secret" now, and who owns it?

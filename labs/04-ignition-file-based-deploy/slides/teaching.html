@@ -271,7 +271,7 @@ body{
     <ul class="checks" style="max-width:960px">
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>You already have:</b> git fluency, branching &amp; PRs done right, validation as a safety net, workflows/jobs/steps, a self-hosted runner, and Ignition under version control from Lab 02. Every one of those comes back today.</span></li>
       <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>New today:</b> the Ignition 8.3 <span class="inlinecode">data/</span> directory decoded file by file, <span class="inlinecode">.deployignore</span>, and a local → test → production promotion driven by GitHub Flow. The scan API returns in anger: per-gateway API keys, scoped permissions, and CI calling it instead of you.</span></li>
-      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Not today:</b> image-based deploys and multi-gateway coordination. That's Day 3 (Labs 05 and 06). Today is a deep dive: decode the file tree, then master the deploy pattern built directly on it.</span></li>
+      <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Not today:</b> image-based deploys (Day 3, Lab 05) and multi-gateway coordination (the Day 4 capstone, Lab 07). Today is a deep dive: decode the file tree, then master the deploy pattern built directly on it.</span></li>
     </ul>
     <div class="callout">
       <div class="lab" style="color:var(--blue)">Why 8.3 changes the game</div>
@@ -735,8 +735,8 @@ curl -X POST \
 scripts/scan.sh test</pre></div>
       <div>
         <ul class="checks">
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Keys are per-gateway, not per-URL.</b> Generate each in <i>that gateway's</i> UI (Config → Security → API Keys). The test key will never authenticate against production.</span></li>
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Least privilege:</b> scope the deploy key to <b>Project Scan + Config Scan</b> only. The deploy runner has no business taking backups or writing tags.</span></li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Keys are per-gateway, not per-URL.</b> Generate each in <i>that gateway's</i> UI (Platform → Security → API Keys). The test key will never authenticate against production.</span></li>
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span><b>Least privilege:</b> 8.3 has no scan-only scope. A key gets a <b>security level</b>, and the scan API needs that level in <b>Gateway Write Permissions</b>, so give the deploy key its own level and nothing more. The deploy runner has no business taking backups or writing tags.</span></li>
           <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span><span>In CI the key lives as an <b>environment-scoped GitHub secret</b> (<span class="inlinecode">lab04-gateway-test</span> / <span class="inlinecode">lab04-gateway-production</span>): per-target secrets and deploy history for free, exactly like Lab 03 taught.</span></li>
         </ul>
         <div class="callout" style="margin-top:16px">
