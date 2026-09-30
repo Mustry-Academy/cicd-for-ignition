@@ -248,7 +248,9 @@ container_cert_issuer() {
 # because Docker Hub rate-limits anonymous pulls PER IP ADDRESS, a whole room
 # behind one NAT pulling on Day 1 gets throttled. (Capstone server-side images
 # such as caddy/postgres are deliberately not in this list.)
-COURSE_IMAGES="$IGNITION_IMAGES timescale/timescaledb:latest-pg16 myoung34/github-runner:latest"
+# migrate/migrate (Labs 06-07 scripts/migrate.sh) and alpine:3 (the Labs 04-06
+# setup.sh volume probe) are small, but come from Docker Hub too, on the day.
+COURSE_IMAGES="$IGNITION_IMAGES timescale/timescaledb:latest-pg16 myoung34/github-runner:latest migrate/migrate:v4.17.1 alpine:3"
 
 # Host ports the lab compose files publish (labs 02–07). 80/443 are only used
 # by the capstone's server-side stack, so they are not checked here.
