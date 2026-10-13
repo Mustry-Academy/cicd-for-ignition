@@ -28,6 +28,12 @@ services:
     user: "2003:0"
     group_add:
       - "${LAB_GID:-0}"
+    # Run the gateway under umask 0002. The image's default umask (022) makes
+    # everything the gateway writes into the bind mount 644/755, group
+    # read-only, so despite group_add + setgid the student cannot edit or
+    # delete those files (and teardown.sh --volumes fails on them). With 0002
+    # they land 664/775, group-owned by the student via the setgid dirs.
+    entrypoint: ["/bin/sh", "-c", 'umask 0002 && exec docker-entrypoint.sh "$@"', "--"]
     restart: unless-stopped
     ports:
       - "8088:8088"
