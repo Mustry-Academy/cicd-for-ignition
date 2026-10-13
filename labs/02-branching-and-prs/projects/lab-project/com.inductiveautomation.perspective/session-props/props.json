@@ -63,10 +63,10 @@
     }
   },
   "props": {
-    "address": "192.168.158.1",
+    "address": "192.168.172.1",
     "device": {},
     "geolocation": {},
-    "locale": "en-US",
+    "locale": "en-BE",
     "offline": {},
     "timeZoneId": "Europe/Brussels"
   }
