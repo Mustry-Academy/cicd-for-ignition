@@ -560,6 +560,27 @@ a{color:var(--primary-deep)}
 .ec h3{font-size:var(--text-xl);font-weight:800;color:var(--ink-strong);letter-spacing:-.01em}
 .ec p{font-size:var(--text-base);color:var(--muted);line-height:1.45}
 
+/* the path of one secret: name lane (Git) and value lane (GitHub secrets) */
+.sflow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.15fr);grid-template-rows:auto 1fr 1fr;grid-template-areas:". . . ." "a1 b1 c1 d" "a2 b2 c2 d";column-gap:2.5rem;row-gap:1.25rem;height:100%}
+.sflow .zh{font-family:var(--font-mono);font-size:var(--text-sm);font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding-bottom:.5rem;border-bottom:2px solid var(--line-2)}
+.sflow .cell{position:relative;display:flex;flex-direction:column;gap:.35rem;justify-content:center;padding:1rem 1.15rem;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--primary);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm)}
+.sflow .cell small{font-family:var(--font-mono);font-size:var(--text-sm);font-weight:600;color:var(--primary-deep)}
+.sflow .cell b{font-size:var(--text-lg);line-height:1.3;color:var(--ink-strong);overflow-wrap:anywhere}
+.sflow .cell span{font-size:var(--text-base);line-height:1.4;color:var(--muted)}
+.sflow code{white-space:normal}
+.sflow small code{font-size:1em}
+.sflow .cell.value{border-left-color:var(--magenta)}
+.sflow .cell.value small{color:var(--magenta)}
+.sflow .cell.local{border-left-color:var(--line-2);border-style:dashed;border-left-style:solid;box-shadow:none;background:transparent}
+.sflow .cell.local small{color:var(--muted)}
+.sflow .cell.ok{border-left-color:var(--good)}
+.sflow .cell.ok small,.sflow .valid{color:var(--good)}
+.sflow .cell.to::after{content:"";position:absolute;top:50%;right:-2.3rem;width:2rem;height:2px;background:var(--primary)}
+.sflow .cell.to::before{content:"";position:absolute;top:calc(50% - 5px);right:-2.35rem;border:6px solid transparent;border-left:9px solid var(--primary);border-right:0}
+.sflow .cell.value.to::after{background:var(--magenta)}
+.sflow .cell.value.to::before{border-left-color:var(--magenta)}
+.sflow .gw{display:flex;flex-direction:column;gap:1rem;justify-content:center;padding:1rem;border:2px solid var(--line-2);border-radius:var(--radius-xl)}
+
 .dark .code{box-shadow:none;border:1px solid hsl(var(--neutral-0) / .12)}
 .dark .col-head{color:var(--soft)}
 
@@ -570,6 +591,11 @@ a{color:var(--primary-deep)}
   .port,.mig{grid-template-columns:1fr}
   .port .arr,.mig .pipe .arr{display:none}
   .envrow{grid-template-columns:1fr}
+  .sflow{grid-template-columns:1fr;grid-template-areas:none;grid-template-rows:none;height:auto}
+  .sflow .cell{grid-area:auto !important}
+  .sflow .gw{grid-area:auto !important}
+  .sflow .zh{display:none}
+  .sflow .cell.to::after,.sflow .cell.to::before{display:none}
 }
 </style>
 </head>
@@ -849,10 +875,80 @@ steps:
   </div>
 </section>
 
-<!-- 11 · THE NEVER-COMMIT LIST -->
+<!-- 11 · THE PATH OF ONE SECRET (interactive) -->
+<section class="slide" data-ctrl="reveal">
+  <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
+  <div class="sechead"><span class="num">11</span><h2 class="title">The path of one secret: the name travels through Git, the value through GitHub secrets</h2></div>
+  <div class="body">
+    <div class="sflow">
+      <div class="zh">Your laptop</div>
+      <div class="zh">GitHub</div>
+      <div class="zh">Deploy workflow</div>
+      <div class="zh">Test gateway</div>
+
+      <div class="cell name to reveal" data-step="1" style="grid-area:a1">
+        <small>The name, committed</small>
+        <b><code>POSTGRES_PASSWORD</code></b>
+        <span>TimescaleDB password: a reference to <code>LabSecrets</code></span>
+        <span><code>LabSecrets</code> reads <code>/run/secrets/<wbr>postgres_password</code></span>
+      </div>
+      <div class="cell name to reveal" data-step="4" style="grid-area:b1">
+        <small>git push, PR merged</small>
+        <b><code>main</code></b>
+        <span>the config with the reference, never a value</span>
+      </div>
+      <div class="cell name to reveal" data-step="4" style="grid-area:c1">
+        <small>Ship the config</small>
+        <b><code>docker cp services/config/</code></b>
+        <span>then a scan: the gateway loads it</span>
+      </div>
+
+      <div class="cell local reveal" data-step="1" style="grid-area:a2">
+        <small>The value, gitignored</small>
+        <b><code>secrets/<wbr>postgres_password.txt</code></b>
+        <span>only your local gateway reads it</span>
+      </div>
+      <div class="cell value to reveal" data-step="2" style="grid-area:b2">
+        <small>Environment secret</small>
+        <b><code>POSTGRES_PASSWORD</code></b>
+        <span>on <code>lab06-gateway-test</code>, masked in every log</span>
+      </div>
+      <div class="cell value to reveal" data-step="3" style="grid-area:c2">
+        <small>Materialize and ship</small>
+        <b><code>printf</code> to a file, <code>umask 177</code></b>
+        <span><code>docker cp</code> to <code>/run/secrets/<wbr>postgres_password</code></span>
+      </div>
+
+      <div class="gw" style="grid-area:d">
+        <div class="cell name reveal" data-step="4">
+          <small>Config</small>
+          <b>Reference to <code>LabSecrets</code> / <code>POSTGRES_PASSWORD</code></b>
+        </div>
+        <div class="cell value reveal" data-step="3">
+          <small>File</small>
+          <b><code>/run/secrets/<wbr>postgres_password</code></b>
+        </div>
+        <div class="cell ok reveal" data-step="5">
+          <small>Resolved</small>
+          <b>Provider reads the file: TimescaleDB is <span class="valid">Valid</span></b>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="controls"><p class="step-note">
+    <span data-at="0">Follow one secret from your laptop to the test gateway.</span>
+    <span data-at="1"><b>Locally:</b> commit only the <b>name</b>. The value stays in a gitignored file.</span>
+    <span data-at="2"><b>GitHub:</b> store the value as a secret on the <code>lab06-gateway-test</code> environment.</span>
+    <span data-at="3"><b>Deploy workflow:</b> writes the secret to a file and copies it to <code>/run/secrets/</code>.</span>
+    <span data-at="4"><b>Push to main:</b> the same committed config ships to test, pointing at the same path.</span>
+    <span data-at="5"><b>The gateway resolves it:</b> name from Git, value from the file. Nothing secret in the repo.</span>
+  </p></div>
+</section>
+
+<!-- 12 · THE NEVER-COMMIT LIST -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">11</span><h2 class="title">What never goes into an Ignition repo, and the scan that checks it</h2></div>
+  <div class="sechead"><span class="num">12</span><h2 class="title">What never goes into an Ignition repo, and the scan that checks it</h2></div>
   <div class="body">
     <div class="cols2">
       <ul class="checks">
@@ -884,10 +980,10 @@ secrets/*
   <div class="divider-body"><h2 class="divider-title">Part 2: version and deploy the <em>database schema</em> with your screens</h2></div>
 </section>
 
-<!-- 12 · SCHEMA DRIFT -->
+<!-- 13 · SCHEMA DRIFT -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">12</span><h2 class="title">Schema drift: a screen ships without the table it needs</h2></div>
+  <div class="sechead"><span class="num">13</span><h2 class="title">Schema drift: a screen ships without the table it needs</h2></div>
   <div class="body">
     <div class="cols2">
       <div class="filecard">
@@ -913,10 +1009,10 @@ secrets/*
   </div>
 </section>
 
-<!-- 13 · DB-INIT -->
+<!-- 14 · DB-INIT -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">13</span><h2 class="title"><code>db-init/</code> runs once, on an empty volume: it creates databases, it never changes them</h2></div>
+  <div class="sechead"><span class="num">14</span><h2 class="title"><code>db-init/</code> runs once, on an empty volume: it creates databases, it never changes them</h2></div>
   <div class="body">
     <div class="cols2">
       <div class="code"><pre><span class="cm"># docker-compose.yaml: the timescaledb service</span>
@@ -936,10 +1032,10 @@ CREATE ROLE reporting LOGIN PASSWORD '...';</pre></div>
   </div>
 </section>
 
-<!-- 14 · MIGRATIONS (interactive) -->
+<!-- 15 · MIGRATIONS (interactive) -->
 <section class="slide" data-ctrl="reveal">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">14</span><h2 class="title">Migrations: numbered SQL files, applied in order, tracked in the database</h2></div>
+  <div class="sechead"><span class="num">15</span><h2 class="title">Migrations: numbered SQL files, applied in order, tracked in the database</h2></div>
   <div class="body">
     <div class="mig">
       <div class="files">
@@ -981,10 +1077,10 @@ INSERT INTO production_kpi ... ;  <span class="cm">-- seed rows</span></pre>
   </p></div>
 </section>
 
-<!-- 15 · THE PIPELINE WITH A DB STEP -->
+<!-- 16 · THE PIPELINE WITH A DB STEP -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">15</span><h2 class="title">The deploy migrates the database before the screens ship</h2></div>
+  <div class="sechead"><span class="num">16</span><h2 class="title">The deploy migrates the database before the screens ship</h2></div>
   <div class="body">
     <ol class="flow">
       <li><b>Secret files</b><span>written and shipped</span></li>
@@ -1001,10 +1097,10 @@ INSERT INTO production_kpi ... ;  <span class="cm">-- seed rows</span></pre>
   </div>
 </section>
 
-<!-- 16 · EXPAND, SWITCH, CONTRACT -->
+<!-- 17 · EXPAND, SWITCH, CONTRACT -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">16</span><h2 class="title">Rename a column without breaking a live screen: expand, switch, contract</h2></div>
+  <div class="sechead"><span class="num">17</span><h2 class="title">Rename a column without breaking a live screen: expand, switch, contract</h2></div>
   <div class="body">
     <div class="cols3 ec">
       <div><small>Deploy 1</small><h3>Expand</h3>
@@ -1039,10 +1135,10 @@ ALTER TABLE downtime_log
   <div class="divider-body"><h2 class="divider-title">Part 3: version and deploy <em>third-party modules and JAR files</em> instead of installing them by hand</h2></div>
 </section>
 
-<!-- 17 · MODULES: COMMIT, LOAD, SHIP -->
+<!-- 18 · MODULES: COMMIT, LOAD, SHIP -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">17</span><h2 class="title">Third-party modules: commit the .modl and load it from a folder</h2></div>
+  <div class="sechead"><span class="num">18</span><h2 class="title">Third-party modules: commit the .modl and load it from a folder</h2></div>
   <div class="body">
     <ol class="flow lg">
       <li><b>Commit the binary</b><span>the <code>.modl</code> goes in <code>third-party-modules/</code>, tracked like any file</span></li>
@@ -1055,10 +1151,10 @@ ALTER TABLE downtime_log
   </div>
 </section>
 
-<!-- 18 · LICENSE ACCEPTANCE -->
+<!-- 19 · LICENSE ACCEPTANCE -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">18</span><h2 class="title">Accept the license in config: the gateway writes the fingerprint and hash for you</h2></div>
+  <div class="sechead"><span class="num">19</span><h2 class="title">Accept the license in config: the gateway writes the fingerprint and hash for you</h2></div>
   <div class="body">
     <div class="split-r">
       <ol class="steps">
@@ -1086,10 +1182,10 @@ ACCEPT_MODULE_CERTS:      <span class="cmd2">..., com.mussonindustrial.embr.char
   </div>
 </section>
 
-<!-- 19 · COMMISSIONING: FAILURE AND RECOVERY -->
+<!-- 20 · COMMISSIONING: FAILURE AND RECOVERY -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">19</span><h2 class="title">A module without its acceptance stops the gateway at commissioning: how to recover</h2></div>
+  <div class="sechead"><span class="num">20</span><h2 class="title">A module without its acceptance stops the gateway at commissioning: how to recover</h2></div>
   <div class="body">
     <div class="compare">
       <div class="bad"><h3>Enabled, not accepted</h3><p><code>StatusPing</code> answers <code>"details":"COMMISSIONING"</code> until someone clicks accept. On a server nobody watches, the gateway is down.</p></div>
@@ -1106,10 +1202,10 @@ docker restart lab06-gateway-local-development
   </div>
 </section>
 
-<!-- 20 · TWO KINDS OF JAR -->
+<!-- 21 · TWO KINDS OF JAR -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">20</span><h2 class="title">JAR files: JDBC drivers ship inside the config tree, library JARs go on the classpath</h2></div>
+  <div class="sechead"><span class="num">21</span><h2 class="title">JAR files: JDBC drivers ship inside the config tree, library JARs go on the classpath</h2></div>
   <div class="body">
     <div class="compare wrap">
       <div class="blue"><span class="kicker">Kind 1</span><h3>JDBC drivers</h3><p>An 8.3 <b>config resource</b>: the JAR sits next to its <code>config.json</code> in <code>database-driver/PostgreSQL/</code> and ships with the config copy.</p></div>
@@ -1124,10 +1220,10 @@ docker restart lab06-gateway-local-development
   </div>
 </section>
 
-<!-- 21 · PERSPECTIVE BINDINGS + LINT -->
+<!-- 22 · PERSPECTIVE BINDINGS + LINT -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">21</span><h2 class="title">A Perspective property binding with a script transform, in the shape the CI linter accepts</h2></div>
+  <div class="sechead"><span class="num">22</span><h2 class="title">A Perspective property binding with a script transform, in the shape the CI linter accepts</h2></div>
   <div class="body">
     <div class="cols2">
       <ul class="checks">
