@@ -603,6 +603,7 @@ gh repo set-default --view
 <span class="cm"># 5: open VS Code, start the stack</span>
 code .
 ./scripts/setup.sh</pre></div>
+      <div class="aside warn"><span class="label">Push rejected by a rule violation?</span>Lab 03's <code>protect-main</code> ruleset is still on your fork: <i>Settings › Rules › Rulesets › protect-main › Delete ruleset</i>, then run step 1 again.</div>
     </div>
   </div>
 </section>
@@ -671,15 +672,20 @@ TimescaleDB_Reports   <span class="red">Faulted</span></pre></div>
   <div class="body">
     <div class="work">
       <ol class="steps">
+        <li><b>Branch first:</b> every Part 1 change goes on <code>feature/fix-test-db-connections</code>.</li>
         <li><b>Create both files</b> from the committed examples: <code>TimescaleDB</code> logs in as <code>ignition</code>, <code>TimescaleDB_Reports</code> as the read-only <code>reporting</code> user. Keep the <b>same values</b>: Postgres only sets passwords on first volume init.</li>
         <li><b>Edit <code>docker-compose.yaml</code>:</b> a top-level <code>secrets:</code> block, then <b>both secrets on both services</b>: the database and the local gateway.</li>
         <li><b>Recreate the stack:</b> both files now sit at <code>/run/secrets/</code> in the gateway.</li>
       </ol>
-      <div class="code"><pre><span class="cm"># 1: create the real files from the committed examples</span>
+      <div class="code"><pre><span class="cm"># 1: a branch off an up-to-date main</span>
+git switch main &amp;&amp; git pull
+git switch -c feature/fix-test-db-connections
+
+<span class="cm"># 2: create the real files from the committed examples</span>
 cp secrets/postgres_password.txt<span class="cmd2">.example</span> secrets/postgres_password.txt
 cp secrets/reporting_password.txt<span class="cmd2">.example</span> secrets/reporting_password.txt
 
-<span class="cm"># 2: docker-compose.yaml</span>
+<span class="cm"># 3: docker-compose.yaml</span>
 secrets:
   postgres_password:
     file: ./secrets/postgres_password.txt
@@ -695,7 +701,7 @@ services:
   gateway-local-development:
     secrets: [postgres_password, reporting_password]
 
-<span class="cm"># 3: recreate, then look</span>
+<span class="cm"># 4: recreate, then look</span>
 docker compose up -d
 docker exec lab06-gateway-local-development ls -l /run/secrets/</pre></div>
     </div>
@@ -788,7 +794,7 @@ git status
   <div class="body">
     <div class="work">
       <ol class="steps">
-        <li><b>Branch</b> <code>feature/fix-test-db-connections</code>.</li>
+        <li><b>Check the branch:</b> you are on <code>feature/fix-test-db-connections</code> since Part 1A.</li>
         <li><b>Commit and push</b> everything from 1A to 1C: compose secrets, the <code>LabSecrets</code> provider in <code>core</code>, the re-pointed connections and the two overrides. The diff <b>adds</b> no secret value.</li>
         <li><b>Open the PR on github.com</b> against <code>main</code> and read your own diff, top to bottom.</li>
         <li><b>Watch the PR validate:</b> <code>lab06-ci.yml</code>, validate and secret scan green.</li>
@@ -796,8 +802,8 @@ git status
         <li><b>Watch the deploy:</b> materialize, ship secrets, ship projects and config, scan, smoke check. The Materialize log prints <b>no value anywhere</b>.</li>
         <li><b>Verify test:</b> both connections <b>Valid</b>, <code>TimescaleDB_Reports</code> on <code>ignition_test</code>.</li>
       </ol>
-      <div class="code"><pre><span class="cm"># 1-2: branch, commit, push</span>
-git switch -c feature/fix-test-db-connections
+      <div class="code"><pre><span class="cm"># 1-2: check the branch, commit, push</span>
+git branch --show-current
 git add -A &amp;&amp; git commit -m <span class="cmd2">"fix: db connections via referenced secrets"</span>
 git push -u origin feature/fix-test-db-connections
 
@@ -850,12 +856,16 @@ git tag lab06-v1.0.0 &amp;&amp; git push origin lab06-v1.0.0
   <div class="body">
     <div class="work">
       <ol class="steps">
-        <li><b>Create</b> <code>db-migration/migrate/0002_add_downtime_log.up.sql</code> <b>and</b> <code>...0002_add_downtime_log.down.sql</code>. The down undoes exactly what the up does.</li>
+        <li><b>Branch</b> <code>feature/downtime-log</code> off an up-to-date <code>main</code>, then <b>create</b> <code>db-migration/migrate/0002_add_downtime_log.up.sql</code> <b>and</b> <code>...0002_add_downtime_log.down.sql</code>. The down undoes exactly what the up does.</li>
         <li><b>Apply locally:</b> <code>./scripts/migrate.sh up</code>. Nothing is applied yet, so this one <code>up</code> applies <code>0001</code> and your <code>0002</code>.</li>
         <li><b>Read the ledger:</b> <code>schema_migrations</code> says version <code>2</code>, not dirty. Run <code>migrate.sh up</code> again: <i>no change</i>.</li>
         <li><b>Edit the applied migration</b> and run <code>up</code> again: nothing complains. Undo the edit; changes go in <code>0003</code>.</li>
       </ol>
-      <div class="code"><pre><span class="cm"># 0002_add_downtime_log.up.sql</span>
+      <div class="code"><pre><span class="cm"># a branch off an up-to-date main</span>
+git switch main &amp;&amp; git pull
+git switch -c feature/downtime-log
+
+<span class="cm"># 0002_add_downtime_log.up.sql</span>
 CREATE TABLE downtime_log (
   id BIGSERIAL PRIMARY KEY,
   reason TEXT NOT NULL,
@@ -904,12 +914,16 @@ docker exec lab06-timescaledb psql -U ignition \
   <div class="body">
     <div class="work">
       <ol class="steps">
-        <li data-n="5"><b>Branch and add the screen</b> that reads <code>downtime_log</code>: a <b>Table</b> on the <code>packaging</code> view, <code>props.data</code> bound to a <b>Query</b> binding on <code>TimescaleDB</code>: <code>SELECT reason, minutes, area FROM downtime_log ORDER BY id DESC</code>. The ready-made JSON is in <code>exercises/lab.md</code>.</li>
-        <li data-n="6"><b>Open a PR with both</b> the migration and the screen.</li>
-        <li data-n="7"><b>Merge and watch:</b> secret files, <b>migrate test DB</b>, ship projects and config, scan, verify.</li>
-        <li data-n="8"><b>Prove it was the pipeline:</b> test's <code>schema_migrations</code> at version 2.</li>
+        <li data-n="5"><b>Add a named query</b> <code>DowntimeLog</code> in <code>packaging-site</code>, database <code>TimescaleDB</code>: <code>SELECT reason, minutes, area FROM downtime_log ORDER BY id DESC</code>.</li>
+        <li data-n="6"><b>Add the screen:</b> a <b>Table</b> on the <code>packaging</code> view, <code>props.data</code> bound to the <b>named query</b> <code>DowntimeLog</code>. The ready-made files are in <code>exercises/lab.md</code>.</li>
+        <li data-n="7"><b>Open a PR with all three:</b> the migration, the named query and the screen.</li>
+        <li data-n="8"><b>Merge and watch:</b> secret files, <b>migrate test DB</b>, ship projects and config, scan, verify.</li>
+        <li data-n="9"><b>Prove it was the pipeline:</b> test's <code>schema_migrations</code> at version 2.</li>
       </ol>
-      <div class="code md"><pre><span class="cm"># step 8: the proof, against the test database</span>
+      <div class="code md"><pre><span class="cm"># 5: Designer › Named Queries › New Query</span>
+<span class="cm"># 6: props.data › Query binding › DowntimeLog</span>
+
+<span class="cm"># 9: the proof, against the test database</span>
 docker exec lab06-timescaledb psql -U ignition \
   -d ignition_test -c 'SELECT * FROM schema_migrations;'</pre></div>
     </div>
@@ -939,13 +953,13 @@ docker exec lab06-timescaledb psql -U ignition \
   <div class="body">
     <div class="work wide">
       <ol class="steps">
-        <li><b>Look first.</b> <code>http://localhost:8088</code>, <i>Platform, Modules</i>: <b>Periscope</b>, <b>Charts</b> and the <b>TimescaleDB Historian</b> are not listed, although their <code>.modl</code> files sit in <code>third-party-modules/</code>.</li>
-        <li><b>Accept them in the env vars:</b> add the three module ids to <b>all three lists</b> in <code>docker-compose.yaml</code>.</li>
+        <li><b>Branch:</b> <code>git switch main &amp;&amp; git pull &amp;&amp; git switch -c feature/third-party-modules</code>. <b>Look first:</b> <code>:8088</code>, <i>Platform, Modules</i> lists none of the three, although their <code>.modl</code> files sit in <code>third-party-modules/</code>.</li>
+        <li><b>Accept them in the env vars:</b> add the three module ids to <b>all three lists</b> in <code>docker-compose.yaml</code>: <code>GATEWAY_MODULES_ENABLED</code>, <code>ACCEPT_MODULE_LICENSES</code> and <code>ACCEPT_MODULE_CERTS</code>.</li>
         <li><b>Add the manifest entries</b> in <code>services/modules.json</code>, two lines each. You do <b>not</b> type the fingerprint or hash.</li>
         <li><code>docker compose up -d</code> recreates <b>all three</b> gateways. Local <b>writes <code>certFingerprint</code> and <code>licenseAgreementHash</code></b> into <code>modules.json</code>: commit that with your compose edit. Test and production lost their <code>/run/secrets</code> files: <b>Faulted</b> until the next deploy.</li>
       </ol>
       <div class="stack" style="gap:.9rem">
-        <div class="code xs"><div class="code-title">2 · docker-compose.yaml: add to ALL THREE lists (GATEWAY_MODULES_ENABLED, ACCEPT_MODULE_LICENSES, ACCEPT_MODULE_CERTS)</div><pre>    <span class="cmd2">com.mussonindustrial.embr.periscope</span>,
+        <div class="code xs"><div class="code-title">2 · docker-compose.yaml: add to ALL THREE lists</div><pre>    <span class="cmd2">com.mussonindustrial.embr.periscope</span>,
     <span class="cmd2">com.mussonindustrial.embr.charts</span>,
     <span class="cmd2">com.mustry.historian.timescaledb</span></pre></div>
         <div class="code xs"><div class="code-title">3 · services/modules.json: per module, all you write</div><pre>"com.mussonindustrial.embr.periscope": {
@@ -954,7 +968,7 @@ docker exec lab06-timescaledb psql -U ignition \
 },
 <span class="cm">// same for ...embr.charts   → Embr-Charts-Ignition83-4.0.1.modl
 // and ...historian.timescaledb → TimescaleDB-Historian.modl</span></pre></div>
-        <div class="code xs"><div class="code-title">4 · services/modules.json: after one boot, the gateway adds to each</div><pre>  <span class="cmd2">"certFingerprint": "e5a3cf3f...",</span>
+        <div class="code xs"><div class="code-title">4 · modules.json: after one boot, the gateway adds</div><pre>  <span class="cmd2">"certFingerprint": "e5a3cf3f...",</span>
   <span class="cmd2">"licenseAgreementHash": 101444854</span></pre></div>
         <div class="code xs"><div class="code-title">4 · terminal: three "Starting up module" lines on local</div><pre>docker compose up -d
 docker logs lab06-gateway-local-development 2&gt;&amp;1 \
