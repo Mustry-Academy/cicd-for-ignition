@@ -1,59 +1,8 @@
-# Mustry Academy: Lab 06 (secrets, migrations, modules & JARs)
-# Three Ignition 8.3 gateways + one TimescaleDB with three logical databases:
-#
-#   gateway-local-development  http://localhost:8088   bind-mounts ./projects + ./services/config
-#                                          (working gateway: edits show
-#                                           up immediately on disk)
-#   gateway-test               http://localhost:8089   projects/ + config/ bind-mounted from
-#                                          ./gateways/test, populated by lab06-deploy.yml
-#                                          (push to main)
-#   gateway-production         http://localhost:8090   projects/ + config/ bind-mounted from
-#                                          ./gateways/production, populated by a
-#                                          lab06-v* tag (lab06-release.yml)
-#
-#   timescaledb                localhost:5432          databases: ignition_local_development, ignition_test,
-#                                          ignition_production (one per env), plus the
-#                                          read-only `reporting` login (db-init/)
-#
-# Host ports are the defaults above. Port taken on your machine? Override them
-# in .env (GATEWAY_PORT, TEST_GATEWAY_PORT, PRODUCTION_GATEWAY_PORT, the
-# *_GAN_PORT trio for 8060-8062, POSTGRES_PORT); scripts/ follow the same
-# variables. Container-side ports never change, so the deploy workflow (which
-# talks to the gateways by service name) is unaffected.
-#
-# Run it:
-#   cp .env.example .env
-#   scripts/setup.sh           # or:  docker compose up -d
-# Then:
-#   open http://localhost:8088   (local)
-#   open http://localhost:8089   (test: empty until the first deploy run)
-#   open http://localhost:8090   (production: empty until the first deploy run)
-#
-# NOTE (Part 1A of the lab): the database passwords below enter the containers
-# as ENVIRONMENT VARIABLES — anyone who can `docker inspect` reads them in
-# plaintext. Part 1 of the lab moves them to file-based secrets: a top-level
-# `secrets:` block backed by ./secrets/*.txt, POSTGRES_PASSWORD_FILE +
-# REPORTING_PASSWORD_FILE on the DB service, and BOTH secrets attached to BOTH
-# services (the DB service also because db-init/ reads the reporting file on a
-# fresh volume; the gateway because its secret provider resolves them). That
-# edit is the exercise, so this file ships WITHOUT it.
-
----
-# `name:` pins the Compose project so this stack always resolves to THESE
-# containers and volumes, whichever directory you run compose from. Without it
-# the project name comes from the folder name, so a second clone of this lab
-# (a fork next to the course repo, a scratch checkout) silently adopts the other
-# one's containers and its timescaledb volume — and db-init/, which only runs on
-# a first volume init, never runs for the new clone.
 name: cicd-lab06
 
-# YAML anchors for the bits that don't differ across the three gateways. Each
-# service merges these in and overrides the parts that do (ports, admin creds,
-# the gateway name passed to the wrapper, volumes).
 x-ignition-env: &ignition-env
   ACCEPT_IGNITION_EULA: "Y"
   IGNITION_EDITION: standard
-  # Skip the Quick Start prompt on first login — the lab ships its own projects.
   DISABLE_QUICKSTART: "true"
   GATEWAY_MODULES_ENABLED: >-
     com.inductiveautomation.alarm-notification,
@@ -71,18 +20,6 @@ x-ignition-env: &ignition-env
     com.inductiveautomation.jdbc.postgresql,
     dev.bwdesigngroup.flint.FlintDesignerBridge,
     project-scan-endpoint
-  # Embr-Periscope, Embr-Charts and the TimescaleDB Historian are the three
-  # spare modules Part 3 installs. Their .modl files sit in
-  # third-party-modules/, but they ship with NO services/modules.json entry
-  # AND deliberately absent from the three module env vars here — so a fresh
-  # boot neither loads nor trusts them. Part 3 is the student adding both
-  # halves: the three module ids to GATEWAY_MODULES_ENABLED +
-  # ACCEPT_MODULE_LICENSES + ACCEPT_MODULE_CERTS, and the minimal manifest
-  # entry per module (filename + onStartup). On the next boot the gateway
-  # installs them headlessly and WRITES the derived certFingerprint +
-  # licenseAgreementHash back into modules.json — which the student commits
-  # so image-based/fresh gateways accept them from config alone. That
-  # derivation is the whole point of Part 3.
   ACCEPT_MODULE_LICENSES: >-
     dev.bwdesigngroup.flint.FlintDesignerBridge,
     project-scan-endpoint
@@ -93,11 +30,6 @@ x-ignition-env: &ignition-env
   GATEWAY_NETWORK_ENABLED: "true"
   TZ: "Europe/Brussels"
 
-# Run the gateway under umask 0002. The image's default umask (022) makes
-# everything the gateway writes into the bind mounts 644/755 — group
-# read-only — so despite group_add + setgid the student cannot edit or
-# delete those files (and teardown.sh --volumes fails on them). With 0002
-# they land 664/775, group-owned by the student via the setgid dirs.
 x-ignition-entrypoint: &ignition-entrypoint
   ["/bin/sh", "-c", 'umask 0002 && exec docker-entrypoint.sh "$@"', "--"]
 
@@ -105,8 +37,6 @@ x-ignition-resources: &ignition-resources
   deploy:
     resources:
       limits:
-        # Heap (-m 1024) plus the JVM's own memory: a 1G cap left the
-        # gateway no room above its heap.
         memory: 1536M
       reservations:
         memory: 512M
@@ -124,18 +54,10 @@ x-ignition-healthcheck: &ignition-healthcheck
   start_period: 90s
 
 services:
-  # --- local gateway: edits on the host show up here immediately --------------
   gateway-local-development:
     image: inductiveautomation/ignition:8.3.8
     container_name: lab06-gateway-local-development
     hostname: lab06-gateway-local-development
-    # Run as YOUR uid with gid 0. The image is built for any uid in group 0
-    # (everything under ignition/ is owned 2003:0 mode 775), and this is the
-    # gateway that reads and writes your working tree: as you, it can write
-    # every folder git creates (a pulled project, a new view) and everything
-    # it writes is yours. The group_add keeps files an older uid-2003 run
-    # left in the bind mounts writable. scripts/preflight.sh writes LAB_UID
-    # and LAB_GID to .env and re-owns the data volume to LAB_UID.
     user: "${LAB_UID:-2003}:0"
     group_add:
       - "${LAB_GID:-0}"
@@ -154,13 +76,6 @@ services:
       <<: *ignition-env
       GATEWAY_ADMIN_USERNAME: "${GATEWAY_ADMIN_USERNAME_LOCAL:-admin}"
       GATEWAY_ADMIN_PASSWORD: "${GATEWAY_ADMIN_PASSWORD_LOCAL:-password}"
-      # The LOCAL gateway runs with CUSTOM secrets-management keys
-      # (services/config/ignition/keys/ — committed, dummy lab keys) instead
-      # of the default key every Ignition installation shares. That's what
-      # makes the committed embedded ciphertexts decrypt HERE and nowhere
-      # else: .deployignore keeps the keys out of the deploy payload, so
-      # test/production fall back to their own keys and the connections fault —
-      # the warm-up's whole point. This passphrase unlocks the root key.
       IGNITION_ROOT_KEY_PASSWORD: "${IGNITION_ROOT_KEY_PASSWORD:-lab06-root-key-pass}"
     command: >
       -n lab06-local
@@ -178,19 +93,10 @@ services:
       timescaledb:
         condition: service_healthy
 
-  # --- test gateway: populated by lab06-deploy.yml (push to main) ------------
   gateway-test:
     image: inductiveautomation/ignition:8.3.8
     container_name: lab06-gateway-test
     hostname: lab06-gateway-test
-    # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
-    # owned 2003:0 mode 775, so any OTHER primary gid loses write access and
-    # the gateway fails to boot ("gateway.xml exists, but isnt readable or
-    # writable"). Instead we ADD the student's group, which -- together with
-    # the group-write + setgid bits scripts/setup.sh applies to the
-    # bind-mounted dirs -- makes everything the gateway writes editable by
-    # the student. No root-owned files, so no sudo.
-    # LAB_GID is exported by scripts/preflight.sh.
     user: "2003:0"
     group_add:
       - "${LAB_GID:-0}"
@@ -201,17 +107,8 @@ services:
       - "${TEST_GATEWAY_GAN_PORT:-8061}:8060"
     volumes:
       - gateway-test-data:/usr/local/bin/ignition/data
-      # projects/ and config/ are bind-mounted from ./gateways/test (gitignored,
-      # created by setup.sh) so you can SEE what a deploy shipped straight from
-      # your laptop: `ls gateways/test/projects`. The rest of data/ (internal db,
-      # var/, certificates/) stays in the named volume above.
       - ./gateways/test/projects:/usr/local/bin/ignition/data/projects
       - ./gateways/test/config:/usr/local/bin/ignition/data/config
-      # The module manifest is a PER-GATEWAY copy (seeded by setup.sh,
-      # updated by deploy.yml) — NOT the repo's services/modules.json, which
-      # only the local gateway mounts. If test shared the working-tree file,
-      # a local edit would leak into test's next boot without a deploy, and
-      # the deploy workflow couldn't tell "already deployed" from "changed".
       - ./gateways/test/modules.json:/usr/local/bin/ignition/data/modules.json
       - ./third-party-modules:/third-party-modules
     environment:
@@ -234,19 +131,10 @@ services:
       timescaledb:
         condition: service_healthy
 
-  # --- production gateway: populated by a lab06-v* tag (lab06-release.yml) --------
   gateway-production:
     image: inductiveautomation/ignition:8.3.8
     container_name: lab06-gateway-production
     hostname: lab06-gateway-production
-    # Keep the image's own identity (uid 2003, gid 0): its data/ tree is
-    # owned 2003:0 mode 775, so any OTHER primary gid loses write access and
-    # the gateway fails to boot ("gateway.xml exists, but isnt readable or
-    # writable"). Instead we ADD the student's group, which -- together with
-    # the group-write + setgid bits scripts/setup.sh applies to the
-    # bind-mounted dirs -- makes everything the gateway writes editable by
-    # the student. No root-owned files, so no sudo.
-    # LAB_GID is exported by scripts/preflight.sh.
     user: "2003:0"
     group_add:
       - "${LAB_GID:-0}"
@@ -257,11 +145,8 @@ services:
       - "${PRODUCTION_GATEWAY_GAN_PORT:-8062}:8060"
     volumes:
       - gateway-production-data:/usr/local/bin/ignition/data
-      # Same pattern as test: deployed files are visible on the host under
-      # ./gateways/production (gitignored, created by setup.sh).
       - ./gateways/production/projects:/usr/local/bin/ignition/data/projects
       - ./gateways/production/config:/usr/local/bin/ignition/data/config
-      # Per-gateway manifest copy — same reasoning as test.
       - ./gateways/production/modules.json:/usr/local/bin/ignition/data/modules.json
       - ./third-party-modules:/third-party-modules
     environment:
@@ -284,16 +169,6 @@ services:
       timescaledb:
         condition: service_healthy
 
-  # --- shared TimescaleDB with three logical databases ----------------------
-  # POSTGRES_DB is the database created automatically at first init. The init
-  # script under ./db-init/ (mounted below) creates the other two so each
-  # gateway can point at its own database, plus the read-only `reporting`
-  # login used by the TimescaleDB_Reports gateway connection.
-  #
-  # Both passwords below are plain environment variables, visible in
-  # `docker inspect`. Part 1A of the lab moves them into secret files. The db-init script also understands REPORTING_PASSWORD_FILE,
-  # so the same _FILE convention as POSTGRES_PASSWORD_FILE works once you
-  # move to file-based secrets.
   timescaledb:
     image: timescale/timescaledb:latest-pg16
     container_name: lab06-timescaledb
@@ -321,21 +196,6 @@ services:
     networks:
       - default
 
-  # --- self-hosted GitHub Actions runner -------------------------------------
-  # Auto-registers against the repo set in RUNNER_REPO_URL using a GitHub
-  # fine-grained Personal Access Token (RUNNER_GITHUB_PAT, Administration: Read
-  # and write on the fork). The
-  # image uses that PAT to fetch its own short-lived registration token, so
-  # you never mint one by hand. Reuse the same PAT you created in Lab 04.
-  #
-  # The runner sits on the lab's compose network, so it reaches the gateways by
-  # service name (gateway-local-development, gateway-test, gateway-production) — see the
-  # IGNITION_URL defaults in .github/workflows/lab06-deploy.yml (repo root).
-  #
-  # Why /var/run/docker.sock is mounted: lab06-deploy.yml uses
-  # `docker cp` and `docker exec` to push project files INTO the test/production
-  # gateway containers. That requires the runner to talk to the host's
-  # Docker daemon. Lab convenience, NOT a production pattern.
   github-runner:
     image: myoung34/github-runner:latest
     container_name: lab06-runner
@@ -347,9 +207,6 @@ services:
       RUNNER_NAME: "${RUNNER_NAME:-lab06-runner}"
       RUNNER_SCOPE: repo
       LABELS: "self-hosted,lab06"
-      # No EPHEMERAL here on purpose: the image treats ANY non-empty value
-      # (even "false") as "enable --ephemeral". Leave it unset for a
-      # persistent runner.
       DISABLE_AUTO_UPDATE: "true"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

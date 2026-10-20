@@ -44,6 +44,10 @@ was on your `main`, so earlier exercises can't cause merge conflicts:
 git fetch https://github.com/Mustry-Academy/cicd-for-ignition.git main && git checkout -f -B main FETCH_HEAD && git push -f origin main
 ```
 
+Push rejected with a rule violation? Lab 03's `protect-main` ruleset is still on
+your fork: **Settings → Rules → Rulesets → `protect-main` → Delete ruleset**,
+then run the command again.
+
 ```bash
 cd ~/mustry-academy/cicd-for-ignition/labs/06-secrets-db-and-modules
 [ -f .env ] || cp .env.example .env   # keeps the .env course-setup.sh may have made
@@ -130,6 +134,8 @@ per-environment database target. Part 1 fixes both.
 ### Part 1: set up a secret for the db-connection (±30 min)
 Two db-connections, same database server, different users: `TimescaleDB` logs in
 as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
+Branch before the first edit, so every Part 1 change lands on the feature branch:
+`git switch main && git pull && git switch -c feature/fix-test-db-connections`.
 - **1A.** Both passwords become secret files: compose `environment:` → files
   mounted at `/run/secrets/postgres_password` and `/run/secrets/reporting_password`.
   A top-level `secrets:` block declares both files, and **both** get attached to
@@ -169,8 +175,8 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   Nothing to change in the workflow: its **Materialize secret files** step
   already turns these secrets into files, and the **Ship secret files** step
   hands them to the gateway at `/run/secrets/`. Nothing is deployed yet.
-- **1D.** The full deploy moment, every station separately: **branch**
-  (`feature/fix-test-db-connections`) → **commit & push** (your diff **adds** no
+- **1D.** The full deploy moment, every station separately: **check the branch**
+  (`git branch --show-current` prints `feature/fix-test-db-connections`) → **commit & push** (your diff **adds** no
   secret value: the secret scan in `lab06-ci.yml` is the check) → **open the
   PR on github.com** → **watch the PR validate** (`lab06-ci.yml` green) →
   **merge** → **watch the pipeline deploy** (materialize secret files → ship
@@ -190,7 +196,8 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   reference.
 
 ### Part 2: ship a DB-migration (±20 min)
-- **2A.** Write `db-migration/migrate/0002_add_downtime_log.up.sql` **and**
+- **2A.** Branch first: `git switch main && git pull && git switch -c feature/downtime-log`.
+  Write `db-migration/migrate/0002_add_downtime_log.up.sql` **and**
   `.down.sql`; apply with `scripts/migrate.sh up`; read `schema_migrations`
   (version 2, not dirty); re-run to see idempotency (`no change`). Your stack
   starts with **nothing applied** — `scripts/migrate.sh version` says
@@ -218,16 +225,55 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
       ./scripts/migrate.sh up --database "$db"
   ```
 
-  PR with the migration **and** the screen that reads the new table together;
+  PR with the migration, the named query **and** the screen that reads the new table together;
   watch the run migrate test before shipping; prove it in test's
   `schema_migrations`.
 
-  The screen is deliberately tiny — a table bound to the new table. In the
-  Designer: open `projects/packaging-site` → the `pages/packaging` view → drop a
-  **Table** component in, then bind `props.data` → **Query** → database
-  `TimescaleDB`, query
-  `SELECT reason, minutes, area FROM downtime_log ORDER BY id DESC`.
-  No Designer? Paste this component into the view's `root.children` list in
+  The screen is deliberately tiny: a table bound to a named query that reads
+  the new table. A Perspective query binding always points at a named query,
+  so create that first. In the Designer, open `packaging-site`:
+
+  1. **Project Browser → Data → Named Queries → New Query**, name it
+     `DowntimeLog`, database `TimescaleDB`, query
+     `SELECT reason, minutes, area FROM downtime_log ORDER BY id DESC`. Save.
+  2. Open the `pages/packaging` view, drop a **Table** component in, then bind
+     `props.data` → **Query** → path `DowntimeLog`. **File → Save All**.
+
+  No Designer? Create the named query as two files in
+  `projects/packaging-site/ignition/named-query/DowntimeLog/`. `query.sql`:
+
+  ```sql
+  SELECT reason, minutes, area FROM downtime_log ORDER BY id DESC
+  ```
+
+  and `resource.json`:
+
+  ```json
+  {
+    "scope": "DG",
+    "version": 2,
+    "restricted": false,
+    "overridable": true,
+    "files": ["query.sql"],
+    "attributes": {
+      "type": "Query",
+      "enabled": true,
+      "database": "TimescaleDB",
+      "parameters": [],
+      "permissions": [{ "zone": "", "role": "" }],
+      "useMaxReturnSize": false,
+      "maxReturnSize": 100,
+      "autoBatchEnabled": false,
+      "cacheEnabled": false,
+      "cacheAmount": 1,
+      "cacheUnit": "SEC",
+      "fallbackEnabled": false,
+      "fallbackValue": ""
+    }
+  }
+  ```
+
+  Then paste this component into the view's `root.children` list in
   `projects/packaging-site/com.inductiveautomation.perspective/views/pages/packaging/view.json`
   — the JSON *is* the screen, which is the whole reason it deploys as a file:
 
@@ -239,10 +285,9 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
       "props.data": {
         "binding": {
           "config": {
-            "database": "TimescaleDB",
-            "fallbackDelay": 2.5,
-            "polling": { "enabled": false },
-            "queryString": "SELECT reason, minutes, area FROM downtime_log ORDER BY id DESC",
+            "parameters": {},
+            "polling": { "enabled": false, "rate": "0" },
+            "queryPath": "DowntimeLog",
             "returnFormat": "dataset"
           },
           "type": "query"
@@ -254,7 +299,7 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
   }
   ```
 
-  Note *where* that query runs: on the gateway, against **that gateway's**
+  Note *where* that named query runs: on the gateway, against **that gateway's**
   `TimescaleDB` connection — so the same screen reads `ignition_test` on test
   and `ignition_production` on production, and it needs its table to already be
   there. That is the whole argument for migrate-before-ship.
@@ -264,6 +309,8 @@ as `ignition`, `TimescaleDB_Reports` as the read-only `reporting` user.
 - Install the three spare `.modl` files by adding **minimal** `services/modules.json` entries, let the gateway derive the acceptance fields, commit them, ship them through the pipeline, and verify they come up **Running** with no hands on the gateway.
 
   The spare modules are **Embr Periscope**, **Embr Charts** and the **TimescaleDB Historian**. Their `.modl` files already sit in `third-party-modules/` — and that is *all* that ships: no `modules.json` entry, and their ids are absent from the compose module env vars. The gateway neither loads nor trusts them.
+
+  Branch first: `git switch main && git pull && git switch -c feature/third-party-modules`.
 
   **Step 1 — look first.** Open `http://localhost:8088` → *Platform → Modules* (the platform-modules page): none of the three is in the list. A `.modl` on disk does nothing on its own.
 

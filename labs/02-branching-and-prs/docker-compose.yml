@@ -1,67 +1,25 @@
-# Mustry Academy — Lab 02
-# A single Ignition 8.3 gateway, used as the subject of the branching/PR exercises.
-#
-# The gateway's own config and runtime state live in a NAMED VOLUME
-# (ignition-data) that it generates itself on first boot — deliberately kept out
-# of the repo, so you never see or touch gateway config in this lab (that arrives
-# in Lab 04). The thing you edit that is bind-mounted from the repo is
-# ./projects, so the project files you edit on your laptop are the project files
-# the gateway runs. ./third-party-modules is mounted too: it holds the one add-on
-# module the gateway installs at boot (Project Scan Endpoint, used by Flint).
-#
-# Run it:
-#   cp .env.example .env
-#   scripts/setup.sh              # or:  docker compose up -d
-# Then:
-#   open http://localhost:8088   (log in with the .env credentials)
-#
-# Port 8088 taken on your machine? Set GATEWAY_PORT in .env (see .env.example);
-# the gateway then answers on http://localhost:<GATEWAY_PORT>.
-
 services:
   ignition:
     image: inductiveautomation/ignition:8.3.8
     container_name: lab02-ignition
-    # Run as YOUR uid with gid 0. The image is built for any uid in group 0
-    # (everything under ignition/ is owned 2003:0 mode 775), and this is the
-    # gateway that reads and writes your working tree: as you, it can write
-    # every folder git creates (a pulled project, a new view) and everything
-    # it writes is yours. The group_add keeps files an older uid-2003 run
-    # left in the bind mounts writable. scripts/preflight.sh writes LAB_UID
-    # and LAB_GID to .env and re-owns the data volume to LAB_UID.
     user: "${LAB_UID:-2003}:0"
     group_add:
       - "${LAB_GID:-0}"
-    # Run the gateway under umask 0002. The image's default umask (022) makes
-    # everything the gateway writes into the bind mount 644/755, group
-    # read-only, so despite group_add + setgid the student cannot edit or
-    # delete those files (and teardown.sh --volumes fails on them). With 0002
-    # they land 664/775, group-owned by the student via the setgid dirs.
     entrypoint: ["/bin/sh", "-c", 'umask 0002 && exec docker-entrypoint.sh "$@"', "--"]
     restart: unless-stopped
     ports:
-      # Host port overridable from .env; inside the container it stays 8088.
       - "${GATEWAY_PORT:-8088}:8088"
     volumes:
-      # Gateway-owned config + runtime state: self-generated, never in the repo.
       - ignition-data:/usr/local/bin/ignition/data
-      # The one thing you edit: project files, straight from the repo.
       - ./projects:/usr/local/bin/ignition/data/projects
-      # Third-party .modl files the gateway installs at boot (read from here
-      # via -Dignition.gateway.externalModulesFolder in `command` below).
       - ./third-party-modules:/third-party-modules
     environment:
       ACCEPT_IGNITION_EULA: "Y"
       IGNITION_EDITION: standard
-      # Skip the Quick Start prompt on first login — the lab seeds its own project.
       DISABLE_QUICKSTART: "true"
       GATEWAY_ADMIN_USERNAME: "${GATEWAY_ADMIN_USERNAME:-admin}"
       GATEWAY_ADMIN_PASSWORD: "${GATEWAY_ADMIN_PASSWORD:-password}"
       TZ: "Europe/Brussels"
-      # Headless install of the Project Scan Endpoint module
-      # (third-party-modules/): accept its licence (MIT) and its signing
-      # certificate up front, so no install dialog ever appears. Flint calls
-      # its endpoint after a save so an open Designer reloads the project.
       ACCEPT_MODULE_LICENSES: project-scan-endpoint
       ACCEPT_MODULE_CERTS: project-scan-endpoint
     command: >

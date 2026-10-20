@@ -28,6 +28,10 @@ your `main`, so there are no merge conflicts:
 git fetch https://github.com/Mustry-Academy/cicd-for-ignition.git main && git checkout -f -B main FETCH_HEAD && git push -f origin main
 ```
 
+Push rejected with a rule violation? Lab 03's `protect-main` ruleset is still on
+your fork: **Settings → Rules → Rulesets → `protect-main` → Delete ruleset**,
+then run the command again.
+
 Go to this lab's folder in your clone and start the stack:
 
 ```bash
