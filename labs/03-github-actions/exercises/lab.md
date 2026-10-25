@@ -12,7 +12,7 @@ a required gate on every PR, then a look at *where* CI runs when GitHub-hosted i
 
 ## What you'll do
 
-- **Part 1: Linters as your safety net:** yamllint, shellcheck, actionlint, **ign-lint**, `scripts/validate.sh`
+- **Part 1: Linters as your safety net:** yamllint, shellcheck, actionlint, **iglint**, `scripts/validate.sh`
 - **Part 2: GitHub Actions:** build `lab03-ci.yml` and a ruleset that requires it
 - **Part 3: Self-hosted runners:** a discussion and an optional hands-on; the real thing comes in Labs 04 and 06
 
@@ -45,8 +45,8 @@ scripts/setup.sh        # boots one Ignition gateway, waits for RUNNING, prints 
 > and re-run `scripts/setup.sh`; it prints the matching URL.
 
 Install the linters, pinned, in a Python 3.12 venv (the version CI uses). `uv` creates it and
-downloads Python 3.12 if your machine doesn't have it (Ubuntu 26.04 ships 3.14, which ign-lint
-doesn't support yet):
+downloads Python 3.12 if your machine doesn't have it (Ubuntu 26.04 ships 3.14). iglint is not
+on PyPI yet, so `--find-links` points uv at the wheels on its GitHub release:
 
 ```bash
 # macOS
@@ -60,7 +60,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh     # then open a new terminal
 
 # both
 uv venv --python 3.12 .venv && source .venv/bin/activate
-uv pip install yamllint==1.35.1 ign-lint==0.6.1
+uv pip install yamllint==1.35.1 iglint==0.1.0 \
+  --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0
 python -V                    # Python 3.12.x, same as CI
 ```
 
@@ -77,7 +78,7 @@ and [`docs/self-hosted-runners.md`](../docs/self-hosted-runners.md).
 
 ## Part 1: Linters as your safety net
 
-**Goal:** run yamllint, shellcheck, actionlint, **ign-lint** and `scripts/validate.sh`
+**Goal:** run yamllint, shellcheck, actionlint, **iglint** and `scripts/validate.sh`
 against a real Ignition project, read each tool's output, fix every finding, and read how
 `.yamllint.yml` documents a rule it mutes on purpose.
 
@@ -106,26 +107,25 @@ yamllint -c .yamllint.yml .            # YAML syntax and style
 shellcheck scripts/*.sh                # shell-script bugs
 actionlint -config-file .github/actionlint.yaml \
   ../../.github/workflows/lab03-*.yml  # Actions workflows (they live at the repo root)
-# ign-lint runs from the repo root; the subshell keeps your terminal in the lab folder
-(cd ../.. && ign-lint --config labs/03-github-actions/rule_config.json \
-  --files "labs/03-github-actions/projects/**/view.json")
+iglint check .                         # the Ignition project: views, scripts, expressions
 scripts/validate.sh                    # every *.json is valid JSON, every code.py parses
 ```
 
 `scripts/validate.sh` exits 0 (green) or 1 (red). It is not a linter and runs none of the
 others for you.
 
-Spend the most time on **ign-lint**, the one tool that reads a Perspective view. Open
-`rule_config.json` and walk the rules the seed trips:
+Spend the most time on **iglint**, the one tool that reads a Perspective view. Open
+`iglint.toml` and walk the rules the seed trips (`iglint rule <CODE>` explains any of them):
 
-- `NamePatternRule`: components PascalCase, properties camelCase, message handlers
+- `NAME001` (name-pattern): components PascalCase, properties camelCase, message handlers
   kebab-case, custom methods snake_case.
-- `PollingIntervalRule`: a floor on binding poll rates, 1000 ms in this lab.
-- `BadComponentReferenceRule`: brittle `.getSibling()` / `.getParent()` / relative-path traversal.
-- `ComponentReferenceValidationRule`: relative references that don't resolve.
-- `PylintScriptRule`: pylint over the Python inside views, with `.config/.ignition-pylintrc`.
+- `BIND004` (polling-interval): a floor on binding poll rates, 1000 ms in this lab.
+- `VIEW018` (fragile-component-reference): brittle `.getSibling()` / `.getParent()` /
+  relative-path traversal.
+- `BIND005` (unresolved-property-reference): references that don't resolve.
 
-The clean `lab-project` passes ign-lint with **zero** findings: every finding you see is
+iglint also parses every script as Jython 2.7, the gateway's interpreter, inside views and
+in the script library. The clean `lab-project` passes iglint with **zero** findings: every finding you see is
 something `scripts/seed.sh` broke on purpose.
 
 ### You do
@@ -135,7 +135,7 @@ Hunt every planted issue and fix them all. (The step numbers match the assignmen
 1. Run `scripts/seed.sh` for a fresh broken state (reset first if your tree still carries
    We-do fixes: `git restore . && rm -f ../../.github/workflows/lab03-example.yml`).
 2. Run all five checks and write down each finding: *what the tool flagged*, in *which file*.
-3. Spend the most time on **ign-lint**'s output. It fires two rules on one binding (the
+3. Spend the most time on **iglint**'s output. It fires two rules on one binding (the
    Kiln tile), plus a poll-rate finding and a naming finding. Work out *why* each rule
    exists before fixing anything.
 4. Fix every finding. For each, record *what the tool flagged*, *why your fix is correct*
@@ -153,7 +153,7 @@ Hunt every planted issue and fix them all. (The step numbers match the assignmen
    git status        # nothing to commit, working tree clean
    ```
 
-> **No delete-cheats.** Don't silence ign-lint by deleting the Clock, the Kiln binding or
+> **No delete-cheats.** Don't silence iglint by deleting the Clock, the Kiln binding or
 > the Power tile: restore real data bindings and a real name. The teaching deck's
 > broken-binding slide shows the Kiln binding before the edit. Check that the view still
 > loads: `docker compose restart` (or `scripts/scan.sh` with an API key in `.env`), then
@@ -168,7 +168,7 @@ The lab ships `.pre-commit-config.yaml` with all four linters as hooks.
    config whenever a commit touches `labs/03-github-actions/`.
 2. Baseline run over the whole lab, clean after Part 1:
    `pre-commit run --all-files --config .pre-commit-config.yaml`
-3. Set the Clock binding to `now(250)`, try to commit, and watch the ign-lint hook refuse
+3. Set the Clock binding to `now(250)`, try to commit, and watch the iglint hook refuse
    the commit.
 4. Undo the bad change. If the commit went through anyway: does `pre-commit --version` work
    (venv active)? Does `git config core.hooksPath` print `scripts/git-hooks`? If not, re-run
@@ -179,7 +179,7 @@ The lab ships `.pre-commit-config.yaml` with all four linters as hooks.
 - Which of these linters would have caught the most recent real bug your team shipped?
 - When does linting *hurt* instead of help? (When it flags style as errors, when it's
   slower than the dev loop, when its config drifts from what the team agrees on.)
-- Which ign-lint rules map to a mistake you've shipped in a Perspective project? Which feel
+- Which iglint rules map to a mistake you've shipped in a Perspective project? Which feel
   like overreach?
 
 ---
@@ -271,7 +271,9 @@ in the `lint` job with the Part 1 linters:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - run: pip install yamllint==1.35.1 ign-lint==0.6.1
+      - run: >-                        # iglint's wheels come from its GitHub release
+          pip install yamllint==1.35.1 iglint==0.1.0
+          --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0
       - run: yamllint -c .yamllint.yml . ../../.github/workflows/lab03-*.yml
       - uses: raven-actions/actionlint@v2
         with:                             # a `uses:` step: paths are repo-root-relative
@@ -279,10 +281,7 @@ in the `lint` job with the Part 1 linters:
           flags: "-config-file labs/03-github-actions/.github/actionlint.yaml"
       - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends shellcheck
       - run: shellcheck scripts/*.sh
-      - working-directory: .              # ign-lint runs from the repo root, as in Part 1
-        run: >-
-          ign-lint --config labs/03-github-actions/rule_config.json
-          --files "labs/03-github-actions/projects/**/view.json"
+      - run: iglint check --output-format github .   # findings as PR annotations
 ```
 
 What the We-do also shows:
@@ -465,7 +464,7 @@ ephemeral container exits and the runner drops off the Runners tab. Check that
 
 You built a CI safety net for an Ignition project:
 
-- **Local linters** (yamllint, shellcheck, actionlint, **ign-lint**, `scripts/validate.sh`),
+- **Local linters** (yamllint, shellcheck, actionlint, **iglint**, `scripts/validate.sh`),
   each catching a class of bug before it ships.
 - **A GitHub Actions workflow** that runs them on every PR, with least-privilege
   permissions.

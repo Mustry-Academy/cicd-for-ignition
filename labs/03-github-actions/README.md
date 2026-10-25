@@ -68,7 +68,7 @@ The whole lab is one continuous workshop in [`exercises/lab.md`](./exercises/lab
 
 | Part | Topic |
 |---|---|
-| 1 | Linters as your safety net (yamllint, shellcheck, actionlint, **ign-lint**, `validate.sh`) |
+| 1 | Linters as your safety net (yamllint, shellcheck, actionlint, **iglint**, `validate.sh`) |
 | 2 | GitHub Actions: build `lab03-ci.yml` and a ruleset that requires it |
 | 3 | Self-hosted runners: a discussion and an optional hands-on |
 
@@ -85,9 +85,7 @@ labs/03-github-actions/
 ├── .gitattributes                     ← LF normalization so Ignition's JSON resources stay clean
 ├── .yamllint.yml                      ← yamllint config (its documented mute is read in Part 1)
 ├── .pre-commit-config.yaml            ← the linters as pre-commit hooks (Stretch 1)
-├── rule_config.json                   ← ign-lint rule configuration
-├── .config/
-│   └── .ignition-pylintrc             ← pylint config ign-lint uses for scripts inside views
+├── iglint.toml                        ← iglint rule configuration
 ├── .github/
 │   └── actionlint.yaml                ← declares the self-hosted runner label
 ├── scripts/

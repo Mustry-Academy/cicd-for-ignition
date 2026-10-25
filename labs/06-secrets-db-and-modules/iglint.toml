@@ -1,0 +1,27 @@
+# iglint configuration for the lab's Ignition project, the same in every lab
+# from Lab 03 on. iglint finds this file from the path it lints, so it works
+# from the lab folder and from the repo root alike.
+# Rules: https://iglint.mustrysolutions.com/
+
+# Opt-in rules on top of the defaults: naming conventions and brittle
+# `../` / getParent() navigation of the component tree.
+extend-select = ["NAME001", "VIEW018"]
+
+# Component min_length is 1: the station tiles use two-letter names (CO,
+# HT, ...) and the dense KPI/status tiles single-character leaf names (L, V,
+# U, S) by design.
+[rules.NAME001]
+per-type = { component = { convention = "PascalCase", min_length = 1, severity = "error" }, property = { convention = "camelCase", min_length = 1, severity = "warning" }, message_handler = { convention = "kebab-case", min_length = 2, severity = "warning" }, custom_method = { convention = "snake_case", min_length = 2, severity = "error" } }
+
+# The lab's clock ticks once a second; anything faster is a runaway poll.
+[rules.BIND004]
+severity = "error"
+minimum-interval = 1000
+
+[rules.VIEW018]
+severity = "error"
+
+# infrastructure.db's units_in_alarm() demonstrates a named query call; the
+# query itself is yours to define, so its absence is not a finding.
+[rules.REF004]
+exclude = ["projects/example-project/ignition/script-python/infrastructure/db/**"]

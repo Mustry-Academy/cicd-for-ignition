@@ -2,7 +2,7 @@
 # Seed Part 1's deliberately-broken state into the working tree.
 #
 # Run this once at the start of Part 1, then hunt the planted issues with the
-# linters (yamllint, shellcheck, actionlint, ign-lint, scripts/validate.sh). Every
+# linters (yamllint, shellcheck, actionlint, iglint, scripts/validate.sh). Every
 # planted issue is a mistake a real Ignition project picks up — a brittle binding,
 # a runaway poll rate, a hand-edited resource with broken JSON, and so on.
 #
@@ -37,7 +37,7 @@ s = s.replace('"$URL/data/api/v1/scan/$1"',
               '$URL/data/api/v1/scan/$1', 1)
 p.write_text(s)
 
-# 4 + 5 + 6. ign-lint — a brittle/dangling component reference, a runaway poll,
+# 4 + 5 + 6. iglint — a brittle/dangling component reference, a runaway poll,
 # and a mis-named component, all in the view
 view = pathlib.Path(
     "projects/lab-project/com.inductiveautomation.perspective/views/pages/overview/view.json")
@@ -45,15 +45,15 @@ s = view.read_text()
 # The Kiln tile's value used a clean runScript binding. Re-point it at a sibling
 # tile by a brittle *relative path* — to a component that no longer exists (someone
 # renamed "BagsPerMin" to "Bags"). This is the classic "renamed a component and
-# a binding silently broke" bug: it trips BOTH BadComponentReferenceRule (brittle '../'
-# traversal) AND ComponentReferenceValidationRule (the target doesn't resolve).
+# a binding silently broke" bug: it trips BOTH VIEW018 (brittle '../' traversal)
+# AND BIND005 (the target doesn't resolve).
 s = s.replace("runScript('lab.display.format_reading', 0, 162.0, '°C')",
-              "{../../BagsPerMin.Value.props.text}", 1)
-# The Clock polls four times a second instead of once — PollingIntervalRule.
+              "{../../BagsPerMin/Value.props.text}", 1)
+# The Clock polls four times a second instead of once — BIND004.
 s = s.replace("now(1000)", "now(250)", 1)
 # The Power KPI tile gets a snake_case rename — the classic "quick rename in the
-# Designer that ignores the naming standard". NamePatternRule wants PascalCase
-# components (severity: error in rule_config.json).
+# Designer that ignores the naming standard". NAME001 wants PascalCase
+# components (severity: error in iglint.toml).
 s = s.replace('"name": "Power"', '"name": "power_tile"', 1)
 view.write_text(s)
 
@@ -84,9 +84,9 @@ Seeded issues into the working tree:
   1. docker-compose.yml              — yamllint    (trailing whitespace)
   2. scripts/scan.sh                 — shellcheck  (SC2086, unquoted variable)
   3. .github/workflows/lab03-example.yml (repo root) — actionlint (deprecated actions/checkout@v2)
-  4. overview/view.json (Kiln)       — ign-lint    (brittle + dangling component reference)
-  5. overview/view.json (Clock)      — ign-lint    (poll faster than the 1000ms floor)
-  6. overview/view.json (Power tile) — ign-lint    (snake_case component name)
+  4. overview/view.json (Kiln)       — iglint      (brittle + dangling component reference)
+  5. overview/view.json (Clock)      — iglint      (poll faster than the 1000ms floor)
+  6. overview/view.json (Power tile) — iglint      (snake_case component name)
   7. project.json                    — validate.sh (malformed JSON: trailing comma)
 
 Find them with the linters. When you're done, reset to a clean tree with:

@@ -52,11 +52,19 @@ repos:
         files: ^labs/06-secrets-db-and-modules/.*resource\.json$
         pass_filenames: false
 
-  # Ignition-native linter for Perspective views (naming, polling, scripts...).
-  # The hook only fires on staged view.json files; --config points it at ours.
-  - repo: https://github.com/bw-design-group/ignition-lint
-    rev: v0.6.1
+  # iglint, the Ignition-native linter: views, scripts, expressions and the
+  # references between them, with the lab's iglint.toml. A staged project file
+  # lints the whole lab, so a rename that breaks another view is caught too.
+  # iglint is not on PyPI yet: pip takes its wheel from the GitHub release.
+  - repo: local
     hooks:
-      - id: ign-lint
-        files: ^labs/06-secrets-db-and-modules/.*view\.json$
-        args: ["--config=labs/06-secrets-db-and-modules/rule_config.json"]
+      - id: iglint
+        name: iglint
+        entry: iglint check labs/06-secrets-db-and-modules
+        language: python
+        additional_dependencies:
+          - "--find-links=https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0"
+          - "iglint==0.1.0"
+        files: ^labs/06-secrets-db-and-modules/.*\.(json|py)$
+        pass_filenames: false
+        require_serial: true

@@ -801,7 +801,7 @@ git push -u origin feature/add-sample-project</pre></div>
   <div class="body">
     <div class="work">
       <ol class="steps">
-        <li data-n="4">Open a PR <b>into <code>main</code></b>, base repository <code>&lt;you&gt;/cicd-for-ignition</code> (your fork). Watch <code>lab04-ci.yml</code> on <code>ubuntu-latest</code>: yamllint, actionlint, shellcheck, ign-lint, <code>docker compose config</code>, JSON validity, <code>.deployignore</code> syntax, the security-properties identity check.</li>
+        <li data-n="4">Open a PR <b>into <code>main</code></b>, base repository <code>&lt;you&gt;/cicd-for-ignition</code> (your fork). Watch <code>lab04-ci.yml</code> on <code>ubuntu-latest</code>: yamllint, actionlint, shellcheck, iglint, <code>docker compose config</code>, JSON validity, <code>.deployignore</code> syntax, the security-properties identity check.</li>
         <li data-n="5"><b>Merge.</b> <code>lab04-deploy.yml</code> fires (its <code>paths:</code> filter skips docs-only pushes). Watch <b>Ship</b> and <b>Trigger gateway scan</b>. The <b>first</b> deploy to a fresh gateway restarts it once; later ones scan hot.</li>
         <li data-n="6"><b>Verify at localhost:8089.</b> Platform → Projects lists <code>sample-project</code>; its view opens at <code>…/data/perspective/client/sample-project</code>; <i>RUN CONTROL V2</i> now shows live values.</li>
       </ol>

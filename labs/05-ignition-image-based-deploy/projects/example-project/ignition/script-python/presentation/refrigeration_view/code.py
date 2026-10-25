@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """presentation.refrigeration_view -- helpers a Perspective view calls.
 
 This layer adapts domain/application output into shapes the UI wants: formatted

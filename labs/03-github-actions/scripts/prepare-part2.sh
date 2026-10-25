@@ -92,9 +92,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # TODO (step 0): set up Python 3.12, then install the pinned tools
-      #                (pip install yamllint==1.35.1 ign-lint==0.6.1)
-      # TODO (step 0): run each linter: yamllint, actionlint, shellcheck, ign-lint
-      #                (ign-lint from the repo root, as in Part 1)
+      #                (pip install yamllint==1.35.1 iglint==0.1.0, with
+      #                --find-links to iglint's GitHub release, as in Part 1)
+      # TODO (step 0): run each linter: yamllint, actionlint, shellcheck, iglint
 
   validate:
     runs-on: ubuntu-latest

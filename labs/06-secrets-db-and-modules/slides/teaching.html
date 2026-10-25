@@ -1196,8 +1196,8 @@ docker restart lab06-gateway-local-development
       <ul class="checks">
         <li><b>Property binding:</b> a component property follows a path such as <code>view.custom.line</code>. <b>Bidirectional</b> lets an input write back into it.</li>
         <li><b>Script transform:</b> Jython that runs <b>on the gateway</b>, gets the bound <code>value</code> and returns what the property shows. Imports go <b>inside</b> it.</li>
-        <li class="no"><b>No sibling paths:</b> ign-lint rejects <code>../TextField.props.text</code>. Share state through a <b>view custom property</b>.</li>
-        <li class="no"><b>Warnings fail the lint job too:</b> keep custom property names plain, <code>line</code>, not <code>csvLine</code>.</li>
+        <li class="no"><b>No sibling paths:</b> iglint rejects <code>../TextField.props.text</code> (VIEW018). Share state through a <b>view custom property</b>.</li>
+        <li class="no"><b>Warnings fail the lint job too:</b> an <code>import</code> the transform never uses is enough.</li>
       </ul>
       <div class="code sm"><pre><span class="cm"># view.json, abridged: the label's binding</span>
 "custom": { "line": "" },

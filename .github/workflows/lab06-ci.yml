@@ -10,7 +10,7 @@
 # Purpose: catch the cheap stuff before a deploy gets near it. We DON'T spin
 # up Ignition here; that's left to the deploy workflow on its self-hosted
 # runner. The linters below mirror the ones Lab 03 introduced (yamllint,
-# actionlint, shellcheck, ign-lint) plus this lab's own JSON / .deployignore
+# actionlint, shellcheck, iglint) plus this lab's own JSON / .deployignore
 # checks, and they all run free on ubuntu-latest.
 
 name: Lab 06 · CI
@@ -53,7 +53,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python tools
-        run: pip install yamllint==1.35.1 ign-lint==0.6.1
+        # iglint is not on PyPI yet: its wheels come from the GitHub release.
+        run: >-
+          pip install yamllint==1.35.1 iglint==0.1.0
+          --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0
 
       - name: yamllint
         run: yamllint -c .yamllint.yml . ../../.github/workflows/lab06-*.yml
@@ -72,13 +75,10 @@ jobs:
           sudo apt-get install -y --no-install-recommends shellcheck
           shellcheck -x scripts/*.sh
 
-      - name: ignition-lint (Perspective views)
-        # From the repo root, like the pre-commit hook: rule_config.json
-        # names its pylint config with a repo-root-relative path.
-        working-directory: .
-        run: >-
-          ign-lint --config labs/06-secrets-db-and-modules/rule_config.json
-          --files "labs/06-secrets-db-and-modules/projects/**/view.json"
+      - name: iglint (Ignition project)
+        # Views, scripts, expressions and the references between them, with
+        # iglint.toml. Findings show up as annotations on the PR.
+        run: iglint check --output-format github .
 
       - name: docker compose config
         run: docker compose config -q

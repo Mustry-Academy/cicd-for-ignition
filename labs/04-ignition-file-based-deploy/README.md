@@ -57,7 +57,7 @@ Login to any of them with the credentials from `.env` (`GATEWAY_ADMIN_USERNAME_L
 
 > **Trial mode:** each gateway runs in 2-hour trial mode. Reset via *Platform → Licensing → Reset Trial* — unlimited and entirely legal for development. You'll do this **three times** if you keep all three gateways up long enough.
 
-> **Stuck?** See [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) for the common stack / runner / deploy failures and their fixes. Before opening a PR, run `scripts/validate.sh` (the quick JSON / `.deployignore` checks) and, if you have `pre-commit` installed, the yamllint / shellcheck / actionlint / ign-lint suite CI runs — it fires on every commit that touches this lab, or run it by hand from the repo root: `pre-commit run --all-files --config labs/04-ignition-file-based-deploy/.pre-commit-config.yaml`.
+> **Stuck?** See [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) for the common stack / runner / deploy failures and their fixes. Before opening a PR, run `scripts/validate.sh` (the quick JSON / `.deployignore` checks) and, if you have `pre-commit` installed, the yamllint / shellcheck / actionlint / iglint suite CI runs — it fires on every commit that touches this lab, or run it by hand from the repo root: `pre-commit run --all-files --config labs/04-ignition-file-based-deploy/.pre-commit-config.yaml`.
 
 ## Lab structure
 
@@ -80,9 +80,7 @@ labs/04-ignition-file-based-deploy/
 ├── .pre-commit-config.yaml             ← local git hooks: the same linters CI runs (carried from Lab 03)
 ├── .yamllint.yml                       ← yamllint config
 ├── .shellcheckrc                       ← lets shellcheck resolve the sourced scripts/lib.sh
-├── rule_config.json                    ← ign-lint (Perspective view) rules
-├── .config/
-│   └── .ignition-pylintrc              ← pylint config ign-lint uses for scripts inside views
+├── iglint.toml                         ← iglint (Ignition project) rules
 ├── .github/
 │   └── actionlint.yaml                 ← declares the self-hosted `lab04` runner label
 ├── exercises/

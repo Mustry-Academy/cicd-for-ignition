@@ -518,9 +518,9 @@ a{color:var(--primary-deep)}
 .trio .where.repo{color:hsl(var(--chart-4-light));background:hsl(var(--chart-4-light) / .12)}
 .trio .ex{font-family:var(--font-mono);font-size:var(--text-base);color:var(--ink);border-top:1px solid var(--line-2);padding-top:.6rem}
 
-/* ign-lint rule rows */
+/* iglint rule rows */
 .rules{display:flex;flex-direction:column}
-.rules>div{display:grid;grid-template-columns:19.5rem 1fr;gap:1.25rem;align-items:baseline;padding:.6rem 0;border-bottom:1px solid var(--line-2)}
+.rules>div{display:grid;grid-template-columns:9rem 1fr;gap:1.25rem;align-items:baseline;padding:.6rem 0;border-bottom:1px solid var(--line-2)}
 .rules>div:first-child{border-top:1px solid var(--line-2)}
 .rules code{font-size:var(--text-base);font-weight:600;color:var(--primary-deep);background:none;padding:0}
 .rules>div>span{font-size:var(--text-base);color:var(--muted);line-height:1.4}
@@ -700,7 +700,7 @@ a{color:var(--primary-deep)}
         <span class="ana">Spellchecker: <b>the spellchecker</b></span>
         <p>You <b>install it once</b>, like <code>git</code> or <code>python</code>. You run it; you never edit it.</p>
         <span class="where">on your machine</span>
-        <span class="ex">ign-lint · shellcheck · yamllint</span>
+        <span class="ex">iglint · shellcheck · yamllint</span>
       </div>
       <div>
         <span class="k">2 · The files</span>
@@ -716,7 +716,7 @@ a{color:var(--primary-deep)}
         <span class="ana">Spellchecker: <b>your dictionary</b></span>
         <p>One small file: the <b>team's agreement</b> on which rules to enforce and how strict.</p>
         <span class="where repo">in the repo: rules travel with the code</span>
-        <span class="ex">rule_config.json · .yamllint.yml</span>
+        <span class="ex">iglint.toml · .yamllint.yml</span>
       </div>
     </div>
   </div>
@@ -732,7 +732,7 @@ a{color:var(--primary-deep)}
       <tr><td><code>yamllint</code></td><td><code>docker-compose.yml</code> · workflows · <code>.yamllint.yml</code></td><td>YAML syntax and style: trailing spaces, <b>truthy</b> surprises (<code>on:</code>), indentation</td></tr>
       <tr><td><code>shellcheck</code></td><td><code>scripts/*.sh</code></td><td>Nearly every shell bug ever made, like <b>SC2086</b>: an unquoted <code>$VAR</code></td></tr>
       <tr><td><code>actionlint</code></td><td><code>.github/workflows/*.yml</code></td><td>Workflow correctness: syntax, <b>expression typing</b>, stale runners and actions</td></tr>
-      <tr><td><code>ign-lint</code></td><td><code>projects/**/view.json</code></td><td><b>Ignition-native</b>: naming, poll rates, brittle references, embedded Python</td></tr>
+      <tr><td><code>iglint</code></td><td>everything under <code>projects/</code></td><td><b>Ignition-native</b>: naming, poll rates, brittle references, Jython in views and scripts</td></tr>
       <tr><td><code>scripts/validate.sh</code></td><td>every <code>*.json</code> and <code>code.py</code> under <code>projects/</code></td><td>The <b>green/red PR signal</b>: valid JSON, parseable Python. Exit 0 green, 1 red</td></tr>
       <tr><td><code>docker compose config -q</code></td><td><code>docker-compose.yml</code></td><td>Compose <b>schema</b>: undefined services, port-string typos, malformed env maps</td></tr>
     </table>
@@ -755,39 +755,37 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 <span class="cm"># both: the same Python 3.12 as CI</span>
 uv venv --python 3.12 .venv &amp;&amp; source .venv/bin/activate
-uv pip install yamllint==1.35.1 ign-lint==0.6.1</pre></div>
+uv pip install yamllint==1.35.1 iglint==0.1.0 \
+  --find-links <span class="cmd2">…/iglint/releases/expanded_assets/v0.1.0</span>
+<span class="cm"># iglint's wheels: its GitHub release (full URL in the assignment)</span></pre></div>
       <div class="code"><div class="code-title">Run every check</div><pre>yamllint -c .yamllint.yml .
 shellcheck scripts/*.sh
 actionlint -config-file .github/actionlint.yaml \
   ../../.github/workflows/lab03-*.yml
 
-<span class="cm"># ign-lint runs from the repo root;</span>
-<span class="cm"># the subshell keeps your terminal in the lab folder</span>
-(cd ../.. &amp;&amp; ign-lint \
-  --config labs/03-github-actions/rule_config.json \
-  --files <span class="cmd2">"labs/03-github-actions/projects/**/view.json"</span>)
+iglint check .
 
 scripts/validate.sh</pre></div>
     </div>
   </div>
 </section>
 
-<!-- IGN-LINT RULES -->
+<!-- IGLINT RULES -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">05</span><h2 class="title"><code>ign-lint</code>: the linter that reads a Perspective view</h2></div>
+  <div class="sechead"><span class="num">05</span><h2 class="title"><code>iglint</code>: the linter that reads a Perspective view</h2></div>
   <div class="body">
     <ol class="flow nonum">
       <li><b><code>view.json</code></b><span>every Perspective view under <code>projects/</code></span></li>
-      <li class="on"><b><code>ign-lint</code></b><span>walks the component tree and the Python inside it</span></li>
-      <li><b>Findings</b><span>per rule in <code>rule_config.json</code>, no running gateway needed</span></li>
+      <li class="on"><b><code>iglint</code></b><span>walks the component tree, its expressions and the Python inside it</span></li>
+      <li><b>Findings</b><span>per rule in <code>iglint.toml</code>, no running gateway needed</span></li>
     </ol>
     <div class="rules" style="margin-top:1.5rem">
-      <div><code>NamePatternRule</code><span>components PascalCase<span class="sev err">error</span> · properties camelCase<span class="sev wrn">warn</span> · handlers kebab-case<span class="sev wrn">warn</span> · methods snake_case<span class="sev err">error</span></span></div>
-      <div><code>PollingIntervalRule</code><span>a floor on binding poll rates, <b>1000&nbsp;ms</b> in this lab: <code>now(250)</code> is a finding</span></div>
-      <div><code>BadComponentReferenceRule</code><span>brittle traversal: <code>.getSibling()</code>, <code>.getParent()</code>, relative paths<span class="sev err">error</span></span></div>
-      <div><code>ComponentReferenceValidationRule</code><span>do relative references <b>actually resolve</b>? Checks expressions, bindings, scripts</span></div>
-      <div><code>PylintScriptRule</code><span>pylint over the Python <b>inside views</b>, with the lab's <code>.config/.ignition-pylintrc</code></span></div>
+      <div><code>NAME001</code><span>components PascalCase<span class="sev err">error</span> · properties camelCase<span class="sev wrn">warn</span> · handlers kebab-case<span class="sev wrn">warn</span> · methods snake_case<span class="sev err">error</span></span></div>
+      <div><code>BIND004</code><span>a floor on binding poll rates, <b>1000&nbsp;ms</b> in this lab: <code>now(250)</code> is a finding<span class="sev err">error</span></span></div>
+      <div><code>VIEW018</code><span>brittle traversal: <code>.getSibling()</code>, <code>.getParent()</code>, relative paths<span class="sev err">error</span></span></div>
+      <div><code>BIND005</code><span>do references <b>actually resolve</b>? Checks expressions and property bindings</span></div>
+      <div><code>SCR…</code><span>the Python <b>inside views</b> and in the script library, parsed as <b>Jython 2.7</b> like the gateway does</span></div>
     </div>
   </div>
 </section>
@@ -795,7 +793,7 @@ scripts/validate.sh</pre></div>
 <!-- BROKEN BINDING (build) -->
 <section class="slide" data-ctrl="binding">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">06</span><h2 class="title">A broken binding the gateway never reports, caught by <code>ign-lint</code></h2></div>
+  <div class="sechead"><span class="num">06</span><h2 class="title">A broken binding the gateway never reports, caught by <code>iglint</code></h2></div>
   <div class="body">
     <div class="split" style="align-items:start">
       <div class="hmi" id="hmi">
@@ -810,9 +808,9 @@ scripts/validate.sh</pre></div>
       </div>
       <div class="finds">
         <div class="find edit reveal" id="f-edit"><div class="fr">the edit</div><p>Kiln now points at a <b>sibling tile by relative path</b>, and someone renames <code>BagsPerMin</code> to <code>Bags</code>. The view still loads; the tile goes <b>quietly blank</b>.</p></div>
-        <div class="find reveal" id="f-ref"><div class="fr">BadComponentReferenceRule · error</div><p><code>../../</code> traversal ties the binding to the view's <b>structure</b>: reorganise the tree and it breaks.</p></div>
-        <div class="find reveal" id="f-res"><div class="fr">ComponentReferenceValidationRule · error</div><p><code>BagsPerMin</code> doesn't resolve: there is <b>no such component</b> anymore.</p></div>
-        <div class="find reveal" id="f-poll"><div class="fr">PollingIntervalRule · error</div><p>The Clock polls at <code>now(250)</code>, 4 times a second, under the 1000&nbsp;ms floor. Multiply by every open session.</p></div>
+        <div class="find reveal" id="f-ref"><div class="fr">VIEW018 · error</div><p><code>../../</code> traversal ties the binding to the view's <b>structure</b>: reorganise the tree and it breaks.</p></div>
+        <div class="find reveal" id="f-res"><div class="fr">BIND005 · error</div><p><code>BagsPerMin</code> doesn't resolve: there is <b>no such component</b> anymore.</p></div>
+        <div class="find reveal" id="f-poll"><div class="fr">BIND004 · error</div><p>The Clock polls at <code>now(250)</code>, 4 times a second, under the 1000&nbsp;ms floor. Multiply by every open session.</p></div>
       </div>
     </div>
   </div>
@@ -857,12 +855,15 @@ scripts/validate.sh
     <div class="cols2" style="margin-top:1rem">
       <div class="code"><pre><span class="cm"># .pre-commit-config.yaml (ships in the lab)</span>
 repos:
-  - repo: https://github.com/bw-design-group/ignition-lint
-    rev: v0.6.1                <span class="cm"># pinned, like pip</span>
+  - repo: local
     hooks:
-      - id: ign-lint
-        files: <span class="cmd2">^labs/03-github-actions/.*view\.json$</span>
-  <span class="cm"># + yamllint, shellcheck, actionlint the same way</span></pre></div>
+      - id: iglint
+        entry: iglint check labs/03-github-actions
+        language: python
+        additional_dependencies:  <span class="cm"># pinned, like pip</span>
+          [<span class="cmd2">"--find-links=…"</span>, <span class="cmd2">"iglint==0.1.0"</span>]
+        files: <span class="cmd2">^labs/03-github-actions/.*\.(json|py)$</span>
+  <span class="cm"># + yamllint, shellcheck, actionlint, pinned by rev:</span></pre></div>
       <div class="code"><pre><span class="cm"># install the tool; there is no `pre-commit install`</span>
 uv pip install pre-commit
 git config core.hooksPath     <span class="cm"># → scripts/git-hooks</span>
@@ -888,7 +889,7 @@ git commit --no-verify -am <span class="cmd2">"..."</span></pre></div>
   <div class="body">
     <div class="shape">
       <div class="h"></div><div class="h">Trigger</div><div class="h">Steps</div><div class="h">Pass or fail</div>
-      <div class="k">By hand<small>Chapter 1</small></div><div>you, typing</div><div><code>scripts/validate.sh</code>, <code>ign-lint …</code></div><div>the exit code</div>
+      <div class="k">By hand<small>Chapter 1</small></div><div>you, typing</div><div><code>scripts/validate.sh</code>, <code>iglint check .</code></div><div>the exit code</div>
       <div class="k ci">In CI<small>lab03-ci.yml</small></div><div class="ci"><b>a pull request</b></div><div class="ci">the same commands, as <code>run:</code> steps</div><div class="ci">a check on the PR</div>
       <div class="k">Deploy<small>Lab 04</small></div><div>a push to <code>main</code></div><div>ship files to a gateway, then scan</div><div>the deploy job</div>
     </div>
@@ -907,8 +908,8 @@ git commit --no-verify -am <span class="cmd2">"..."</span></pre></div>
           <div class="job-h"><b>job: lint</b><span>runs-on: ubuntu-latest</span></div>
           <div class="stp uses reveal" data-step="2"><span>actions/checkout@v7</span><span class="k">uses: an action</span></div>
           <div class="stp uses reveal" data-step="2"><span>actions/setup-python@v7 · "3.12"</span><span class="k">uses</span></div>
-          <div class="stp run reveal" data-step="2"><span>pip install yamllint==1.35.1 ign-lint==0.6.1</span><span class="k">run: shell</span></div>
-          <div class="stp run reveal" data-step="2"><span>yamllint · actionlint · shellcheck · ign-lint</span><span class="k">run</span></div>
+          <div class="stp run reveal" data-step="2"><span>pip install yamllint==1.35.1 iglint==0.1.0</span><span class="k">run: shell</span></div>
+          <div class="stp run reveal" data-step="2"><span>yamllint · actionlint · shellcheck · iglint</span><span class="k">run</span></div>
           <div class="stp run reveal" data-step="2"><span>docker compose config -q</span><span class="k">run</span></div>
         </div>
         <div class="job reveal" data-step="1">
@@ -959,8 +960,7 @@ on:
       - <span class="cmd2">"labs/03-github-actions/docker-compose.yml"</span>
       - <span class="cmd2">".github/workflows/lab03-*.yml"</span>
       - <span class="cmd2">"labs/03-github-actions/.yamllint.yml"</span>
-      - <span class="cmd2">"labs/03-github-actions/rule_config.json"</span>
-      - <span class="cmd2">"labs/03-github-actions/.config/**"</span>
+      - <span class="cmd2">"labs/03-github-actions/iglint.toml"</span>
       - <span class="cmd2">"labs/03-github-actions/.github/**"</span>
   push:
     branches: [main]
@@ -1003,12 +1003,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: <span class="cmd2">"3.12"</span>   <span class="cm"># quoted, same as your venv</span>
-      - run: pip install yamllint==1.35.1 ign-lint==0.6.1
+      - run: pip install yamllint==1.35.1 iglint==0.1.0 --find-links …
       - run: yamllint -c .yamllint.yml . ../../.github/workflows/lab03-*.yml
       - uses: raven-actions/actionlint@v2   <span class="cm"># + with: lab03-*.yml</span>
       - run: shellcheck scripts/*.sh        <span class="cm"># apt-get install first</span>
-      - working-directory: .                <span class="cm"># repo root</span>
-        run: ign-lint --config labs/03-…/rule_config.json …
+      - run: iglint check --output-format github .  <span class="cm"># PR annotations</span>
       - run: docker compose config -q
   validate:
     runs-on: ubuntu-latest
@@ -1137,8 +1136,7 @@ on:
       - <span class="cmd2">"!labs/03-github-actions/scripts/**"</span>    <span class="cm"># lab03-ci.yml checks</span>
       - <span class="cmd2">"!labs/03-github-actions/docker-compose.yml"</span>
       - <span class="cmd2">"!labs/03-github-actions/.yamllint.yml"</span>
-      - <span class="cmd2">"!labs/03-github-actions/rule_config.json"</span>
-      - <span class="cmd2">"!labs/03-github-actions/.config/**"</span>
+      - <span class="cmd2">"!labs/03-github-actions/iglint.toml"</span>
       - <span class="cmd2">"!labs/03-github-actions/.github/**"</span>
 permissions: {}
 jobs:
@@ -1652,13 +1650,13 @@ docker rm -f lab03-runner</pre></div>
   const refs = [slide.querySelector('#f-ref'), slide.querySelector('#f-res')];
   const poll = slide.querySelector('#f-poll');
   const CLEAN = 'Kiln.value: <span class="ok">runScript(\'lab.display.format_reading\', 0, 162.0, \'°C\')</span>';
-  const BROKEN = 'Kiln.value: <span class="no">{../../BagsPerMin.Value.props.text}</span> <span class="cm"># renamed to Bags</span>';
+  const BROKEN = 'Kiln.value: <span class="no">{../../BagsPerMin/Value.props.text}</span> <span class="cm"># renamed to Bags</span>';
   const notes = [
     'A healthy view: Kiln gets its value from a clean <b>runScript data binding</b>.',
     'The component names: <b>Bags, Kiln, Load, Power</b>, plus a Clock polling <b>now(1000)</b>.',
     'The edit lands. The view <b>still loads</b> and the gateway raises no error; a reviewer skimming the diff would likely miss it too.',
-    '<b>ign-lint catches it twice</b>, statically, in seconds, without a gateway.',
-    'And <b>now(250)</b> trips PollingIntervalRule. <code>scripts/seed.sh</code> plants all of this, and more, for you.'
+    '<b>iglint catches it twice</b>, statically, in milliseconds, without a gateway.',
+    'And <b>now(250)</b> trips BIND004. <code>scripts/seed.sh</code> plants all of this, and more, for you.'
   ];
   deckKit.controller('binding', { max: 4, render(s, api) {
     const broken = s >= 2;

@@ -474,9 +474,9 @@ Branch before the first edit, so every Part 1 change lands on the feature branch
 
   1. **Prove the gap first.** In any lab project, add a view with a **Text
      Field** and a **Label** next to it, wired through a view custom
-     property (this is the shape `lab06-ci.yml`'s ign-lint accepts; a
+     property (this is the shape `lab06-ci.yml`'s iglint accepts; a
      binding that reaches a sibling with `../TextField` fails its
-     BadComponentReferenceRule):
+     VIEW018 fragile-component-reference rule):
      - add a custom property `line` on the view (`view.custom.line`, a
        string);
      - bind the text field's `props.text` to `view.custom.line` with a

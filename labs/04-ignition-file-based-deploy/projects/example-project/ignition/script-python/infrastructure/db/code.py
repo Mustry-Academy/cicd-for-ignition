@@ -56,8 +56,8 @@ def units_in_alarm():
     the project and the binding stays in the Designer, the call stays here.
     """
     try:
-        return system.db.runNamedQuery("Refrigeration/UnitsInAlarm", {})
+        return system.db.execQuery("Refrigeration/UnitsInAlarm", {})
     except Exception:
         logger.warn("named query Refrigeration/UnitsInAlarm not found; "
                     "returning empty result")
-        return system.dataset.toDataSet([], [])
+        return system.dataset.toDataset([], [])

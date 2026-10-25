@@ -9,7 +9,7 @@
 #   4. security-properties doesn't name a throwaway temp_N identity.
 #   5. actionlint passes on this lab's workflows, .github/workflows/lab05-*.yml
 #      at the repo root.
-#   6. yamllint, shellcheck and ign-lint pass, and `docker compose config`
+#   6. yamllint, shellcheck and iglint pass, and `docker compose config`
 #      accepts the compose file.
 # Linters that aren't installed are skipped with a note (CI always runs them
 # all), so a green run here means "everything you have installed passed".
@@ -117,7 +117,7 @@ else
   echo -e "  ${YELLOW}skipped${NC} — actionlint not installed (CI runs it; install from https://github.com/rhysd/actionlint to check locally)"
 fi
 
-# 6. yamllint, shellcheck, ign-lint, compose config (each optional) -----------
+# 6. yamllint, shellcheck, iglint, compose config (each optional) -------------
 # Same invocations as lab05-ci.yml's lint job.
 run_optional() {
   local label="$1" tool="$2" hint="$3"; shift 3
@@ -138,15 +138,9 @@ run_optional "yamllint" yamllint "uv pip install yamllint" \
   yamllint -c .yamllint.yml . "$repo_root"/.github/workflows/lab05-*.yml
 run_optional "shellcheck (scripts/*.sh)" shellcheck "install shellcheck from your package manager" \
   shellcheck -x scripts/*.sh
-# ign-lint runs from the repo root, like CI: rule_config.json names its pylint
-# config with a repo-root-relative path.
-lab_rel="${PROJECT_ROOT#"$repo_root"/}"
-# shellcheck disable=SC2329,SC2317  # invoked through run_optional
-ign_lint_views() {
-  (cd "$repo_root" && ign-lint --config "$lab_rel/rule_config.json" --files "$lab_rel/projects/**/view.json")
-}
-run_optional "ign-lint (Perspective views)" ign-lint "uv pip install ign-lint==0.6.1" \
-  ign_lint_views
+run_optional "iglint (Ignition project)" iglint \
+  "uv pip install iglint==0.1.0 --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0" \
+  iglint check .
 run_optional "docker compose config" docker "install Docker with Compose v2" \
   docker compose config -q
 

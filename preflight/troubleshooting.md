@@ -166,9 +166,9 @@ Use the email attached to your GitHub account so commits are attributed to you o
 
 ## "python3 … is too old", "uv not found" or "cannot create a virtual environment"
 
-Lab 02–07 scripts use `python3` (3.10+). Lab 03 installs its linters (`ign-lint`, `yamllint`) into a
-Python 3.12 virtual environment, the same Python version CI uses, created with `uv`. ign-lint
-doesn't support Python 3.14 yet (Ubuntu 26.04's `python3`), so `uv` downloads 3.12 when needed.
+Lab 02–07 scripts use `python3` (3.10+). Lab 03 installs its linters (`iglint`, `yamllint`) into a
+Python 3.12 virtual environment, the same Python version CI uses, created with `uv`, which
+downloads 3.12 when needed (Ubuntu 26.04's `python3` is 3.14).
 
 - **Install uv on Ubuntu / WSL:** `curl -LsSf https://astral.sh/uv/install.sh | sh`, then open a new terminal.
 - **Install uv on macOS:** `brew install uv`.

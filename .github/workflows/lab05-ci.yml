@@ -15,7 +15,7 @@
 # here runs on ubuntu-latest (free, no self-hosted runner). Pushing and
 # promoting the image lives in deploy.yml / release.yml; recreating a gateway
 # from it is done by hand in this lab. The linters mirror the ones Lab 03 introduced
-# (yamllint, actionlint, shellcheck, ign-lint) plus this lab's own JSON /
+# (yamllint, actionlint, shellcheck, iglint) plus this lab's own JSON /
 # .dockerignore checks.
 #
 # The one image-specific addition vs a file-based lab: the `build` job actually
@@ -61,7 +61,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python tools
-        run: pip install yamllint==1.35.1 ign-lint==0.6.1
+        # iglint is not on PyPI yet: its wheels come from the GitHub release.
+        run: >-
+          pip install yamllint==1.35.1 iglint==0.1.0
+          --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0
 
       - name: yamllint
         run: yamllint -c .yamllint.yml . ../../.github/workflows/lab05-*.yml
@@ -78,13 +81,10 @@ jobs:
           sudo apt-get install -y --no-install-recommends shellcheck
           shellcheck -x scripts/*.sh
 
-      - name: ignition-lint (Perspective views)
-        # From the repo root, like the pre-commit hook: rule_config.json
-        # names its pylint config with a repo-root-relative path.
-        working-directory: .
-        run: >-
-          ign-lint --config labs/05-ignition-image-based-deploy/rule_config.json
-          --files "labs/05-ignition-image-based-deploy/projects/**/view.json"
+      - name: iglint (Ignition project)
+        # Views, scripts, expressions and the references between them, with
+        # iglint.toml. Findings show up as annotations on the PR.
+        run: iglint check --output-format github .
 
       - name: docker compose config
         run: docker compose config -q

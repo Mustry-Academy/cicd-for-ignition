@@ -528,7 +528,7 @@ fi
 
 # --- Python (required) -----------------------------------------------------
 # Lab 02–07 scripts hard-exit without python3, and Lab 03 installs its linters
-# (ign-lint needs ≥ 3.10) into a venv. Ubuntu/WSL ships python3 WITHOUT the
+# (iglint, yamllint) into a venv. Ubuntu/WSL ships python3 WITHOUT the
 # venv module, so we actually create one rather than trusting `command -v`.
 section "Python"
 
@@ -585,7 +585,7 @@ if command -v python3 >/dev/null 2>&1; then
       fi
       log_missing "$REQUIRED" "python3 → $PY_PATH ($PY_VERSION), but Python $NEWER_VERSION is installed at $NEWER_PATH" "$PY_FIX. Don't use an alias: the lab scripts won't see it"
     else
-      log_missing "$REQUIRED" "python3 $PY_VERSION ($PY_PATH) is too old (Lab 03's ign-lint needs ≥ 3.10)" "Ubuntu 22.04+ ships a new enough Python; on macOS: brew install python"
+      log_missing "$REQUIRED" "python3 $PY_VERSION ($PY_PATH) is too old (the lab scripts need ≥ 3.10)" "Ubuntu 22.04+ ships a new enough Python; on macOS: brew install python"
     fi
   fi
   VENV_TMP="$(mktemp -d 2>/dev/null || echo "${TMPDIR:-/tmp}/preflight-venv-$$")"
@@ -600,8 +600,8 @@ else
 fi
 
 # Lab 03 runs its linters in a Python 3.12 venv, the same version as CI.
-# ign-lint doesn't support 3.14 (Ubuntu 26.04's python3), so uv creates the
-# venv and downloads Python 3.12 when the machine has none. Doing it here also
+# uv creates the venv and downloads Python 3.12 when the machine has none
+# (Ubuntu 26.04's python3 is 3.14). Doing it here also
 # caches that Python before Day 1.
 UV_FIX="macOS: brew install uv. Ubuntu/WSL: curl -LsSf https://astral.sh/uv/install.sh | sh, then open a new terminal"
 if command -v uv >/dev/null 2>&1; then

@@ -17,8 +17,6 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# ign-lint scratch output (rule_config.json points debug_dir here)
-.ignition-lint/
 
 # Certificates and security
 **/certificates/

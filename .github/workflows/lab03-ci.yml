@@ -12,8 +12,7 @@ on:
       - "labs/03-github-actions/docker-compose.yml"
       - ".github/workflows/lab03-*.yml"
       - "labs/03-github-actions/.yamllint.yml"
-      - "labs/03-github-actions/rule_config.json"
-      - "labs/03-github-actions/.config/**"
+      - "labs/03-github-actions/iglint.toml"
       - "labs/03-github-actions/.github/**"
   push:
     branches: [main]
@@ -51,7 +50,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python tools
-        run: pip install yamllint==1.35.1 ign-lint==0.6.1
+        # iglint is not on PyPI yet: its wheels come from the GitHub release.
+        run: >-
+          pip install yamllint==1.35.1 iglint==0.1.0
+          --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0
 
       - name: yamllint
         run: yamllint -c .yamllint.yml . ../../.github/workflows/lab03-*.yml
@@ -70,13 +72,10 @@ jobs:
       - name: shellcheck
         run: shellcheck scripts/*.sh
 
-      - name: ignition-lint (Perspective views)
-        # From the repo root, like the pre-commit hook: rule_config.json
-        # names its pylint config with a repo-root-relative path.
-        working-directory: .
-        run: >-
-          ign-lint --config labs/03-github-actions/rule_config.json
-          --files "labs/03-github-actions/projects/**/view.json"
+      - name: iglint (Ignition project)
+        # Views, scripts, expressions and the references between them, with
+        # iglint.toml. Findings show up as annotations on the PR.
+        run: iglint check --output-format github .
 
       - name: docker compose config
         run: docker compose config -q

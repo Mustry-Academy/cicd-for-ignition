@@ -110,7 +110,7 @@ Thumbs.db
 # Lint and editor config: used by CI and your editor, never by the gateway
 .yamllint.yml
 .shellcheckrc
-rule_config.json
-.config/
+iglint.toml
+.iglint_cache/
 flint.config.json
 .flint/

@@ -21,8 +21,6 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# ign-lint scratch output (rule_config.json points debug_dir here)
-.ignition-lint/
 
 # Ignition gateway-generated artifacts (regenerated on boot/scan — never commit).
 # The gateway writes these into the bind-mounted projects/ directory.

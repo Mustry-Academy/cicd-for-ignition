@@ -12,8 +12,8 @@
 #   4. security-properties doesn't name a throwaway temp_N identity.
 # Runs when the tool is installed, the `lint` job (skipped with a hint
 # otherwise; CI always runs them):
-#   5. ign-lint on every Perspective view.json, with rule_config.json (run
-#      from the repo root, like CI; uv pip install ign-lint==0.6.1).
+#   5. iglint on the lab's Ignition projects and gateway config, with
+#      iglint.toml (see the install hint below).
 #   6. yamllint, shellcheck and actionlint, as in CI.
 #   7. docker compose config -q.
 #
@@ -141,21 +141,19 @@ else
   echo -e "  ${YELLOW}skipped${NC} — $secprops not found"
 fi
 
-# 5. ign-lint (optional) -------------------------------------------------------
-# Same command as the lint job, from the repo root (rule_config.json names its
-# pylint config repo-root-relative). ign-lint exits non-zero on warnings too,
-# so a view that CI rejects fails here first.
+# 5. iglint (optional) ---------------------------------------------------------
+# Same command as the lint job. iglint exits non-zero on warnings too, so a
+# project that CI rejects fails here first.
 repo_root="$(git rev-parse --show-toplevel)"
-lab_rel="${PROJECT_ROOT#"$repo_root"/}"
-echo "→ ign-lint (projects/**/view.json)"
-if command -v ign-lint > /dev/null 2>&1; then
-  if (cd "$repo_root" && ign-lint --config "$lab_rel/rule_config.json" --files "$lab_rel/projects/**/view.json"); then
+echo "→ iglint (projects/ and services/)"
+if command -v iglint > /dev/null 2>&1; then
+  if iglint check .; then
     echo -e "  ${GREEN}ok${NC}"
   else
     rc=1
   fi
 else
-  echo -e "  ${YELLOW}skipped${NC}: ign-lint not installed (CI runs it; uv pip install ign-lint==0.6.1 in your Lab 03 venv)"
+  echo -e "  ${YELLOW}skipped${NC}: iglint not installed (CI runs it; in your Lab 03 venv: uv pip install iglint==0.1.0 --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0)"
 fi
 
 # 6. yamllint + shellcheck (optional) -----------------------------------------

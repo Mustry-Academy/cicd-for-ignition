@@ -43,12 +43,12 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# ign-lint scratch output (rule_config.json points debug_dir here)
-.ignition-lint/
 
 
 # Database files
 **/db/
+# ...but not a project's `db` script package (infrastructure.db)
+!projects/*/ignition/script-python/**/db/
 **/metricsdb/
 **/autobackup/
 **/datacache/

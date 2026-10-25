@@ -11,7 +11,7 @@ around the files this lab tracks: YAML, workflows, shell scripts and Perspective
 | **yamllint** | YAML syntax and style issues (`docker-compose.yml`, workflows, `.yamllint.yml`) | ms | local + CI |
 | **actionlint** | GitHub Actions workflow correctness (syntax, expression typing) | ms | local + CI |
 | **shellcheck** | Bash scripting bugs in `scripts/*.sh` | ms | local + CI |
-| **ign-lint** | Ignition-native static analysis of Perspective `view.json` files and embedded scripts | seconds | local + CI |
+| **iglint** | Ignition-native static analysis of the whole project: Perspective views, Jython scripts, expressions and the references between them | ms | local + CI |
 
 Plus two validators that aren't really linters:
 
@@ -26,45 +26,53 @@ Plus two validators that aren't really linters:
 `scripts/validate.sh`. Cheap, fast, hard to argue with.
 
 **2. Likely bug.** It parses, but the pattern is risky: `shellcheck` flagging an unquoted
-`$VAR`, or `ign-lint` flagging a component reached via brittle `.getParent().getChild(...)`
+`$VAR`, or `iglint` flagging a component reached via brittle `.getParent().getChild(...)`
 traversal. It works today and breaks the moment someone renames or reorders something.
 
-**3. Style.** Is it consistent? Some `yamllint` rules (line length) and `ign-lint`'s naming
+**3. Style.** Is it consistent? Some `yamllint` rules (line length) and `iglint`'s naming
 conventions (PascalCase components, camelCase properties). Tune or disable rules *as long
 as the team agrees*, and check the config in so the agreement is enforced.
 
-## ign-lint: the Ignition-native linter
+## iglint: the Ignition-native linter
 
-`ign-lint` statically analyzes Perspective `view.json` files, and the Python scripts
-embedded inside them, **without a running gateway**.
+`iglint` statically analyzes an Ignition 8.3 project the way the gateway stores it on
+disk, **without a running gateway**: Perspective views (components, bindings, transforms,
+events), the Jython 2.7 scripts everywhere they live (also inside `view.json`),
+expressions, and the references between them (views, named queries, library functions,
+message types). Every finding points at an exact line and column, also inside a script
+or expression embedded in JSON.
 
-- **PyPI package:** `ign-lint` (v0.6.1, pinned)
-- **Install:** `uv pip install ign-lint==0.6.1` in the Python 3.12 venv (the lab and CI run it on Python 3.12)
-- **Run (from the repo root):** `ign-lint --config labs/03-github-actions/rule_config.json --files "labs/03-github-actions/projects/**/view.json"`
-- **Repo:** <https://github.com/bw-design-group/ignition-lint>
-- **Docs:** <https://bw-design-group.github.io/ignition-lint>
+- **Package:** `iglint` (v0.1.0, pinned). Not on PyPI yet: the wheels are attached to the
+  GitHub release, so pip and uv take them from there with `--find-links`.
+- **Install:** `uv pip install iglint==0.1.0 --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0`
+  in the Python 3.12 venv (CI installs it the same way)
+- **Run (from the lab folder):** `iglint check .` (it finds `iglint.toml` from the path it
+  lints, so `iglint check labs/03-github-actions` from the repo root works too)
+- **Explain a rule:** `iglint rule BIND004`; list them all with `iglint rules`
+- **Repo:** <https://github.com/Mustry-Solutions/iglint>
+- **Docs:** <https://iglint.mustrysolutions.com/>
 
-It's configured by the lab's `rule_config.json`, tuned so the clean `lab-project` passes
-with zero findings. Every later lab uses the same rules and the same pylint config.
+It's configured by the lab's `iglint.toml`, tuned so the clean `lab-project` passes with
+zero findings. Every later lab uses the same rules. On top of iglint's default rule set
+(syntax errors, undefined names, unknown `system.*` functions, references that resolve
+nowhere, ...) it turns on two opt-in rules and tightens one:
 
-- **NamePatternRule:** naming conventions per node type: components `PascalCase`,
+- **NAME001 (name-pattern):** naming conventions per node type: components `PascalCase`,
   properties `camelCase`, message handlers `kebab-case`, custom methods `snake_case`. In
   this lab, component and custom-method violations are `error`; property and
   message-handler violations are `warning`.
-- **PollingIntervalRule:** flags `now()` / expression polling faster than a minimum,
-  **1000 ms** in this lab.
-- **PylintScriptRule:** runs pylint over the Python scripts embedded in views, with the
-  lab's `.config/.ignition-pylintrc` (ign-lint's bundled config with
-  `import-outside-toplevel` switched off). `rule_config.json` names that file
-  repo-root-relative, so CI, the pre-commit hook and your own runs all start ign-lint from
-  the repo root.
-- **BadComponentReferenceRule:** brittle traversal like `.getSibling()`, `.getParent()` and
-  other relative walking that breaks when the component tree is edited.
-- **ComponentReferenceValidationRule:** relative references that don't resolve to a real
-  component (expressions, property bindings and scripts).
-- **UnusedCustomPropertiesRule:** custom properties that nothing reads.
-- **ExcessiveContextDataRule:** oversized context data (large arrays, deep nesting, too
-  many data points).
+- **BIND004 (polling-interval):** flags `now()` / `runScript()` polling faster than a
+  minimum, **1000 ms** in this lab (iglint's default is 10000 ms), as an `error`.
+- **VIEW018 (fragile-component-reference):** brittle traversal like `.getSibling()`,
+  `.getParent()` and relative `../` paths that break when the component tree is edited.
+
+Rules from the default set you will meet in this lab:
+
+- **BIND005 (unresolved-property-reference):** a property reference that doesn't resolve
+  to a real component or custom property (expressions and property bindings).
+- **SCR001 (syntax-error)** and the other `SCR` rules: the Python inside views and in the
+  script library, parsed as Jython 2.7 (the gateway's interpreter), not Python 3.
+- **VIEW001 (invalid-json):** a resource that doesn't parse.
 
 ## scripts/validate.sh: the gateway-free project validator
 
@@ -103,19 +111,21 @@ Jython validator.
 - `the runner of "actions/checkout@v2" action is too old`: bump the action to a current
   release.
 
-### ign-lint
+### iglint
 
 - **Non-PascalCase component name:** `myButton` or `temp_gauge` instead of
-  `TemperatureGauge`. `NamePatternRule`, severity `error`.
-- **Sub-minimum polling interval:** a binding polling faster than 1000 ms.
-  `PollingIntervalRule`. Bump the interval, or use a tag change-driven binding.
+  `TemperatureGauge`. `NAME001`, severity `error`. iglint suggests the new name and can
+  rename the component and every reference to it (`iglint check --fix`, or
+  `--unsafe-fixes` when it can't prove the rename is safe).
+- **Sub-minimum polling interval:** a binding polling faster than 1000 ms. `BIND004`.
+  Bump the interval, or use a tag change-driven binding.
 - **Brittle component reference:** a binding or script reaching another component by
-  relative path. `BadComponentReferenceRule` / `ComponentReferenceValidationRule`. Bind to
-  a real data source, a custom property or a message handler instead.
+  relative path. `VIEW018`, plus `BIND005` when the target doesn't exist. Bind to a real
+  data source, a custom property or a message handler instead.
 
 ## Further reading
 
 - [yamllint docs](https://yamllint.readthedocs.io/): full rule reference
 - [shellcheck wiki](https://www.shellcheck.net/wiki/): every error code explained
 - [actionlint docs](https://github.com/rhysd/actionlint/blob/main/docs/checks.md): what it checks
-- [ign-lint docs](https://bw-design-group.github.io/ignition-lint): rule reference and configuration
+- [iglint docs](https://iglint.mustrysolutions.com/): rule reference and configuration

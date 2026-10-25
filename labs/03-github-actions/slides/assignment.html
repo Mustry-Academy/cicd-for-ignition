@@ -611,7 +611,8 @@ bash &lt;(curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scri
 sudo mv actionlint /usr/local/bin/
 curl -LsSf https://astral.sh/uv/install.sh | sh   <span class="cm"># then open a new terminal</span></pre></div>
     <div class="code"><div class="code-title">Both: uv downloads Python 3.12 if you don't have it</div><pre>uv venv --python 3.12 .venv &amp;&amp; source .venv/bin/activate
-uv pip install yamllint==1.35.1 ign-lint==0.6.1
+uv pip install yamllint==1.35.1 iglint==0.1.0 \
+  --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0
 python -V                    <span class="cm"># Python 3.12.x, same as CI</span></pre></div>
   </div>
 </section>
@@ -625,7 +626,7 @@ python -V                    <span class="cm"># Python 3.12.x, same as CI</span>
       <ol class="steps">
         <li>Run <code>scripts/seed.sh</code>. It plants at least one issue per tool, including a <b>brittle broken binding</b>, a <b>runaway poll</b> and a <b>mis-named component</b> in the Overview view.</li>
         <li>Run <b>all five checks</b> and <b>write down every finding</b>: <i>what the tool flagged</i>, in <i>which file</i>. Don't use <code>git diff</code>: it shows all seven answers at once.</li>
-        <li>Spend the most time on <b>ign-lint</b>: two rules fire on one binding (the Kiln tile), plus a poll-rate and a naming finding. Work out <i>why</i> each rule exists before fixing anything.</li>
+        <li>Spend the most time on <b>iglint</b>: two rules fire on one binding (the Kiln tile), plus a poll-rate and a naming finding. Work out <i>why</i> each rule exists before fixing anything.</li>
       </ol>
       <div class="code"><pre><span class="cm"># plant the seven bugs into your working tree</span>
 scripts/seed.sh
@@ -638,8 +639,7 @@ yamllint -c .yamllint.yml .
 shellcheck scripts/*.sh
 actionlint -config-file .github/actionlint.yaml \
   ../../.github/workflows/lab03-*.yml
-(cd ../.. &amp;&amp; ign-lint --config labs/03-github-actions/rule_config.json \
-  --files <span class="cmd2">"labs/03-github-actions/projects/**/view.json"</span>)
+iglint check .
 scripts/validate.sh
 
 <span class="cm"># start over any time, then re-seed</span>
@@ -778,7 +778,9 @@ gh pr close ci/first-run --delete-branch   <span class="cm"># close it unmerged<
       - uses: actions/setup-python@v7
         with:
           python-version: <span class="cmd2">"3.12"</span>
-      - run: pip install yamllint==1.35.1 ign-lint==0.6.1
+      - run: &gt;-                        <span class="cm"># iglint's wheels: its GitHub release</span>
+          pip install yamllint==1.35.1 iglint==0.1.0
+          --find-links <span class="cmd2">https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0</span>
       - run: yamllint -c .yamllint.yml . ../../.github/workflows/lab03-*.yml
       - uses: raven-actions/actionlint@v2
         with:                             <span class="cm"># a `uses:` step: repo-root-relative</span>
@@ -786,14 +788,11 @@ gh pr close ci/first-run --delete-branch   <span class="cm"># close it unmerged<
           flags: <span class="cmd2">"-config-file labs/03-github-actions/.github/actionlint.yaml"</span>
       - run: sudo apt-get update &amp;&amp; sudo apt-get install -y --no-install-recommends shellcheck
       - run: shellcheck scripts/*.sh
-      - working-directory: .              <span class="cm"># repo root, as in Part 1</span>
-        run: &gt;-
-          ign-lint --config labs/03-github-actions/rule_config.json
-          --files <span class="cmd2">"labs/03-github-actions/projects/**/view.json"</span></pre></div>
+      - run: iglint check --output-format github .</pre></div>
       <ul class="checks sm">
         <li><b>Same pins and the same Python <code>"3.12"</code> as your venv.</b></li>
         <li><b>actionlint is a <code>uses:</code> step:</b> it isn't installed on <code>ubuntu-latest</code>, so <code>run: actionlint</code> fails with <i>command not found</i>. <code>uses:</code> steps ignore <code>working-directory</code>.</li>
-        <li><b>A step-level <code>working-directory: .</code></b> overrides the default for that step only: ign-lint runs from the repo root.</li>
+        <li><b><code>--output-format github</code></b> turns every iglint finding into an annotation on the PR's changed lines.</li>
         <li><b><code>timeout-minutes</code> on every job:</b> a hung job otherwise bills for up to 6 hours. Too tight and a slow apt mirror flakes the check.</li>
         <li class="warn"><b>Job ids are check names:</b> the ruleset in step 1 matches <code>lint</code> and <code>validate</code> by name. Rename a job and the required check waits forever.</li>
       </ul>
@@ -979,7 +978,7 @@ docker rm -f lab03-runner</pre></div>
       <ol class="steps alt">
         <li><b>Install the tool</b> in your venv: <code>uv pip install pre-commit</code>. No <code>pre-commit install</code>: <code>scripts/setup.sh</code> already set <code>core.hooksPath</code>.</li>
         <li><b>Baseline run</b> over the whole lab: clean after Part 1.</li>
-        <li><b>Set the Clock binding to <code>now(250)</code></b>, try to commit, and watch the <b>ign-lint hook refuse the commit</b>.</li>
+        <li><b>Set the Clock binding to <code>now(250)</code></b>, try to commit, and watch the <b>iglint hook refuse the commit</b>.</li>
         <li><b>Undo the bad change.</b> Commit went through anyway? Check <code>pre-commit --version</code> (venv active) and that <code>git config core.hooksPath</code> prints <code>scripts/git-hooks</code>; if not, re-run <code>scripts/setup.sh</code>.</li>
       </ol>
       <div class="code"><pre>uv pip install pre-commit
@@ -988,7 +987,7 @@ pre-commit run --all-files --config .pre-commit-config.yaml
 
 <span class="cm"># edit the Clock binding → now(250), then:</span>
 git commit -am <span class="cmd2">"test: should be blocked"</span>
-<span class="cm"># ign-lint hook fails, commit refused</span></pre></div>
+<span class="cm"># iglint hook fails, commit refused</span></pre></div>
     </div>
   </div>
 </section>
@@ -1025,7 +1024,7 @@ gh secret set EXAMPLE_SECRET --body <span class="cmd2">"hunter2"</span> \
     <ul class="checks" style="max-width:66rem">
       <li>You hunted <b>seven planted bugs</b> with five tools and can say which linter catches which class of bug, the Ignition-specific ones included.</li>
       <li>Your repo runs a <b>two-job workflow</b> with least privilege, and a <b>ruleset on <code>main</code></b> rejected your direct push and blocked a red PR.</li>
-      <li>Bring to the wrap-up: <b>which linter would have caught your team's last real bug</b>, and one ign-lint rule you'd call overreach.</li>
+      <li>Bring to the wrap-up: <b>which linter would have caught your team's last real bug</b>, and one iglint rule you'd call overreach.</li>
     </ul>
     <div class="aside" style="max-width:66rem"><span class="label">Before Lab 04</span><b>Delete the <code>protect-main</code> ruleset</b> on your fork (every lab shares <code>main</code>) and skim <code>docs/self-hosted-runners.md</code>. Lab 04 opens up the Ignition file structure and deploys project files to a gateway, on the CI you just built.</div>
   </div>

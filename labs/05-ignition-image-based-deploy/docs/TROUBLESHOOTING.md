@@ -281,7 +281,7 @@ re-run it if diffs still show timestamp/signature noise. Only the machine-local
 
 ```bash
 scripts/validate.sh      # the CI checks: JSON, .dockerignore, identity policy, compose config,
-                         # plus yamllint, shellcheck, ign-lint, hadolint, actionlint if installed
+                         # plus yamllint, shellcheck, iglint, hadolint, actionlint if installed
 scripts/build-image.sh   # confirm the image actually builds
 ```
 
