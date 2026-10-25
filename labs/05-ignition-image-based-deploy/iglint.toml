@@ -25,3 +25,4 @@ severity = "error"
 # query itself is yours to define, so its absence is not a finding.
 [rules.REF004]
 exclude = ["projects/example-project/ignition/script-python/infrastructure/db/**"]
+
