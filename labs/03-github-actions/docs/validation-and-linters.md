@@ -42,9 +42,8 @@ expressions, and the references between them (views, named queries, library func
 message types). Every finding points at an exact line and column, also inside a script
 or expression embedded in JSON.
 
-- **Package:** `iglint` (v0.1.0, pinned). Not on PyPI yet: the wheels are attached to the
-  GitHub release, so pip and uv take them from there with `--find-links`.
-- **Install:** `uv pip install iglint==0.1.0 --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0`
+- **Package:** `iglint` on PyPI (v0.1.0, pinned)
+- **Install:** `uv pip install iglint==0.1.0`
   in the Python 3.12 venv (CI installs it the same way)
 - **Run (from the lab folder):** `iglint check .` (it finds `iglint.toml` from the path it
   lints, so `iglint check labs/03-github-actions` from the repo root works too)

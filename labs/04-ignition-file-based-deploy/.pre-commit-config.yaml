@@ -39,7 +39,6 @@ repos:
   # iglint, the Ignition-native linter: views, scripts, expressions and the
   # references between them, with the lab's iglint.toml. A staged project file
   # lints the whole lab, so a rename that breaks another view is caught too.
-  # iglint is not on PyPI yet: pip takes its wheel from the GitHub release.
   - repo: local
     hooks:
       - id: iglint
@@ -47,7 +46,6 @@ repos:
         entry: iglint check labs/04-ignition-file-based-deploy
         language: python
         additional_dependencies:
-          - "--find-links=https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0"
           - "iglint==0.1.0"
         files: ^labs/04-ignition-file-based-deploy/.*\.(json|py)$
         pass_filenames: false

@@ -139,7 +139,7 @@ run_optional "yamllint" yamllint "uv pip install yamllint" \
 run_optional "shellcheck (scripts/*.sh)" shellcheck "install shellcheck from your package manager" \
   shellcheck -x scripts/*.sh
 run_optional "iglint (Ignition project)" iglint \
-  "uv pip install iglint==0.1.0 --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0" \
+  "uv pip install iglint==0.1.0" \
   iglint check .
 run_optional "docker compose config" docker "install Docker with Compose v2" \
   docker compose config -q

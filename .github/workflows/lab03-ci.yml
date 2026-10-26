@@ -50,10 +50,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python tools
-        # iglint is not on PyPI yet: its wheels come from the GitHub release.
-        run: >-
-          pip install yamllint==1.35.1 iglint==0.1.0
-          --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0
+        run: pip install yamllint==1.35.1 iglint==0.1.0
 
       - name: yamllint
         run: yamllint -c .yamllint.yml . ../../.github/workflows/lab03-*.yml

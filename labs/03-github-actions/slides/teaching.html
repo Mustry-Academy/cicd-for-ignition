@@ -755,9 +755,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 <span class="cm"># both: the same Python 3.12 as CI</span>
 uv venv --python 3.12 .venv &amp;&amp; source .venv/bin/activate
-uv pip install yamllint==1.35.1 iglint==0.1.0 \
-  --find-links <span class="cmd2">…/iglint/releases/expanded_assets/v0.1.0</span>
-<span class="cm"># iglint's wheels: its GitHub release (full URL in the assignment)</span></pre></div>
+uv pip install yamllint==1.35.1 iglint==0.1.0</pre></div>
       <div class="code"><div class="code-title">Run every check</div><pre>yamllint -c .yamllint.yml .
 shellcheck scripts/*.sh
 actionlint -config-file .github/actionlint.yaml \
@@ -861,7 +859,7 @@ repos:
         entry: iglint check labs/03-github-actions
         language: python
         additional_dependencies:  <span class="cm"># pinned, like pip</span>
-          [<span class="cmd2">"--find-links=…"</span>, <span class="cmd2">"iglint==0.1.0"</span>]
+          [<span class="cmd2">"iglint==0.1.0"</span>]
         files: <span class="cmd2">^labs/03-github-actions/.*\.(json|py)$</span>
   <span class="cm"># + yamllint, shellcheck, actionlint, pinned by rev:</span></pre></div>
       <div class="code"><pre><span class="cm"># install the tool; there is no `pre-commit install`</span>
@@ -1003,7 +1001,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: <span class="cmd2">"3.12"</span>   <span class="cm"># quoted, same as your venv</span>
-      - run: pip install yamllint==1.35.1 iglint==0.1.0 --find-links …
+      - run: pip install yamllint==1.35.1 iglint==0.1.0
       - run: yamllint -c .yamllint.yml . ../../.github/workflows/lab03-*.yml
       - uses: raven-actions/actionlint@v2   <span class="cm"># + with: lab03-*.yml</span>
       - run: shellcheck scripts/*.sh        <span class="cm"># apt-get install first</span>

@@ -45,8 +45,7 @@ scripts/setup.sh        # boots one Ignition gateway, waits for RUNNING, prints 
 > and re-run `scripts/setup.sh`; it prints the matching URL.
 
 Install the linters, pinned, in a Python 3.12 venv (the version CI uses). `uv` creates it and
-downloads Python 3.12 if your machine doesn't have it (Ubuntu 26.04 ships 3.14). iglint is not
-on PyPI yet, so `--find-links` points uv at the wheels on its GitHub release:
+downloads Python 3.12 if your machine doesn't have it (Ubuntu 26.04 ships 3.14):
 
 ```bash
 # macOS
@@ -60,8 +59,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh     # then open a new terminal
 
 # both
 uv venv --python 3.12 .venv && source .venv/bin/activate
-uv pip install yamllint==1.35.1 iglint==0.1.0 \
-  --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0
+uv pip install yamllint==1.35.1 iglint==0.1.0
 python -V                    # Python 3.12.x, same as CI
 ```
 
@@ -271,9 +269,7 @@ in the `lint` job with the Part 1 linters:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - run: >-                        # iglint's wheels come from its GitHub release
-          pip install yamllint==1.35.1 iglint==0.1.0
-          --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0
+      - run: pip install yamllint==1.35.1 iglint==0.1.0
       - run: yamllint -c .yamllint.yml . ../../.github/workflows/lab03-*.yml
       - uses: raven-actions/actionlint@v2
         with:                             # a `uses:` step: paths are repo-root-relative

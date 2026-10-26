@@ -611,8 +611,7 @@ bash &lt;(curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scri
 sudo mv actionlint /usr/local/bin/
 curl -LsSf https://astral.sh/uv/install.sh | sh   <span class="cm"># then open a new terminal</span></pre></div>
     <div class="code"><div class="code-title">Both: uv downloads Python 3.12 if you don't have it</div><pre>uv venv --python 3.12 .venv &amp;&amp; source .venv/bin/activate
-uv pip install yamllint==1.35.1 iglint==0.1.0 \
-  --find-links https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0
+uv pip install yamllint==1.35.1 iglint==0.1.0
 python -V                    <span class="cm"># Python 3.12.x, same as CI</span></pre></div>
   </div>
 </section>
@@ -778,9 +777,7 @@ gh pr close ci/first-run --delete-branch   <span class="cm"># close it unmerged<
       - uses: actions/setup-python@v7
         with:
           python-version: <span class="cmd2">"3.12"</span>
-      - run: &gt;-                        <span class="cm"># iglint's wheels: its GitHub release</span>
-          pip install yamllint==1.35.1 iglint==0.1.0
-          --find-links <span class="cmd2">https://github.com/Mustry-Solutions/iglint/releases/expanded_assets/v0.1.0</span>
+      - run: pip install yamllint==1.35.1 iglint==0.1.0
       - run: yamllint -c .yamllint.yml . ../../.github/workflows/lab03-*.yml
       - uses: raven-actions/actionlint@v2
         with:                             <span class="cm"># a `uses:` step: repo-root-relative</span>
