@@ -328,21 +328,20 @@ The assignment runs on one real repository,
 [`Mustry-Solutions/demo-oatmakers`](https://github.com/Mustry-Solutions/demo-oatmakers):
 the repo behind Mustry's live Oatmakers demo at
 <https://cloud.mustrysolutions.com>. It is option A at its smallest: one repo,
-one production gateway (`oatmakers-site-7`), one release file, and a test
-gateway on every student laptop.
+one local development gateway, one production gateway (`oatmakers-site-7`)
+and one release file.
 
-### Two deploy channels
+### Local development and a pinned production deploy
 
-| Channel | Trigger | Workflow | Runner label | Target |
-|---|---|---|---|---|
-| Test | every push to `main` (every merged PR), or by hand for a branch: `gh workflow run test-<yourname>.yml --ref <branch>` | your own `test-<yourname>.yml` | `[self-hosted, <yourname>-local]` | your test gateway, `localhost:8090` |
-| Production | a merged change to `release.yaml` (a manual run only from `main`) | `Deploy` (`deploy.yml`) | `[self-hosted, demo-oatmakers]` | `oatmakers-site-7`, cloud.mustrysolutions.com |
+Build and verify changes on the local gateway at `localhost:8088`, backed
+by its own PostgreSQL database. Saves in the Designer land in the working
+tree through bind mounts. Merge the reviewed feature PR, tag the merged
+`main`, then promote the tag with a `release.yaml` PR.
 
-- **Test tracks `main`**, exactly like `gw-test.yaml` in the releases folder:
-  no pins, every merge lands. One workflow file per person, each naming its
-  own runner label. Each runner registers with a registration token the
-  instructor posts in the chat. Each test gateway has its own database,
-  which only its workflow migrates.
+| Trigger | Workflow | Runner label | Target |
+|---|---|---|---|
+| a merged change to `release.yaml` (a manual run only from `main`) | `Deploy` (`deploy.yml`) | `[self-hosted, demo-oatmakers]` | `oatmakers-site-7`, cloud.mustrysolutions.com |
+
 - **Production is pinned.** The production deploy is wide: every pinned
   project ships from its own tag, and the gateway payload (gateway config,
   module manifest, third-party modules, JARs, migrations) ships from the

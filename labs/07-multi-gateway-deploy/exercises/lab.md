@@ -4,12 +4,12 @@
 course repo. Everyone works as a **contributor** on one real, public
 repository: [`Mustry-Solutions/demo-oatmakers`](https://github.com/Mustry-Solutions/demo-oatmakers),
 the repo behind Mustry's live Oatmakers demo at
-<https://cloud.mustrysolutions.com>. Every merge to `main` lands on **your
-own test gateway**, and every change to `release.yaml` deploys to **that
-live production gateway** on the internet. You first stand up your test
-gateway, then bring a project with your own name live, then land one of
-five challenges on the shared oatmakers project, then build on each other's
-work. Real reviews, real deploys, real merge conflicts.
+<https://cloud.mustrysolutions.com>. Build on your local development
+gateway, merge through a reviewed PR, then deploy to **that live production
+gateway** with a tag and a `release.yaml` PR. First bring a project with
+your own name live, then land one of five challenges on the shared
+oatmakers project, then build on each other's work. Real reviews, real
+deploys, real merge conflicts.
 
 The point of this lab: **use everything we learned and get some reps
 in**: feature branch, commits, PR, review, tag, release pin, deploy, again
@@ -34,14 +34,12 @@ You should leave this lab able to:
 - Work as a **contributor on a shared, protected repo**: no pushes to
   `main`, every change through a PR with a green `CI OK` check and one
   approval from someone else
-- Explain the two deploy channels: a merge to `main` lands on **every
-  student's test gateway**, while **only `release.yaml` decides what reaches
-  production**, and why one is gated and the other is not
+- Explain why merging a feature PR does not deploy to production, and why
+  **only `release.yaml` decides what reaches production**
 - Cut a **prefixed tag** (`<yourname>@v1.0.0`, the next free
   `oatmakers@vX.Y.Z`) and explain why the tag must exist, on a commit on
   `main`, **before** `release.yaml` may point at it
-- Read `runs-on: [self-hosted, <yourname>-local]` and
-  `runs-on: [self-hosted, demo-oatmakers]` and explain how a runner label
+- Read `runs-on: [self-hosted, demo-oatmakers]` and explain how a runner label
   routes a deploy to one machine's network
 - Ship the lab 06 building blocks through a real pipeline: a **third-party
   module**, a **library JAR**, a **migration pair** and a **referenced
@@ -73,7 +71,6 @@ db-migration/migrate/        golang-migrate up/down pairs (lab 06)
 local-development/secrets/   local stand-ins for the referenced secrets
 scripts/                     setup, teardown, validate, migrate, scan, reset-trial, ...
 .github/workflows/           ci.yml (PR checks) · deploy.yml (release.yaml → production)
-                             · test-example.yml.template (you copy it in Part 0)
 ```
 
 **The rules of the repo:**
@@ -82,12 +79,11 @@ scripts/                     setup, teardown, validate, migrate, scan, reset-tri
   green **`CI OK`** check and **one approval**. You cannot approve your own
   PR: the instructor or a fellow student approves it. The Mustry team can
   bypass these rules; you cannot, and you should not want to.
-- **Two deploy channels, two triggers.** Every merge to `main` lands on
-  **your own test gateway** automatically, through a workflow you add in
-  Part 0 (and on everyone else's, through theirs). Only a change to
-  `release.yaml` on `main` reaches the **production gateway**: workflow
-  `Deploy`, on the runner labelled `[self-hosted, demo-oatmakers]`. Started
-  by hand from any other branch, `Deploy` refuses to run.
+- **Only `release.yaml` triggers a production deploy.** A feature PR
+  merges the code without deploying it. A change to `release.yaml` on
+  `main` runs workflow `Deploy` on the runner labelled
+  `[self-hosted, demo-oatmakers]`. Started by hand from any other branch,
+  `Deploy` refuses to run.
 - **The production deploy is wide.** It ships every pinned project from its
   own tag, plus the gateway payload (config, module manifest, third-party
   modules, JARs, migrations) from the `oatmakers` pin. Migrations run first.
@@ -144,7 +140,7 @@ Everyone in the group, and the Mustry team, ships through the same
   <https://github.com/Mustry-Solutions/demo-oatmakers/invitations>. No fork.
 - **Coming straight from lab 06? Shut its stack down first**
   (`docker compose down` in `labs/06-secrets-db-and-modules/` of your fork):
-  it holds ports **8088, 8090 and 5432**.
+  it holds ports **8088 and 5432**.
 - **Clone the repo next to the course repo** in `~/mustry-academy/`, not
   inside `cicd-for-ignition/`:
 
@@ -157,8 +153,7 @@ Everyone in the group, and the Mustry team, ships through the same
 - **Windows:** keep the clone in your WSL home (`~/...`), never under
   `/mnt/c/...`. See [`docs/wsl-setup.md`](../docs/wsl-setup.md).
 
-You start the stack in Part 0: it needs one value from the instructor that
-is posted in the chat at the start of that part.
+You start the local development stack in Part 0.
 
 ### Local development: where you actually build
 
@@ -169,22 +164,14 @@ stack, the same move as every previous lab:
 |---|---|---|
 | local gateway `oatmakers-gateway` | <http://localhost:8088> | `admin` / `password` |
 | local database `oatmakers-postgres` | `localhost:5432` | see `local-development/secrets/` |
-| your test gateway `oatmakers-test-gateway` (Part 0) | <http://localhost:8090> | fed by your workflow only |
-| its own database `oatmakers-test-postgres` (Part 0) | no host port | migrated by your workflow only |
 | production `oatmakers-site-7` | <https://cloud.mustrysolutions.com> | fed by `release.yaml` only |
 
 - **The local gateway bind-mounts the repo.** A save in the Designer lands
   in your working tree immediately, so `git status` is your export step.
   Review the diff; stage only what you meant to change.
-- **Your test gateway does not.** It gets its files the way production does:
-  `docker cp` into the container plus an authenticated scan, run by your
-  own workflow on your own runner. That is why a green test deploy is
-  evidence about production and not just about your laptop.
-- **Each gateway has its own database.** Your local gateway uses
-  `oatmakers-postgres`; your test gateway uses `oatmakers-test-postgres`,
-  which only your test workflow migrates. Both answer to the hostname
-  `postgres`, like production's database, so one connection setting works in
-  all three places.
+- **Development and production have separate databases.** Your local
+  gateway uses `oatmakers-postgres`. Both environments use the hostname
+  `postgres`, so the same connection setting works in both places.
 - **Referenced secrets work locally too.** `local-development/secrets/`
   holds the local stand-ins at the path the gateway's file secret provider
   (named `environment`) reads, so a connection that references `POSTGRES_PASSWORD` resolves on
@@ -194,7 +181,7 @@ stack, the same move as every previous lab:
   not. Run `scripts/reset-trial.sh` (safe to re-run). Never wipe volumes for
   this.
 - The loop is always: **build locally → see it in `git diff` → PR →
-  review → merge (lands on test) → tag → `release.yaml` PR → live.**
+  review → merge → tag → `release.yaml` PR → live.**
 
 ---
 
@@ -223,118 +210,33 @@ stack, the same move as every previous lab:
    option B (splits) live, against the constraints from the teaching: site
    teams, a vendor and an infra team.
 2. Where the runners live: one per site, `runs-on: [self-hosted, site-4]`,
-   inside the site network, no inbound access needed. Today: one per
-   student laptop, plus one next to the production gateway.
+   inside the site network, no inbound access needed. Today the deploy
+   runner lives next to the production gateway.
 
 ## You do (breakout rooms): four parts
 
 Follows [`slides/assignment.html`](https://share.mustrysolutions.com/a95c879a-d14b-4f76-8214-8f39784f09b1) ([offline copy](../slides/assignment.html)) 1:1.
 
-### Part 0 (±15 min): stand up your test gateway and your runner
+### Part 0 (±5 min): start your local development gateway
 
-Everyone does this once, at the start, then leaves it running for the rest of the lab.
-It gives you a second local gateway that receives **every merge to
-`main`**, so you see a change land somewhere safe before it is ever tagged
-for production.
-
-**1. Tell the stack who you are.** At the start of Part 0 the instructor
-posts **one runner registration token** in the Zoom chat. Then:
+Everyone does this once, then leaves the stack running for the lab.
+From your fresh demo-oatmakers clone:
 
 ```bash
 cp .env.example .env
-# edit .env: LAB_USER=<yourname>      lowercase, no spaces
-#            RUNNER_TOKEN=<the token from the Zoom chat>
+# keep LAB_USER empty to start only the development stack
 # leave IGNITION_API_KEY empty: setup.sh generates it
-```
-
-Everyone uses the same token. It is valid for **one hour**; missed the
-window, or wiped your volumes? Ask for a fresh one.
-
-**2. Start the stack.**
-
-```bash
 ./scripts/setup.sh
 ```
 
-`setup.sh` starts the local stack (gateway on `8088`, database on `5432`)
-and, because `LAB_USER` is set, the `test` compose profile: your test
-gateway `oatmakers-test-gateway` on `8090`, its own database
-`oatmakers-test-postgres` and your runner
-`oatmakers-test-runner-<yourname>`. It also generates your API key, so
-always use `setup.sh` for the first start. It is safe to re-run.
+In `.env`, clear the example value of `LAB_USER`. Keep `IGNITION_API_KEY`
+empty for the first start. `setup.sh` starts the development gateway on
+`8088` and its database on `5432`, generates your API key and applies the
+local migrations. It is safe to re-run.
 
-Need a new API key (it showed up on screen, say)? Empty `IGNITION_API_KEY`
-in `.env` and run `./scripts/setup.sh` again: it generates a new key, puts
-it on both gateways and your runner, and restarts each gateway that still
-holds the old one.
-
-**3. Check that your runner is online** in its log:
-
-```bash
-docker logs oatmakers-test-runner-<yourname> 2>&1 | grep -E "Connected to GitHub|Listening for Jobs"
-```
-
-`Listening for Jobs` means your runner `oatmakers-test-<yourname>` is
-registered with the labels `self-hosted,<yourname>-local` and waiting.
-
-**4. Make the provided workflow yours.** The deploy workflow is already
-written. Copy the template under your name:
-
-```bash
-git switch -c feature/<yourname>-test-workflow
-cp .github/workflows/test-example.yml.template \
-   .github/workflows/test-<yourname>.yml
-```
-
-In the new file, replace `CHANGEME` with your name in the one line marked
-`CHANGEME`, the runner label:
-
-```yaml
-runs-on: [self-hosted, <yourname>-local]
-```
-
-The workflow does what the production deploy does, minus the
-`release.yaml` indirection: check out `main`, run the migrations against
-your test gateway's own database, `docker cp` projects and config into your
-test gateway, ship modules and JARs, then ask the gateway for an
-authenticated scan.
-
-**5. PR it in like anything else.**
-
-```bash
-git add .github/workflows/test-<yourname>.yml
-git commit -m "ci: add test deploy workflow for <yourname>"
-git push -u origin feature/<yourname>-test-workflow
-```
-
-Open the PR from the link `git push` prints. Wait for `CI OK`, ask for a
-review in the room (the instructor or a fellow student approves), then
-merge.
-
-**6. Verify it works.** Your merge is itself a push to `main`, so it starts
-your new workflow straight away:
-
-- Actions tab → workflow `.github/workflows/test-<yourname>.yml` (a
-  workflow without a `name:` is listed by its path) → the run for your
-  merge commit is picked up by **your** runner and goes green.
-- <http://localhost:8090/data/perspective/client/oatmakers/> serves the
-  oatmakers project on your test gateway.
-- From now on, every merge anyone makes runs your workflow too. Watch the
-  runs pile up in the Actions tab during Part 1.
-
-- **Observe:** the runner **label** routes the deploy. Everyone's
-  workflow runs on every merge, and each one deploys only to its owner's
-  test gateway. Production uses the same mechanism:
-  `runs-on: [self-hosted, demo-oatmakers]`.
-
-- **From now on you can also deploy a branch** to your test gateway before
-  you merge it: `gh workflow run test-<yourname>.yml --ref <your-branch>`
-  (or **Run workflow** in the Actions tab, then pick the branch). The next
-  push to `main` puts `main` back.
-
-**Part 0 gate:** your `test-<yourname>.yml` merged through an approved PR,
-`Listening for Jobs` in your runner's log, and a green `test-<yourname>.yml`
-run that put `main` on `localhost:8090`.
+**Part 0 gate:** sign in at <http://localhost:8088> with
+`admin` / `password`, open the Designer, and verify that the `oatmakers`
+project is available.
 
 ### Part 1 (±20 min): create your own project and bring it live
 
@@ -350,7 +252,7 @@ git switch -c feature/<yourname>-project
 
 **2. Build your project on the local gateway.** In the Designer
 (<http://localhost:8088>, `admin` / `password`) create a new project named
-`<yourname>` (lowercase, the same as `LAB_USER`). Add one Perspective view
+`<yourname>` (lowercase, no spaces). Add one Perspective view
 that shows your name, set it as the primary view of the `/` page in
 *Page Configuration*, and save. `git status` now shows `projects/<yourname>/`.
 
@@ -366,8 +268,6 @@ approval. If you get review comments, fix them and push again: same PR.
 
 **4. Merge.**
 
-- **Observe:** your test gateway (and everyone else's) now serves
-  `http://localhost:8090/data/perspective/client/<yourname>/`.
 - **Observe:** production did **not** change. `Deploy` did not run,
   because `release.yaml` did not change.
 
@@ -434,12 +334,9 @@ together, on a live gateway.
   (for example `Course/<yourname>/`) with a page route like
   `/course/<yourname>`, your tags under a `Course/` folder, your tables
   with a `course_` prefix. Leave the demo's existing screens alone.
-- **Check it on your test gateway first.** Before you merge, run
-  `gh workflow run test-<yourname>.yml --ref <your-branch>` to put your
-  branch on `localhost:8090`. After your PR merges, your
-  `test-<yourname>.yml` run puts `main` there. If it does not work there, it
-  will not work on production: fix it (with a follow-up PR if it already
-  merged) before you tag.
+- **Verify on your local development gateway before the PR.** Open your
+  view on `localhost:8088`, exercise the behaviour, and review `git diff`.
+  Resolve any problems before you merge and tag.
 - **Finished means live.** Merge your PR, cut the **next free**
   `oatmakers@` tag, pin it in `release.yaml` by PR. The gateway payload
   (config, modules, JARs, migrations) rides the `oatmakers` pin, which is
@@ -483,22 +380,24 @@ tag from the current `main` and pin that one.
 
 **Challenge 1: add the Embr Charts module and build a chart screen**
 
-Embr Charts stays on production once a group installed it: the demo keeps
-using it. If `services/modules.json` on `main` already has a
-`com.mussonindustrial.embr.charts` entry, skip the download, the entry and
-the recreate: check that your test gateway runs the module (installed from
-the manifest alone: it shows in the gateway's module list on
-`localhost:8090`), then build the chart screen.
+Use **Embr Charts 4.0.1 for Ignition 8.3**, the version bundled in the
+course repo. If `services/modules.json` on `main` already has a
+`com.mussonindustrial.embr.charts` entry, keep its filename and version.
+Verify that the module is running on your local development gateway
+(`localhost:8088`). If it is not installed yet, recreate that gateway with
+`docker compose up -d --force-recreate gateway`, then build the chart screen.
 
-- Download `Embr-Charts-Ignition83-6.0.1.modl` (Embr Charts 6.0.1 for
-  Ignition 8.3, module id `com.mussonindustrial.embr.charts`) from
-  <https://github.com/mussonindustrial/embr/releases/tag/releases%2F8.3%2F2026.6.17>
-  and put it in `third-party-modules/`.
+If the module is not yet in the manifest:
+
+- Copy `Embr-Charts-Ignition83-4.0.1.modl` from the course repo's
+  `labs/06-secrets-db-and-modules/third-party-modules/` into
+  demo-oatmakers's `third-party-modules/`. Reuse this file so the filename
+  and version match the manifest entry below.
 - Add a minimal entry to `services/modules.json` (the lab 06 move):
 
   ```json
   "com.mussonindustrial.embr.charts": {
-    "filename": "/third-party-modules/Embr-Charts-Ignition83-6.0.1.modl",
+    "filename": "/third-party-modules/Embr-Charts-Ignition83-4.0.1.modl",
     "onStartup": "enabled"
   },
   ```
@@ -515,8 +414,7 @@ the manifest alone: it shows in the gateway's module list on
   (the lab 06 env vars), so it installs headless and writes
   `certFingerprint` and `licenseAgreementHash` into your entry. Commit only
   your `modules.json` entry and the `.modl`.
-- Your test gateway and production trust the module through the two
-  values in your entry.
+- Production trusts the module through the two values in your entry.
 - Build a Perspective screen with a chart from the module on it.
 - This release restarts production: announce it in the chat before you
   merge the pin.
@@ -577,7 +475,7 @@ the manifest alone: it shows in the gateway's module list on
   scripts/migrate.sh up
   ```
 
-  That is your local database; your test gateway has its own. Run
+  That updates your local development database. Run
   `scripts/migrate.sh down 1` before you switch branches or renumber. Pick a
   number higher than any on `main` at merge time. If `main` already has
   your number when you rebase, renumber yours.
@@ -662,17 +560,9 @@ tag, one release PR at a time.
 
 ## Troubleshooting
 
-- **My `test-<yourname>.yml` run says "Waiting for a runner to pick up this
-  job".** The label in `runs-on` does not match your runner. It must be
-  exactly `<yourname>-local`, with the same `<yourname>` as `LAB_USER` in
-  `.env`. Check `docker logs oatmakers-test-runner-<yourname>` for
-  `Listening for Jobs`.
-- **The runner log says the token is invalid or expired.** Ask for a fresh
-  token in the chat, put it in `.env` as `RUNNER_TOKEN`, and re-run
-  `./scripts/setup.sh`.
 - **`setup.sh` says a port is already in use.** Something else holds
-  8088, 8090 or 5432 (often the lab 06 stack). Stop it, or move this lab:
-  set `GATEWAY_PORT`, `TEST_GATEWAY_PORT` or `POSTGRES_PORT` in `.env` and
+  8088 or 5432 (often the lab 06 stack). Stop it, or move this lab:
+  set `GATEWAY_PORT` or `POSTGRES_PORT` in `.env` and
   re-run `./scripts/setup.sh`. The URLs in this lab then use your ports.
 - **Perspective pages are blank, the Designer disconnects, a deploy that
   worked an hour ago fails.** The trial lapsed: `scripts/reset-trial.sh`.
@@ -685,17 +575,10 @@ tag, one release PR at a time.
   `tag-definition/System/Gateway/{Devices,Database,StoreAndForward}/<name>/`
   for your device, connection or historian. The same folders for someone
   else's work, after a pull, are theirs: leave them.
-- **Your `test-<yourname>.yml` run fails with
-  `no migration found for version N`.** You deployed a branch with
-  `gh workflow run` and its migration is still in your test database, but
-  `main` does not have it. On that branch:
-  `scripts/migrate.sh --test down 1`, then re-run the failed run.
 - **`scripts/migrate.sh up` (or `setup.sh`) says
-  `no migration found for version N`.** The same, in your local database:
-  on that branch, `scripts/migrate.sh down 1`.
-- **Your test run says `Still not authorized`.** Your test gateway and your
-  runner hold different API keys. Run `./scripts/setup.sh`, then re-run the
-  failed run.
+  `no migration found for version N`.** A migration from your previous
+  branch is still applied locally. On that branch, run
+  `scripts/migrate.sh down 1` before switching branches.
 - **`CI OK` is red on a release PR.** Open the failing job: most often the
   pin points at a tag that was never pushed (`git push origin <tag>`), a
   tag on a commit that is not on `main` (tag `main` after your PR merged),
@@ -709,11 +592,11 @@ tag, one release PR at a time.
 
 ## Definition of done
 
-Everything on this list is visible on GitHub or on the production gateway;
-nothing needs your laptop.
+After the local setup in Part 0, the results are visible on GitHub or on
+the production gateway.
 
-0. **Part 0:** your `test-<yourname>.yml` merged through an approved PR, and
-   a green `test-<yourname>.yml` run on your own runner.
+0. **Part 0:** the local development gateway is running and you can open
+   `oatmakers` in the Designer.
 1. **Part 1:** `projects/<yourname>/` merged through an approved PR, the tag
    `<yourname>@v1.0.0`, your line in `release.yaml`, and your view **live on
    cloud.mustrysolutions.com**.

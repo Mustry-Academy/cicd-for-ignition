@@ -588,7 +588,7 @@ a{color:var(--primary-deep)}
 .own .fits{font-size:var(--text-sm);font-weight:600;color:var(--primary-deep)}
 .own small{display:block;font-family:var(--font-mono);font-size:var(--text-xs);font-weight:600;color:var(--faint);letter-spacing:.04em}
 
-/* demo-oatmakers: two deploy channels */
+/* demo-oatmakers: local development and production */
 .chan{display:grid;grid-template-columns:.8fr 1.5fr;gap:2rem;align-items:start}
 .routes{display:flex;flex-direction:column;gap:1rem}
 .route{display:grid;grid-template-columns:11rem 8.5rem 1fr;align-items:center;gap:.75rem}
@@ -598,7 +598,6 @@ a{color:var(--primary-deep)}
 .route .via i{height:2px;background:var(--primary);position:relative}
 .route .via i::after{content:"";position:absolute;right:-1px;top:-4px;border-left:7px solid var(--primary);border-top:5px solid transparent;border-bottom:5px solid transparent}
 .target{border-left:3px solid var(--primary);padding:.1rem 0 .1rem 1rem}
-.target.test{border-left-color:var(--teal)}
 .target b{font-size:var(--text-lg)}
 .target .addr{font-family:var(--font-mono);font-size:var(--text-sm);color:var(--muted);margin-left:.5rem}
 .target p{font-size:var(--text-base);color:var(--muted);line-height:1.4;margin-top:.2rem}
@@ -1057,33 +1056,33 @@ projects:
   <div class="glow ambient" aria-hidden="true"></div>
   <header class="topbar"><img class="logo" src="logos/OriginalLight.png" alt="Mustry Solutions"></header>
   <div class="divider-body">
-    <h2 class="divider-title">How <em>demo-oatmakers</em> deploys: two channels, one release file</h2>
+    <h2 class="divider-title">How <em>demo-oatmakers</em> deploys through one release file</h2>
     <ol class="flow nonum" style="max-width:76rem">
       <li><b>One public repo</b><span>the repo behind Mustry's live Oatmakers demo: option A at its smallest</span></li>
       <li><b>One production gateway</b><span><code>cloud.mustrysolutions.com</code></span></li>
       <li><b>One release file</b><span><code>release.yaml</code></span></li>
-      <li><b>A test gateway per laptop</b><span><code>localhost:8090</code></span></li>
+      <li><b>Local development per laptop</b><span><code>localhost:8088</code>, Designer saves in your working tree</span></li>
     </ol>
   </div>
 </section>
 
-<!-- TWO DEPLOY CHANNELS (interactive) -->
+<!-- LOCAL DEVELOPMENT AND PRODUCTION (interactive) -->
 <section class="slide" data-ctrl="reveal">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">13</span><h2 class="title">demo-oatmakers: one public repo with two deploy channels</h2></div>
+  <div class="sechead"><span class="num">13</span><h2 class="title">demo-oatmakers: local development and a pinned production deploy</h2></div>
   <div class="body">
     <div class="chan">
       <div class="filecard reveal" data-step="1">
         <div class="fh">Mustry-Solutions/demo-oatmakers</div>
-        <pre class="tree"><span class="l"><span class="hl">release.yaml</span>         <span class="cm">what runs on prod</span></span><span class="l">projects/oatmakers/  <span class="cm">the shared project</span></span><span class="l">projects/&lt;you&gt;/      <span class="cm">yours, Part 1</span></span><span class="l">services/config/     <span class="cm">gateway config</span></span><span class="l">services/modules.json</span><span class="l">third-party-modules/</span><span class="l">jar-files/jar/</span><span class="l">db-migration/migrate/</span><span class="l">.github/workflows/</span><span class="l">  ci.yml             <span class="cm">PR checks: CI OK</span></span><span class="l">  <span class="hl">deploy.yml</span>         <span class="cm">Deploy: production</span></span><span class="l">  <span class="grn">test-&lt;you&gt;.yml</span>     <span class="cm">yours, Part 0</span></span></pre>
+        <pre class="tree"><span class="l"><span class="hl">release.yaml</span>         <span class="cm">what runs on prod</span></span><span class="l">projects/oatmakers/  <span class="cm">the shared project</span></span><span class="l">projects/&lt;you&gt;/      <span class="cm">yours, Part 1</span></span><span class="l">services/config/     <span class="cm">gateway config</span></span><span class="l">services/modules.json</span><span class="l">third-party-modules/</span><span class="l">jar-files/jar/</span><span class="l">db-migration/migrate/</span><span class="l">.github/workflows/</span><span class="l">  ci.yml             <span class="cm">PR checks: CI OK</span></span><span class="l">  <span class="hl">deploy.yml</span>         <span class="cm">Deploy: production</span></span></pre>
       </div>
       <div>
         <div class="routes">
           <div class="route reveal" data-step="2">
-            <span class="pkt">merge to main</span>
-            <div class="via"><span>test-&lt;you&gt;.yml</span><i></i></div>
-            <div class="target test"><b>your test gateway</b><span class="addr">localhost:8090 · one per student</span>
-              <p><code>runs-on: [self-hosted, &lt;you&gt;-local]</code>: a runner on your laptop, registered with a token we post in the chat. Its own database.</p></div>
+            <span class="pkt">Designer save</span>
+            <div class="via"><span>bind mount</span><i></i></div>
+            <div class="target"><b>local development gateway</b><span class="addr">localhost:8088 · one per student</span>
+              <p>Build and verify locally. Review the working-tree diff, then open a feature PR. Merging it leaves production at its pinned version.</p></div>
           </div>
           <div class="route reveal" data-step="3">
             <span class="pkt">release.yaml changed</span>
@@ -1115,9 +1114,9 @@ projects:
     </div>
   </div>
   <div class="controls"><p class="step-note">
-    <span data-at="0">One repo, two ways out of it: the runner label decides where each job runs.</span>
+    <span data-at="0">Develop locally, review the change, then promote a tag through release.yaml.</span>
     <span data-at="1"><b>The repo:</b> projects, the gateway payload, <code>release.yaml</code> and the workflows.</span>
-    <span data-at="2"><b>Test tracks main:</b> one workflow file per person, each naming its own runner label.</span>
+    <span data-at="2"><b>Build locally:</b> Designer saves land in your working tree. Verify the behaviour and review the diff before the PR.</span>
     <span data-at="3"><b>Production is pinned:</b> only a merged change to <code>release.yaml</code> starts Deploy. Started by hand from another branch, it refuses.</span>
     <span data-at="4"><b>The production deploy is wide:</b> every pinned project from its own tag, the whole gateway payload from the <code>oatmakers</code> pin.</span>
     <span data-at="5"><b>You cannot approve your own PR:</b> the instructor or a fellow student does.</span>
@@ -1156,7 +1155,7 @@ projects:
   </div>
   <div class="controls"><p class="step-note">
     <span data-at="0">The releases folder as one file: each line pins a project to a tag <code>&lt;project&gt;@vX.Y.Z</code>.</span>
-    <span data-at="1"><b>Your feature PR merged:</b> every test gateway has it, production does not. Deploy did not even run.</span>
+    <span data-at="1"><b>Your feature PR merged:</b> the code is on main. Production keeps its pinned version; Deploy did not run.</span>
     <span data-at="2"><b>Tag the merged main:</b> the prefix names the project, the version names the point in history. Now the release exists.</span>
     <span data-at="3"><b>Pin it on a branch, by PR:</b> one line in <code>release.yaml</code>, and you stage only that file.</span>
     <span data-at="4"><b>Tag before pin, and tag only main:</b> CI enforces both.</span>
@@ -1253,7 +1252,7 @@ git push --force-with-lease</pre></div>
         <ul class="dots sm">
           <li>Your <b>local</b> gateway accepts it through <code>ACCEPT_MODULE_LICENSES</code> and <code>ACCEPT_MODULE_CERTS</code> in <code>docker-compose.yaml</code> (lab 06).</li>
           <li>Recreate, not restart: <code>docker compose up -d --force-recreate gateway</code>.</li>
-          <li>The gateway writes <code>certFingerprint</code> and <code>licenseAgreementHash</code> into your <code>modules.json</code> entry: <b>test and production trust the module through those two values</b>.</li>
+          <li>The gateway writes <code>certFingerprint</code> and <code>licenseAgreementHash</code> into your <code>modules.json</code> entry: <b>production trusts the module through those two values</b>.</li>
         </ul>
       </div>
       <div>
@@ -1283,21 +1282,18 @@ git push --force-with-lease</pre></div>
 <!-- WORKFLOW DETAILS -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">19</span><h2 class="title">Test a branch on your test gateway, keep migrations in step, inherit from a parent project</h2></div>
+  <div class="sechead"><span class="num">19</span><h2 class="title">Verify locally, keep migrations in step, inherit from a parent project</h2></div>
   <div class="body">
     <div class="pair">
-      <div class="code"><pre><span class="cm"># 1 · your branch on your test gateway, before the merge</span>
-gh workflow run test-<span class="cmd2">&lt;you&gt;</span>.yml --ref <span class="cmd2">&lt;your-branch&gt;</span>
-<span class="cm">#     the next push to main puts main back</span>
+      <div class="code"><pre><span class="cm"># verify your branch on localhost:8088</span>
+<span class="cm"># review the working-tree diff before the PR</span>
+git diff
 
-<span class="cm"># 2 · migrations: a number higher than any on main</span>
+<span class="cm"># migrations: a number higher than any on main</span>
 scripts/migrate.sh up       <span class="cm"># try it on your local database</span>
-scripts/migrate.sh down 1   <span class="cm"># before you switch branches</span>
-<span class="cm">#     a branch you deployed with step 1 left its</span>
-<span class="cm">#     migration in your TEST database: on that branch</span>
-scripts/migrate.sh --test down 1</pre></div>
+scripts/migrate.sh down 1   <span class="cm"># before you switch branches</span></pre></div>
       <div class="stack" style="gap:1.25rem">
-        <div class="code"><pre><span class="cm"># 3 · inheritance is two fields in project.json</span>
+        <div class="code"><pre><span class="cm"># inheritance is two fields in project.json</span>
 <span class="cm"># projects/course-lib/project.json</span>
 "inheritable": <span class="grn">true</span>
 <span class="cm"># projects/&lt;you&gt;/project.json</span>
@@ -1316,7 +1312,7 @@ scripts/scan.sh</pre></div>
     <h2 class="divider-title">Next: contribute to <span class="nw">demo-oatmakers</span> and deploy to a <em>live production gateway</em></h2>
     <ol class="flow" style="max-width:84rem">
       <li><b>We-do</b><span>Map Oatmakers' eight sites onto the reference architectures, sketch the repo layouts, and walk one release PR on demo-oatmakers end to end: bump a pin in <code>release.yaml</code>, review, merge, watch <b>Deploy</b> run on the <code>demo-oatmakers</code> runner.</span></li>
-      <li class="on"><b>You-do</b><span>Breakout rooms, from <code>exercises/lab.md</code>. Accept the collaborator invite on <code>Mustry-Solutions/demo-oatmakers</code>. Part 0: your test gateway and runner. Part 1: a project with your name <b>live on production</b> through a tag and a <code>release.yaml</code> PR. Part 2: five challenges on the shared oatmakers project. Part 3: build on each other's work.</span></li>
+      <li class="on"><b>You-do</b><span>Breakout rooms, from <code>exercises/lab.md</code>. Accept the collaborator invite on <code>Mustry-Solutions/demo-oatmakers</code>. Part 0: start your local development gateway. Part 1: a project with your name <b>live on production</b> through a tag and a <code>release.yaml</code> PR. Part 2: five challenges on the shared oatmakers project. Part 3: build on each other's work.</span></li>
       <li><b>Debrief</b><span>The last lab of the course: the debrief closes all four days. Bring the pipeline you would actually build at your own plant.</span></li>
     </ol>
   </div>

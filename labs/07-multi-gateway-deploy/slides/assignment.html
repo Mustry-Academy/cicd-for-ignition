@@ -610,7 +610,7 @@ svg text.lname{font-family:var(--font-mono);font-size:11px;fill:var(--muted)}
       <li><b>Share your screen</b> in the breakout room. <code>exercises/lab.md</code> is the source of truth; these slides mirror it.</li>
       <li><b>No fork:</b> everyone works in <code>Mustry-Solutions/demo-oatmakers</code>. Accept the collaborator invite and push your branches straight to it.</li>
       <li><b>main is protected:</b> a pull request, a green <code>CI OK</code> and <b>one approval</b> from someone else.</li>
-      <li><b>Two deploy channels:</b> every merge to <code>main</code> lands on <b>your own test gateway</b>; only a change to <code>release.yaml</code> reaches <b>production</b> through <b>Deploy</b>.</li>
+      <li><b>Production is pinned:</b> build and verify locally, merge a reviewed PR, then tag and change <code>release.yaml</code> to deploy through <b>Deploy</b>.</li>
       <li class="warn"><b>Production is live and public:</b> <code>https://cloud.mustrysolutions.com</code>. Verify through the public pages and the workflow logs.</li>
       <li><b>Stuck?</b> The Troubleshooting section of <code>exercises/lab.md</code>, then say so in the room.</li>
     </ul>
@@ -649,10 +649,10 @@ git push --force-with-lease</pre></div>
 <!-- THE PLAN -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">THE PLAN</span><h2 class="title">Four parts: your test gateway, your own project, the shared challenges, building on each other</h2></div>
+  <div class="sechead"><span class="num">THE PLAN</span><h2 class="title">Four parts: local setup, your own project, the shared challenges, building on each other</h2></div>
   <div class="body">
     <ol class="track">
-      <li><small>Part 0 · ±15 min · solo</small><b>Stand up your test gateway and your runner</b><span>The provided <code>test</code> profile on your laptop, plus your own <code>test-&lt;yourname&gt;.yml</code> workflow on your runner label.</span><span class="gate">gate: a green test-&lt;yourname&gt; run put main on localhost:8090</span></li>
+      <li><small>Part 0 · ±5 min · solo</small><b>Start your local development gateway</b><span>Run the setup script for the development gateway and database.</span><span class="gate">gate: open oatmakers in the Designer on localhost:8088</span></li>
       <li class="now"><small>Part 1 · ±20 min · solo</small><b>Create your own project and bring it live</b><span>Add <code>projects/&lt;yourname&gt;/</code> by PR, tag <code>&lt;yourname&gt;@v1.0.0</code>, pin it in <code>release.yaml</code>, watch <b>Deploy</b> ship it.</span><span class="gate">gate: your view live on cloud.mustrysolutions.com</span></li>
       <li><small>Part 2 · ±35 min · group</small><b>Five challenges on the shared oatmakers project</b><span>A module, a JAR, a database with a migration and a referenced secret, a simulator with live tags, and history on top. Claim one each.</span><span class="gate">gate: your challenge live via an oatmakers@ tag</span></li>
       <li><small>Part 3 · extra · group</small><b>Build on each other's work</b><span>A showcase view, a shared library at its own tag, crossing the challenges. You decide together who does what.</span><span class="gate">gate: one PR that builds on someone else's work</span></li>
@@ -668,7 +668,7 @@ git push --force-with-lease</pre></div>
     <div class="work">
       <ol class="steps alt">
         <li><b>Accept the invite</b> from your GitHub notifications, or at <code>github.com/Mustry-Solutions/demo-oatmakers/invitations</code>. You get write access; no fork.</li>
-        <li><b>Shut the lab 06 stack down</b> (<code>docker compose down</code> in <code>labs/06-secrets-db-and-modules/</code>): it holds ports <b>8088, 8090 and 5432</b>.</li>
+        <li><b>Shut the lab 06 stack down</b> (<code>docker compose down</code> in <code>labs/06-secrets-db-and-modules/</code>): it holds ports <b>8088 and 5432</b>.</li>
         <li><b>Clone next to the course repo</b> in <code>~/mustry-academy/</code>, not inside <code>cicd-for-ignition/</code>. On Windows: in your WSL home, never under <code>/mnt/c/</code>.</li>
       </ol>
       <div class="side">
@@ -679,7 +679,6 @@ cd demo-oatmakers</pre></div>
           <tr><th>Your laptop runs</th><th>Where</th><th>Fed by</th></tr>
           <tr><td>local gateway</td><td><code>localhost:8088</code></td><td>your working tree (bind mount), <code>admin</code> / <code>password</code></td></tr>
           <tr><td>local database</td><td><code>localhost:5432</code></td><td>login in <code>local-development/secrets/</code></td></tr>
-          <tr><td>your test gateway</td><td><code>localhost:8090</code></td><td>your workflow, on every merge to main</td></tr>
           <tr><td>production</td><td><code>cloud.mustrysolutions.com</code></td><td><b>Deploy</b>, only when <code>release.yaml</code> changes</td></tr>
         </table>
       </div>
@@ -687,57 +686,25 @@ cd demo-oatmakers</pre></div>
   </div>
 </section>
 
-<!-- PART 0 A -->
+<!-- PART 0 -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num warm">PART 0 · A</span><h2 class="title">Start your test gateway and register your runner with the shared token</h2></div>
+  <div class="sechead"><span class="num warm">PART 0</span><h2 class="title">Start your local development gateway and open the Designer</h2></div>
   <div class="body">
     <div class="work">
       <ol class="steps alt">
-        <li><b>Tell the stack who you are.</b> We post <b>one runner registration token</b> in the Zoom chat at the start of Part 0. Copy <code>.env.example</code> to <code>.env</code>, set <code>LAB_USER</code> (lowercase, no spaces) and <code>RUNNER_TOKEN</code>. Leave <code>IGNITION_API_KEY</code> empty.</li>
-        <li><b>Start the stack:</b> <code>./scripts/setup.sh</code>. Because <code>LAB_USER</code> is set, it also starts the <code>test</code> profile: your test gateway on <code>8090</code>, its own database and your runner. It generates your API key too, so always use <code>setup.sh</code> for the first start.</li>
-        <li><b>Check your runner is online</b> in its log: <code>Listening for Jobs</code> means it is registered and waiting.</li>
+        <li>Copy <code>.env.example</code> to <code>.env</code>. Clear the example value of <code>LAB_USER</code> and leave <code>IGNITION_API_KEY</code> empty.</li>
+        <li>Run <code>./scripts/setup.sh</code>. It starts the development gateway on <code>8088</code> and its database on <code>5432</code>, generates your API key and applies local migrations.</li>
+        <li>Sign in at <code>localhost:8088</code> with <code>admin</code> / <code>password</code>. Open the Designer and the <code>oatmakers</code> project.</li>
       </ol>
       <div class="side">
         <div class="code"><pre>cp .env.example .env
-<span class="cm"># LAB_USER=&lt;yourname&gt;</span>
-<span class="cm"># RUNNER_TOKEN=&lt;the token from the Zoom chat&gt;</span>
-./scripts/setup.sh
-
-docker logs oatmakers-test-runner-<span class="cmd2">&lt;yourname&gt;</span> 2>&amp;1 \
-  | grep -E <span class="grn">"Connected to GitHub|Listening for Jobs"</span></pre></div>
-        <div class="aside good"><span class="label">Observe</span>Your runner is <code>oatmakers-test-&lt;yourname&gt;</code> with the labels <code>self-hosted,&lt;yourname&gt;-local</code>. The token is valid one hour; missed it? Ask for a fresh one.</div>
+<span class="cm"># clear LAB_USER in .env</span>
+<span class="cm"># leave IGNITION_API_KEY empty</span>
+./scripts/setup.sh</pre></div>
+        <div class="aside good"><span class="label">Part 0 gate</span>The local development gateway is running and you can open <b>oatmakers</b> in the Designer.</div>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- PART 0 B -->
-<section class="slide">
-  <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num warm">PART 0 · B</span><h2 class="title">Copy the workflow template under your name, merge it, and watch it deploy main to localhost:8090</h2></div>
-  <div class="body">
-    <div class="work">
-      <ol class="steps alt">
-        <li data-n="4"><b>Make the provided workflow yours:</b> copy <code>test-example.yml.template</code> to <code>test-&lt;yourname&gt;.yml</code> and replace <code>CHANGEME</code> with your name in the one line marked <code>CHANGEME</code>: <code>runs-on</code>.</li>
-        <li data-n="5"><b>PR it in:</b> branch, <code>git add</code> that one file, push, open the PR, wait for <code>CI OK</code>, ask for an approval, merge.</li>
-        <li data-n="6"><b>Verify it works.</b> Your merge starts your workflow: <code>test-&lt;yourname&gt;.yml</code> runs on <b>your</b> runner and goes green, and <code>localhost:8090/data/perspective/client/oatmakers/</code> serves the shared project.</li>
-        <li data-n="7"><b>Test a branch before you merge it:</b> <code>gh workflow run test-&lt;yourname&gt;.yml --ref &lt;your-branch&gt;</code> puts that branch on your test gateway. The next push to <code>main</code> puts <code>main</code> back.</li>
-      </ol>
-      <div class="side">
-        <div class="code"><pre>git switch -c feature/&lt;yourname&gt;-test-workflow
-cp .github/workflows/test-example.yml.template \
-   .github/workflows/test-<span class="cmd2">&lt;yourname&gt;</span>.yml
-<span class="cm"># the one CHANGEME line: CHANGEME → &lt;yourname&gt;</span>
-runs-on: [self-hosted, <span class="cmd2">&lt;yourname&gt;-local</span>]
-
-git add .github/workflows/test-&lt;yourname&gt;.yml
-git commit -m <span class="grn">"ci: add test deploy workflow for &lt;yourname&gt;"</span>
-git push -u origin feature/&lt;yourname&gt;-test-workflow</pre></div>
-        <div class="aside"><span class="label">Observe</span><b>The runner label routes the deploy.</b> Everyone's workflow runs on every merge, and each deploys only to its owner's test gateway. Production works the same way: <code>[self-hosted, demo-oatmakers]</code>.</div>
-      </div>
-    </div>
-    <div class="aside good"><span class="label">Part 0 gate</span><b>Your <code>test-&lt;yourname&gt;.yml</code> merged through an approved PR</b>, <code>Listening for Jobs</code> in your runner's log, and a green run that put <code>main</code> on <code>localhost:8090</code>.</div>
   </div>
 </section>
 
@@ -766,7 +733,6 @@ git status
 git add projects/<span class="cmd2">&lt;yourname&gt;</span>/
 git commit -m <span class="grn">"feat: add &lt;yourname&gt; project with welcome view"</span>
 git push -u origin feature/&lt;yourname&gt;-project</pre></div>
-        <div class="aside good"><span class="label">Observe</span><b>Your merge landed on every test gateway:</b> <code>localhost:8090/data/perspective/client/&lt;yourname&gt;/</code> works on yours.</div>
         <div class="aside"><span class="label">Observe</span><b>Production did not change:</b> <b>Deploy</b> did not run, because <code>release.yaml</code> did not change.</div>
       </div>
     </div>
@@ -813,7 +779,7 @@ git push -u origin pin/&lt;yourname&gt;-v1.0.0</pre></div>
       <ol class="steps vio">
         <li><b>Claim a challenge in the room.</b> More people than challenges: pair up. Challenge 5 builds on 3 and 4.</li>
         <li><b>Work lands in <code>projects/oatmakers/</code></b> plus <code>services/</code>, <code>third-party-modules/</code>, <code>jar-files/jar/</code>, <code>db-migration/migrate/</code>. Your views in <code>Course/&lt;yourname&gt;/</code> with a page like <code>/course/&lt;yourname&gt;</code>, tags under <code>Course/</code>, tables prefixed <code>course_</code>.</li>
-        <li><b>Check your test gateway first:</b> <code>gh workflow run test-&lt;yourname&gt;.yml --ref &lt;branch&gt;</code> before the merge, your workflow on <code>main</code> after it. Not working on <code>localhost:8090</code>? Fix it before you tag.</li>
+        <li><b>Verify locally before the PR:</b> open your view on <code>localhost:8088</code>, exercise its behaviour and review <code>git diff</code>. Resolve problems before you merge and tag.</li>
         <li><b>Finished means live:</b> merge, cut the next free <code>oatmakers@</code> tag (from <code>v5.1.0</code>: a fix <code>v5.1.1</code>, a feature <code>v5.2.0</code>), pin it by PR.</li>
       </ol>
       <div class="side">
@@ -841,7 +807,7 @@ git merge-base --is-ancestor \
   <div class="body">
     <div class="work">
       <ol class="steps vio">
-        <li>Download <code>Embr-Charts-Ignition83-6.0.1.modl</code> (module id <code>com.mussonindustrial.embr.charts</code>) into <code>third-party-modules/</code>, from <a class="link" href="https://github.com/mussonindustrial/embr/releases/tag/releases%2F8.3%2F2026.6.17">github.com/mussonindustrial/embr/releases/tag/releases%2F8.3%2F2026.6.17</a></li>
+        <li>Copy <code>Embr-Charts-Ignition83-4.0.1.modl</code> from the course repo's <code>labs/06-secrets-db-and-modules/third-party-modules/</code> into demo-oatmakers's <code>third-party-modules/</code>. This is Embr Charts <b>4.0.1 for Ignition 8.3</b>, module id <code>com.mussonindustrial.embr.charts</code>.</li>
         <li>Add the minimal entry on the right to <code>services/modules.json</code>: the lab 06 move.</li>
         <li><b>Recreate</b> your local gateway (env vars only reach a new container). The repo's compose file already accepts this module id on your local gateway, so it installs headless and writes <code>certFingerprint</code> + <code>licenseAgreementHash</code> into your entry.</li>
         <li>Commit <b>only</b> your <code>modules.json</code> entry and the <code>.modl</code>.</li>
@@ -850,14 +816,14 @@ git merge-base --is-ancestor \
       <div class="side">
         <div class="code sm"><pre><span class="cm"># services/modules.json, your entry</span>
 "com.mussonindustrial.embr.charts": {
-  "filename": <span class="grn">"/third-party-modules/Embr-Charts-Ignition83-6.0.1.modl"</span>,
+  "filename": <span class="grn">"/third-party-modules/Embr-Charts-Ignition83-4.0.1.modl"</span>,
   "onStartup": <span class="grn">"enabled"</span>
 },
 
 <span class="cm"># a recreate, not a restart</span>
 docker compose up -d --force-recreate gateway
 git diff services/modules.json   <span class="cm"># the two values appeared</span></pre></div>
-        <div class="aside"><span class="label">Already on main?</span>If <code>services/modules.json</code> on <code>main</code> already has the entry, skip the module steps: check it runs on your test gateway, then build the chart screen.</div>
+        <div class="aside"><span class="label">Already on main?</span>If the entry already exists on <code>main</code>, keep its filename and version. Verify it runs on your local gateway at <code>localhost:8088</code>; recreate that gateway if needed, then build the screen.</div>
       </div>
     </div>
   </div>
@@ -1005,16 +971,14 @@ ignition/tag-definition/System/Gateway/Devices/CourseSim/</pre></div>
 <!-- TROUBLESHOOTING -->
 <section class="slide">
   <header class="topbar"><img class="logo" src="logos/OriginalDark.png" alt="Mustry Solutions"></header>
-  <div class="sechead"><span class="num">FIXES</span><h2 class="title">Troubleshooting: the runner, the trial, stray churn, migrations and a red release</h2></div>
+  <div class="sechead"><span class="num">FIXES</span><h2 class="title">Troubleshooting: ports, the trial, stray churn, migrations and a red release</h2></div>
   <div class="body">
     <table class="table tight" style="font-size:var(--text-base)">
       <tr><th style="width:30%">Symptom</th><th>Fix</th></tr>
-      <tr><td>"Waiting for a runner to pick up this job" on your <code>test-&lt;yourname&gt;</code> run</td><td>The <code>runs-on</code> label does not match your runner. It must be exactly <code>&lt;yourname&gt;-local</code>, the same name as <code>LAB_USER</code>. Check <code>docker logs oatmakers-test-runner-&lt;yourname&gt;</code> for <code>Listening for Jobs</code>.</td></tr>
-      <tr><td>The runner log says the token is invalid or expired</td><td>Ask for a fresh token in the chat, put it in <code>.env</code> as <code>RUNNER_TOKEN</code>, re-run <code>./scripts/setup.sh</code>.</td></tr>
+      <tr><td><code>setup.sh</code> says a port is in use</td><td>Stop the lab 06 stack, or set <code>GATEWAY_PORT</code> or <code>POSTGRES_PORT</code> in <code>.env</code> and re-run setup. Defaults: <code>8088</code> and <code>5432</code>.</td></tr>
       <tr><td>Blank Perspective pages, Designer disconnects, a deploy that worked fails</td><td>The trial lapsed: <code>scripts/reset-trial.sh</code>.</td></tr>
       <tr><td><code>git status</code> shows files you never touched</td><td>Gateway churn (module fingerprints, <code>resource.json</code> stamps): do not stage it, see <code>docs/resource-json-hygiene.html</code>. Except the store-and-forward and status-tag folders of a device, connection or historian <b>you</b> added: stage those with it.</td></tr>
-      <tr><td>Test run fails: <code>no migration found for version N</code></td><td>A branch you deployed with <code>gh workflow run</code> left its migration in your test database. On that branch: <code>scripts/migrate.sh --test down 1</code>, then re-run. From <code>setup.sh</code> or <code>migrate.sh up</code>: <code>scripts/migrate.sh down 1</code> on that branch.</td></tr>
-      <tr><td>Test run says <code>Still not authorized</code></td><td>Your test gateway and your runner hold different API keys. Run <code>./scripts/setup.sh</code>, then re-run.</td></tr>
+      <tr><td><code>setup.sh</code> or <code>migrate.sh up</code>: <code>no migration found for version N</code></td><td>A migration from your previous branch is still applied locally. On that branch: <code>scripts/migrate.sh down 1</code> before switching branches.</td></tr>
       <tr><td><code>CI OK</code> is red on a release PR</td><td>Open the failing job. Most often the pin points at a tag that was never pushed (<code>git push origin &lt;tag&gt;</code>) or not on <code>main</code>, or the YAML lost a line in a rebase. After pushing a tag: <b>Checks, Re-run failed jobs</b>.</td></tr>
       <tr><td><b>Deploy</b> is red, or production looks wrong after your release</td><td>Say so in the chat straight away. The fix is the <b>Revert</b> button on the merged release PR, reviewed and merged as usual.</td></tr>
     </table>
@@ -1027,7 +991,7 @@ ignition/tag-definition/System/Gateway/Devices/CourseSim/</pre></div>
   <div class="sechead"><span class="num">GATE</span><h2 class="title">Definition of done for all four parts</h2></div>
   <div class="body">
     <ol class="steps" style="max-width:72rem">
-      <li data-n="0"><b>Part 0:</b> your <code>test-&lt;yourname&gt;.yml</code> merged through an approved PR, and a green <code>test-&lt;yourname&gt;.yml</code> run <b>on your own runner</b>.</li>
+      <li data-n="0"><b>Part 0:</b> the local development gateway is running and you can open <b>oatmakers</b> in the Designer.</li>
       <li data-n="1"><b>Part 1:</b> <code>projects/&lt;yourname&gt;/</code> merged through an approved PR, the tag <code>&lt;yourname&gt;@v1.0.0</code>, your line in <code>release.yaml</code>, and your view <b>live on cloud.mustrysolutions.com</b>.</li>
       <li data-n="2"><b>Part 2:</b> your challenge merged and <b>live on production</b> via an <code>oatmakers@</code> tag that contains it and a reviewed <code>release.yaml</code> pin.</li>
       <li data-n="3"><b>Part 3:</b> at least one merged PR that <b>builds on someone else's work</b>, and at least one review (an approval or a comment) you gave someone else.</li>
@@ -1043,7 +1007,7 @@ ignition/tag-definition/System/Gateway/Devices/CourseSim/</pre></div>
   <div class="divider-body">
     <h2 class="divider-title" style="max-width:26ch">You shipped to a <em>live production gateway</em> through a protected, shared repo</h2>
     <ul class="checks" style="max-width:74rem">
-      <li>A test gateway that tracked <b>main</b> for the whole lab, fed by your own runner through a label only you answer to.</li>
+      <li>A local development gateway where you built and verified each change before review and release.</li>
       <li>Your own project, from <b>git clone to live on production</b>: a reviewed PR, a tag, a <code>release.yaml</code> line, a <b>Deploy</b> run.</li>
       <li>Five challenges on one shared project: a <b>module</b>, a <b>JAR</b>, a <b>database</b> with a migration and a referenced secret, <b>live tags</b> from a simulator, and <b>history</b> on top.</li>
       <li>One version stream shared by the whole group: <b>tag races, rebases, merge conflicts and small fast PRs</b>, like a real team on a real plant.</li>

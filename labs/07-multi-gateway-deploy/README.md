@@ -6,9 +6,9 @@ Day 4 of the [CI/CD for Ignition Masterclass](https://github.com/Mustry-Academy/
 > **contributor on one real, public repo**,
 > [`Mustry-Solutions/demo-oatmakers`](https://github.com/Mustry-Solutions/demo-oatmakers):
 > the repo behind Mustry's live Oatmakers demo at
-> <https://cloud.mustrysolutions.com>. Every merge to `main` lands on your
-> **own test gateway**; only a change to `release.yaml` reaches the **live
-> production gateway**. Feature branch → PR → review → tag → release pin →
+> <https://cloud.mustrysolutions.com>. Build on your local development
+> gateway; a change to `release.yaml` reaches the **live production gateway**.
+> Feature branch → PR → review → tag → release pin →
 > live, again and again, with the rest of the group in the same version
 > stream.
 
@@ -16,7 +16,7 @@ This folder holds the **material** for the lab: the slides, the exercise and
 the reference docs. The code you work on lives in demo-oatmakers; nothing in
 this folder runs.
 
-Two deploy channels, one rule: `release.yaml` is the **only** production
+The release rule: `release.yaml` is the **only** production
 trigger. Each pin is a git tag `<project>@vX.Y.Z` that must exist before the
 file may point at it; CI enforces that on the PR. Rollback is `git revert`
 of the release PR.
@@ -26,9 +26,9 @@ of the release PR.
 - The instructor adds you as a **collaborator** on demo-oatmakers at the start
   of the session. Accept the invite from your GitHub notifications. No fork.
 - Docker with the Compose V2 plugin, `git`, `curl`, `python3`
-- **≥ 6 GB free RAM for Docker**: two Ignition gateways (your local one and
-  your test gateway), a PostgreSQL database for each, and a runner
-- Ports **8088, 8090 and 5432** free: stop the lab 06 stack first
+- Docker resources for one local Ignition development gateway and one
+  PostgreSQL database
+- Ports **8088 and 5432** free: stop the lab 06 stack first
   (`docker compose down` in `labs/06-secrets-db-and-modules/`)
 - _Background:_ [labs 03-06](../): the runner, tags, secrets, migrations and
   module moves all return here, wired into one pipeline
@@ -44,16 +44,15 @@ Clone it **next to** the course repo, not inside it:
 cd ~/mustry-academy    # the folder that already holds cicd-for-ignition/
 git clone git@github.com:Mustry-Solutions/demo-oatmakers.git
 cd demo-oatmakers
-cp .env.example .env   # Part 0: LAB_USER + the runner token from the Zoom chat
-./scripts/setup.sh     # local stack + your test gateway and runner, idempotent
+cp .env.example .env
+# edit .env: clear LAB_USER and leave IGNITION_API_KEY empty
+./scripts/setup.sh     # local development gateway + database, idempotent
 ```
 
 | Service | URL | Login / fed by |
 |---|---|---|
 | local gateway | http://localhost:8088 | `admin` / `password`, bind-mounted from your working tree |
 | local database | localhost:5432 | see `local-development/secrets/` |
-| your test gateway | http://localhost:8090 | your `test-<yourname>.yml` workflow, on every merge to `main` |
-| its own database | no host port | migrated by that workflow only |
 | **production** | https://cloud.mustrysolutions.com | the `Deploy` workflow, only when `release.yaml` changes |
 
 ## Lab structure
@@ -63,7 +62,7 @@ cp .env.example .env   # Part 0: LAB_USER + the runner token from the Zoom chat
 
 | Part | Topic | Gate |
 |---|---|---|
-| 0 (±15 min) | Your test gateway and runner from the provided `test` profile, plus your own `test-<yourname>.yml` workflow on your runner label | a green `test-<yourname>.yml` run that put `main` on `localhost:8090` |
+| 0 (±5 min) | Start the local development gateway and database | sign in on `localhost:8088` and open oatmakers in the Designer |
 | 1 (±20 min) | Your own project through the full loop: PR → approval → `<yourname>@v1.0.0` tag → `release.yaml` pin | your view live on production |
 | 2 (±35 min) | Five challenges on the shared oatmakers project: module, JAR, migration + referenced secret, simulator tags, history in the TimescaleDB-Historian | your challenge live via an `oatmakers@` tag (the group starts at the `v5.1.0` pin) |
 | 3 (extra) | Build on each other's work: a showcase view, a shared library at its own tag, small PRs, real merge conflicts | a merged PR that uses someone else's Part 2 work |
